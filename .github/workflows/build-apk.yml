@@ -39,7 +39,7 @@ jobs:
         run: pnpm install --no-frozen-lockfile
 
       - name: Validate TypeScript Typings
-        run: pnpm exec tsc --no-emit
+        run: pnpm exec tsc --noEmit
 
       - name: Run Widget Registry Validations
         run: node scripts/validate_widgets.js
