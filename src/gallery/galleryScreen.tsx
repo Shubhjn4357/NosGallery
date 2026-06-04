@@ -95,13 +95,36 @@ export const GalleryScreen: React.FC = () => {
     const isWeather = template.category === 'weather';
     const isGithub = template.id.includes('github') || template.id.includes('git');
     const isFinance = template.category === 'finance';
+    const isHealth = template.category === 'health';
+    const isDevMonitor = template.category === 'developer' && 
+                         (template.id.includes('cpu') || template.id.includes('ram') || template.id.includes('disk') || template.id.includes('server'));
 
-    if (isWeather || isGithub || isFinance) {
+    if (isWeather || isGithub || isFinance || isHealth || isDevMonitor) {
       setPromptTemplate(template);
       setPendingPresetToApply(preset);
-      setPromptInputVal(
-        isWeather ? 'London' : isGithub ? 'octocat' : isFinance ? 'BTC' : ''
-      );
+      if (isWeather) {
+        setPromptInputVal('London');
+      } else if (isGithub) {
+        setPromptInputVal('octocat');
+      } else if (isFinance) {
+        setPromptInputVal('BTC');
+      } else if (isHealth) {
+        if (template.id.includes('step')) {
+          setPromptInputVal('8432');
+        } else if (template.id.includes('cal')) {
+          setPromptInputVal('482');
+        } else if (template.id.includes('water') || template.id.includes('hydra')) {
+          setPromptInputVal('5');
+        } else if (template.id.includes('sleep')) {
+          setPromptInputVal('7h 42m');
+        } else if (template.id.includes('stress') || template.id.includes('mood')) {
+          setPromptInputVal('38');
+        } else {
+          setPromptInputVal('100');
+        }
+      } else if (isDevMonitor) {
+        setPromptInputVal('12');
+      }
       return;
     }
 
@@ -175,13 +198,36 @@ export const GalleryScreen: React.FC = () => {
     const isWeather = template.category === 'weather';
     const isGithub = template.id.includes('github') || template.id.includes('git');
     const isFinance = template.category === 'finance';
+    const isHealth = template.category === 'health';
+    const isDevMonitor = template.category === 'developer' && 
+                         (template.id.includes('cpu') || template.id.includes('ram') || template.id.includes('disk') || template.id.includes('server'));
 
-    if (isWeather || isGithub || isFinance) {
+    if (isWeather || isGithub || isFinance || isHealth || isDevMonitor) {
       setPromptTemplate(template);
       setPendingPresetToApply(mockPreset);
-      setPromptInputVal(
-        isWeather ? 'London' : isGithub ? 'octocat' : isFinance ? 'BTC' : ''
-      );
+      if (isWeather) {
+        setPromptInputVal('London');
+      } else if (isGithub) {
+        setPromptInputVal('octocat');
+      } else if (isFinance) {
+        setPromptInputVal('BTC');
+      } else if (isHealth) {
+        if (template.id.includes('step')) {
+          setPromptInputVal('8432');
+        } else if (template.id.includes('cal')) {
+          setPromptInputVal('482');
+        } else if (template.id.includes('water') || template.id.includes('hydra')) {
+          setPromptInputVal('5');
+        } else if (template.id.includes('sleep')) {
+          setPromptInputVal('7h 42m');
+        } else if (template.id.includes('stress') || template.id.includes('mood')) {
+          setPromptInputVal('38');
+        } else {
+          setPromptInputVal('100');
+        }
+      } else if (isDevMonitor) {
+        setPromptInputVal('12');
+      }
       return;
     }
 
@@ -196,6 +242,9 @@ export const GalleryScreen: React.FC = () => {
     const isWeather = promptTemplate.category === 'weather';
     const isGithub = promptTemplate.id.includes('github') || promptTemplate.id.includes('git');
     const isFinance = promptTemplate.category === 'finance';
+    const isHealth = promptTemplate.category === 'health';
+    const isDevMonitor = promptTemplate.category === 'developer' && 
+                         (promptTemplate.id.includes('cpu') || promptTemplate.id.includes('ram') || promptTemplate.id.includes('disk') || promptTemplate.id.includes('server'));
 
     const customSettings: { titleText?: string; valueText?: string } = {};
 
@@ -208,6 +257,12 @@ export const GalleryScreen: React.FC = () => {
     } else if (isFinance) {
       customSettings.titleText = promptInputVal.toUpperCase();
       customSettings.valueText = `$0.00`;
+    } else if (isHealth) {
+      customSettings.titleText = promptTemplate.defaultTitle;
+      customSettings.valueText = promptInputVal;
+    } else if (isDevMonitor) {
+      customSettings.titleText = promptTemplate.defaultTitle;
+      customSettings.valueText = `${promptInputVal}%`;
     }
 
     commitApplyPreset(pendingPresetToApply, customSettings);
@@ -241,6 +296,9 @@ export const GalleryScreen: React.FC = () => {
     const isWeather = promptTemplate.category === 'weather';
     const isGithub = promptTemplate.id.includes('github') || promptTemplate.id.includes('git');
     const isFinance = promptTemplate.category === 'finance';
+    const isHealth = promptTemplate.category === 'health';
+    const isDevMonitor = promptTemplate.category === 'developer' && 
+                         (promptTemplate.id.includes('cpu') || promptTemplate.id.includes('ram') || promptTemplate.id.includes('disk') || promptTemplate.id.includes('server'));
 
     if (promptTemplate.category === 'ai') return null;
 
@@ -256,6 +314,29 @@ export const GalleryScreen: React.FC = () => {
     } else if (isFinance) {
       promptLabel = 'Enter Stock/Crypto Symbol (e.g. AAPL, BTC, ETH):';
       placeholder = 'Symbol';
+    } else if (isHealth) {
+      if (promptTemplate.id.includes('step')) {
+        promptLabel = 'Enter steps count (e.g. 8432):';
+        placeholder = 'Steps count';
+      } else if (promptTemplate.id.includes('cal')) {
+        promptLabel = 'Enter calorie count (kcal, e.g. 482):';
+        placeholder = 'Calories';
+      } else if (promptTemplate.id.includes('water') || promptTemplate.id.includes('hydra')) {
+        promptLabel = 'Enter cups logged (0-8, e.g. 5):';
+        placeholder = 'Cups';
+      } else if (promptTemplate.id.includes('sleep')) {
+        promptLabel = 'Enter sleep duration (e.g. 7h 42m):';
+        placeholder = 'Sleep duration';
+      } else if (promptTemplate.id.includes('stress') || promptTemplate.id.includes('mood')) {
+        promptLabel = 'Enter stress value (0-100, e.g. 38):';
+        placeholder = 'Stress value';
+      } else {
+        promptLabel = 'Enter starting health value:';
+        placeholder = 'Value';
+      }
+    } else if (isDevMonitor) {
+      promptLabel = `Enter initial ${promptTemplate.name.toUpperCase()} percentage (0-100):`;
+      placeholder = 'Usage %';
     }
 
     return (

@@ -8,25 +8,34 @@ import { ThemeId } from '../../themes/themes';
 interface SocialFeedProps {
   customizations: WidgetCustomizations;
   globalTheme: ThemeId;
+  interactive?: boolean;
 }
 
 export const SocialFeed: React.FC<SocialFeedProps> = ({
   customizations,
   globalTheme,
+  interactive = false,
 }) => {
   const { textStyle, subtextStyle, accentColor, successColor } = useWidgetStyle(customizations, globalTheme);
 
   const title = customizations.titleText || 'SUBSCRIBERS';
 
   // Live ticking subscriber count
-  const [subscribers, setSubscribers] = useState(14242);
+  const [subscribers, setSubscribers] = useState(() => {
+    if (customizations.valueText) {
+      const parsed = parseInt(customizations.valueText.replace(/[^0-9]/g, ''), 10);
+      return isNaN(parsed) ? 14242 : parsed;
+    }
+    return 14242;
+  });
 
   useEffect(() => {
+    if (!interactive) return;
     const timer = setInterval(() => {
       setSubscribers(prev => prev + Math.floor(Math.random() * 2));
     }, 4000);
     return () => clearInterval(timer);
-  }, []);
+  }, [interactive]);
 
   return (
     <View style={styles.container}>

@@ -7,11 +7,13 @@ import { ThemeId } from '../../themes/themes';
 interface BreathingWidgetProps {
   customizations: WidgetCustomizations;
   globalTheme: ThemeId;
+  interactive?: boolean;
 }
 
 export const BreathingWidget: React.FC<BreathingWidgetProps> = ({
   customizations,
   globalTheme,
+  interactive = false,
 }) => {
   const { textStyle, accentColor } = useWidgetStyle(customizations, globalTheme);
 
@@ -20,6 +22,12 @@ export const BreathingWidget: React.FC<BreathingWidgetProps> = ({
   const [breathCounter, setBreathCounter] = useState(4);
 
   useEffect(() => {
+    if (!interactive) {
+      setBreathScale(1.0);
+      setBreathPhase('inhale');
+      setBreathCounter(4);
+      return;
+    }
     const timer = setInterval(() => {
       setBreathCounter((prev) => {
         if (prev <= 1) {
@@ -48,7 +56,7 @@ export const BreathingWidget: React.FC<BreathingWidgetProps> = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [breathPhase]);
+  }, [breathPhase, interactive]);
 
   return (
     <View style={styles.container}>

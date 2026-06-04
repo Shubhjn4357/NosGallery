@@ -286,6 +286,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
           <BreathingWidget
             customizations={customizations}
             globalTheme={globalTheme}
+            interactive={interactive}
           />
         );
       }
@@ -293,6 +294,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
         <StepsWidget
           customizations={customizations}
           globalTheme={globalTheme}
+          interactive={interactive}
         />
       );
     }
@@ -333,6 +335,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
         <CpuMonitor
           customizations={customizations}
           globalTheme={globalTheme}
+          interactive={interactive}
         />
       );
     }
@@ -343,6 +346,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
         <SocialFeed
           customizations={customizations}
           globalTheme={globalTheme}
+          interactive={interactive}
         />
       );
     }

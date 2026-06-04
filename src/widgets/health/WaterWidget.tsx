@@ -17,7 +17,13 @@ export const WaterWidget: React.FC<WaterWidgetProps> = ({
 }) => {
   const { textStyle, subtextStyle, accentColor } = useWidgetStyle(customizations, globalTheme);
 
-  const [waterCups, setWaterCups] = useState(4);
+  const [waterCups, setWaterCups] = useState(() => {
+    if (customizations.valueText) {
+      const parsed = parseInt(customizations.valueText.split('/')[0].replace(/[^0-9]/g, ''), 10);
+      return isNaN(parsed) ? 4 : Math.min(8, Math.max(0, parsed));
+    }
+    return 4;
+  });
   const title = customizations.titleText || 'HYDRATION';
 
   const logWater = () => {
