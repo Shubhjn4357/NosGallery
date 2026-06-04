@@ -176,8 +176,8 @@ export const PreviewContainer: React.FC = () => {
   const renderLockScreenContent = () => {
     return (
       <View style={styles.lockScreenContainer}>
-        <Text style={styles.lockScreenTime}>21:09</Text>
-        <Text style={styles.lockScreenDate}>Thursday, June 4</Text>
+        <Text style={styles.lockScreenTime}>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</Text>
+        <Text style={styles.lockScreenDate}>{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</Text>
         
         {/* Render a horizontal widget shelf (Lock Screen Widgets) */}
         <View style={styles.lockShelf}>

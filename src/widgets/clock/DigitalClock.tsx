@@ -23,7 +23,7 @@ export const DigitalClock: React.FC<DigitalClockProps> = ({
   let displayTime = currentTime;
   let labelSuffix = '';
 
-  const templateId = customizations.themeOverride || '';
+
 
   if (customizations.titleText?.toLowerCase().includes('tokyo') || customizations.titleText?.toLowerCase().includes('japan')) {
     // GMT+9 (assume standard local is GMT+5:30)

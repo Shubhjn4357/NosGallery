@@ -25,7 +25,7 @@ export interface LiveGithubData {
 // 1. Fetch Real Weather Data via Open-Meteo
 export const fetchLiveWeather = async (lat = 51.5074, lon = -0.1278): Promise<LiveWeatherData> => {
   try {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=relative_humidity_2m&daily=uv_index_max,air_quality_index&timezone=auto`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=relative_humidity_2m&daily=uv_index_max&timezone=auto`;
     const response = await fetch(url);
     if (!response.ok) throw new Error('Weather API fetch failed');
     const data = await response.json();
@@ -71,23 +71,26 @@ export const fetchLiveWeather = async (lat = 51.5074, lon = -0.1278): Promise<Li
   }
 };
 
-// 2. Fetch Bitcoin Pricing via CoinDesk
+// 2. Fetch Bitcoin Pricing via CoinGecko (CoinDesk v1 deprecated since 2023)
 export const fetchBitcoinPrice = async (): Promise<LiveFinanceData> => {
   try {
-    const response = await fetch('https://api.coindesk.com/v1/bpi/currentprice.json');
+    const response = await fetch(
+      'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true'
+    );
     if (!response.ok) throw new Error('Crypto API fetch failed');
     const data = await response.json();
     
-    const btcPrice = data.bpi?.USD?.rate_float || 67492.50;
+    const btcPrice = data.bitcoin?.usd || 67492.50;
+    const btcChange24h = parseFloat((data.bitcoin?.usd_24h_change || 4.25).toFixed(2));
     
-    // Since CoinDesk is USD-only index, we fetch simulated AAPL stock movements to wire both finance metrics
+    // AAPL uses a simulated drift since we don't want a paid stock API key
     const aaplBase = 189.24;
     const aaplDrift = (Math.random() - 0.48) * 1.5;
     const aaplPrice = parseFloat((aaplBase + aaplDrift).toFixed(2));
     
     return {
       btcPrice,
-      btcChange24h: 4.25,
+      btcChange24h,
       aaplPrice,
       aaplChange24h: 1.2
     };

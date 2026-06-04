@@ -4,6 +4,7 @@ import * as LucideIcons from 'lucide-react-native';
 import { useWidgetStore, ActiveWidget } from '../store/widgetStore';
 import { ThemeId } from '../themes/themes';
 import { useWidgetStyle } from '../hooks/useWidgetStyle';
+import { useFeedback } from '../hooks/useFeedback';
 
 // Modular Component Imports
 import { DigitalClock } from './clock/DigitalClock';
@@ -424,13 +425,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
   );
 };
 
-// Help feedback loader within file to avoid imports mapping lags
-const useFeedback = () => {
-  const settings = { hapticsEnabled: true, soundEnabled: true };
-  const triggerHaptic = (type: string) => console.log(`[Haptic] ${type}`);
-  const triggerSound = (type: string) => console.log(`[Sound] ${type}`);
-  return { triggerHaptic, triggerSound };
-};
+
 
 const styles = StyleSheet.create({
   widgetCard: {

@@ -31,6 +31,7 @@ export const BreathingWidget: React.FC<BreathingWidgetProps> = ({
     const timer = setInterval(() => {
       setBreathCounter((prev) => {
         if (prev <= 1) {
+          // Advance phase using functional update to avoid stale closure
           setBreathPhase((curr) => {
             if (curr === 'inhale') {
               setBreathScale(1.35);
@@ -45,18 +46,21 @@ export const BreathingWidget: React.FC<BreathingWidgetProps> = ({
           });
           return 4;
         }
-        
-        setBreathScale((scale) => {
-          if (breathPhase === 'inhale') return scale + 0.08;
-          if (breathPhase === 'exhale') return scale - 0.04;
-          return scale;
+        // Nudge scale using functional update (no stale read needed)
+        setBreathPhase((curr) => {
+          setBreathScale((scale) => {
+            if (curr === 'inhale') return Math.min(1.35, scale + 0.08);
+            if (curr === 'exhale') return Math.max(0.85, scale - 0.04);
+            return scale;
+          });
+          return curr;
         });
         return prev - 1;
       });
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [breathPhase, interactive]);
+  }, [interactive]); // Only re-create when interactive changes, not on every phase tick
 
   return (
     <View style={styles.container}>

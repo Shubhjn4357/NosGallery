@@ -18,7 +18,8 @@ export const CalendarMonthly: React.FC<CalendarMonthlyProps> = ({
 }) => {
   const { textStyle, subtextStyle, accentColor } = useWidgetStyle(customizations, globalTheme);
 
-  const days = Array.from({ length: 30 }, (_, i) => i + 1);
+  const daysInMonth = new Date(currentTime.getFullYear(), currentTime.getMonth() + 1, 0).getDate();
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const currentDay = currentTime.getDate();
   const title = customizations.titleText || 'CALENDAR';
 

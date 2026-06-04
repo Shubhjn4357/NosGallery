@@ -34,7 +34,9 @@ export const FinanceStockCrypto: React.FC<FinanceStockCryptoProps> = ({
     loadPrices();
     
     // Ticker updates every 5 seconds
-    const interval = setInterval(loadPrices, 5000);
+    const interval = setInterval(() => {
+      if (active) loadPrices();
+    }, 5000);
     return () => {
       active = false;
       clearInterval(interval);
