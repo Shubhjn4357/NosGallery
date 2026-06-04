@@ -1,15 +1,38 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import { useColorScheme } from 'react-native';
+import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
+import { useWidgetStore } from '../store/widgetStore';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+export default function RootLayout() {
+  const { settings } = useWidgetStore();
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  useEffect(() => {
+    // Battery optimization simulated logging
+    const intervalTime = settings.refreshInterval === 'realtime'
+      ? 1000
+      : settings.refreshInterval === '1min'
+        ? 60000
+        : settings.refreshInterval === '5min'
+          ? 300000
+          : 900000;
+
+    console.log(`[NOS Refresh Engine] Starting batch cycle. Interval: ${settings.refreshInterval} (${intervalTime}ms)`);
+    
+    const refreshTimer = setInterval(() => {
+      if (settings.autoRefresh) {
+        console.log(`[NOS Refresh Engine] Batch update triggered for active widgets.`);
+      }
+    }, intervalTime);
+
+    return () => clearInterval(refreshTimer);
+  }, [settings.refreshInterval, settings.autoRefresh]);
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
+    <>
+      <StatusBar style="light" />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#000000' } }}>
+        <Stack.Screen name="index" />
+      </Stack>
+    </>
   );
 }

@@ -1,0 +1,97 @@
+import { WidgetCustomizations } from '../../store/widgetStore';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { useWidgetStyle } from '../../hooks/useWidgetStyle';
+import { ThemeId } from '../../themes/themes';
+
+interface BreathingWidgetProps {
+  customizations: WidgetCustomizations;
+  globalTheme: ThemeId;
+}
+
+export const BreathingWidget: React.FC<BreathingWidgetProps> = ({
+  customizations,
+  globalTheme,
+}) => {
+  const { textStyle, accentColor } = useWidgetStyle(customizations, globalTheme);
+
+  const [breathPhase, setBreathPhase] = useState<'inhale' | 'hold' | 'exhale'>('inhale');
+  const [breathScale, setBreathScale] = useState(1.0);
+  const [breathCounter, setBreathCounter] = useState(4);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setBreathCounter((prev) => {
+        if (prev <= 1) {
+          setBreathPhase((curr) => {
+            if (curr === 'inhale') {
+              setBreathScale(1.35);
+              return 'hold';
+            }
+            if (curr === 'hold') {
+              setBreathScale(0.85);
+              return 'exhale';
+            }
+            setBreathScale(1.0);
+            return 'inhale';
+          });
+          return 4;
+        }
+        
+        setBreathScale((scale) => {
+          if (breathPhase === 'inhale') return scale + 0.08;
+          if (breathPhase === 'exhale') return scale - 0.04;
+          return scale;
+        });
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [breathPhase]);
+
+  return (
+    <View style={styles.container}>
+      <View
+        style={[
+          styles.circle,
+          {
+            transform: [{ scale: breathScale }],
+            backgroundColor: `${accentColor}18`,
+            borderColor: accentColor,
+          },
+        ]}
+      >
+        <Text style={[styles.phase, textStyle, { color: accentColor }]}>
+          {breathPhase.toUpperCase()}
+        </Text>
+        <Text style={[styles.timer, textStyle]}>{breathCounter}s</Text>
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  circle: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  phase: {
+    fontSize: 8,
+    fontWeight: 'bold',
+  },
+  timer: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    marginTop: 1,
+  },
+});
