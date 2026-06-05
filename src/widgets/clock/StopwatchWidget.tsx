@@ -26,35 +26,92 @@ export const StopwatchWidget: React.FC<StopwatchWidgetProps> = ({
 }) => {
   const { textStyle, subtextStyle, accentColor } = useWidgetStyle(customizations, globalTheme);
 
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  const swSec = Math.floor(swTime / 10) % 60;
-  const swMin = Math.floor(swTime / 600);
-  const swDs = swTime % 10;
+  const swSec = Math.floor(swTime / 10);
+  const displaySec = swSec % 60;
+  
+  // Choose standard orange/espresso accent if none provided
+  const timerAccent = customizations.accentColor || '#ff9500';
+  const isLight = customizations.backgroundColor === '#ffffff';
 
-  const title = customizations.titleText || 'STOPWATCH';
+  // Calculate ticks
+  const maxTicks = 24;
+  // Make ticks fill up to 20 or loop
+  const filledTicks = Math.min(maxTicks, Math.round((swSec % 30) / 30 * maxTicks));
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={[styles.title, subtextStyle]}>{title}</Text>
-        <LucideIcons.Timer size={12} color={accentColor} />
-      </View>
-      <Text style={[styles.timeText, textStyle]}>
-        {pad(swMin)}:{pad(swSec)}.{swDs}
-      </Text>
-      {interactive && (
-        <View style={styles.btnRow}>
-          <TouchableOpacity
-            style={[styles.btn, { backgroundColor: swActive ? '#ff3b30' : '#34c759' }]}
-            onPress={handleStopwatch}
-          >
-            <Text style={styles.btnText}>{swActive ? 'Pause' : 'Start'}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.btn, { backgroundColor: '#555' }]} onPress={handleStopwatchReset}>
-            <Text style={styles.btnText}>Reset</Text>
-          </TouchableOpacity>
+      {/* Top Progress Ticks */}
+      <View style={styles.ticksWrapper}>
+        <View style={styles.ticksNumbersRow}>
+          <Text style={[styles.tickNum, subtextStyle]}>10</Text>
+          <Text style={[styles.tickNum, subtextStyle, { marginRight: 20 }]}>20</Text>
         </View>
-      )}
+        <View style={styles.ticksRow}>
+          {Array.from({ length: maxTicks }).map((_, idx) => {
+            const isFilled = idx < filledTicks;
+            return (
+              <View
+                key={idx}
+                style={[
+                  styles.tickBar,
+                  {
+                    backgroundColor: isFilled 
+                      ? timerAccent 
+                      : (isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.15)'),
+                    height: idx % 6 === 0 ? 10 : 6,
+                  }
+                ]}
+              />
+            );
+          })}
+        </View>
+      </View>
+
+      {/* Main Control Panel */}
+      <View style={styles.controlsRow}>
+        {/* Name Label */}
+        <View>
+          <Text style={[styles.timerTitle, { color: timerAccent }]}>
+            {customizations.titleText || 'Espresso'}
+          </Text>
+          <Text style={[styles.timerSubText, subtextStyle]}>Brewing</Text>
+        </View>
+
+        {/* Play/Stop Center Trigger Button */}
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            disabled={!interactive}
+            onPress={handleStopwatch}
+            style={[styles.playStopBtn, { borderColor: timerAccent }]}
+          >
+            {swActive ? (
+              <View style={[styles.stopSquare, { backgroundColor: timerAccent }]} />
+            ) : (
+              <View style={[styles.playTriangle, { borderLeftColor: timerAccent }]} />
+            )}
+          </TouchableOpacity>
+
+          {/* Quick Double-tap Reset Area */}
+          {swTime > 0 && !swActive && (
+            <TouchableOpacity 
+              activeOpacity={0.7} 
+              onPress={handleStopwatchReset}
+              style={styles.resetBadge}
+            >
+              <LucideIcons.RotateCcw size={10} color={timerAccent} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Elapsed Timer Counter */}
+        <View style={styles.timeWrapper}>
+          <Text style={[styles.timeText, { color: isLight ? '#000000' : '#ffffff' }]}>
+            {displaySec}
+            <Text style={[styles.timeUnit, { color: timerAccent }]}>s</Text>
+          </Text>
+        </View>
+      </View>
     </View>
   );
 };
@@ -63,35 +120,102 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'space-between',
+    paddingVertical: 4,
+    paddingHorizontal: 2,
   },
-  header: {
+  ticksWrapper: {
+    width: '100%',
+  },
+  ticksNumbersRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingLeft: 30,
+    marginBottom: 2,
+  },
+  tickNum: {
+    fontSize: 7.5,
+    fontWeight: 'bold',
+    opacity: 0.5,
+  },
+  ticksRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    height: 12,
+    paddingHorizontal: 4,
+  },
+  tickBar: {
+    width: 2.5,
+    borderRadius: 1,
+  },
+  controlsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 6,
   },
-  title: {
-    fontSize: 8.5,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-  },
-  timeText: {
-    fontSize: 28,
+  timerTitle: {
+    fontSize: 13,
     fontWeight: '900',
+    letterSpacing: -0.2,
   },
-  btnRow: {
-    flexDirection: 'row',
-    gap: 4,
+  timerSubText: {
+    fontSize: 7.5,
+    fontWeight: 'bold',
+    opacity: 0.6,
+    marginTop: 1,
   },
-  btn: {
-    flex: 1,
-    paddingVertical: 3,
-    borderRadius: 4,
+  buttonContainer: {
+    position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  btnText: {
-    color: '#ffffff',
-    fontSize: 8.5,
+  playStopBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stopSquare: {
+    width: 10,
+    height: 10,
+    borderRadius: 1.5,
+  },
+  playTriangle: {
+    width: 0,
+    height: 0,
+    backgroundColor: 'transparent',
+    borderStyle: 'solid',
+    borderLeftWidth: 10,
+    borderRightWidth: 0,
+    borderTopWidth: 6,
+    borderBottomWidth: 6,
+    borderTopColor: 'transparent',
+    borderBottomColor: 'transparent',
+    marginLeft: 2.5,
+  },
+  resetBadge: {
+    position: 'absolute',
+    bottom: -8,
+    right: -8,
+    backgroundColor: 'rgba(120, 120, 120, 0.08)',
+    borderRadius: 6,
+    padding: 2,
+  },
+  timeWrapper: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  timeText: {
+    fontSize: 22,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+  },
+  timeUnit: {
+    fontSize: 12,
     fontWeight: 'bold',
   },
 });
+

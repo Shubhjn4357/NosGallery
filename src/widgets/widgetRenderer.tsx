@@ -320,7 +320,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
           />
         );
       }
-      if (template.includes('build') || template.includes('ci/cd') || template.includes('deploy')) {
+      if (template === 'developer_build' || template.includes('build') || template.includes('ci/cd') || template.includes('deploy')) {
         return (
           <CicdPipeline
             buildStatus={buildStatus}

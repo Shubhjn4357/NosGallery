@@ -6,6 +6,7 @@ import { WidgetRenderer } from '../widgets/widgetRenderer';
 import { themes, ThemeId } from '../themes/themes';
 import { fonts, FontId } from '../fonts/fonts';
 import { useFeedback } from '../hooks/useFeedback';
+import { DotGridBackground } from '../components/DotGridBackground';
 import * as LucideIcons from 'lucide-react-native';
 
 const CATEGORIES: { id: WidgetCategory; name: string }[] = [
@@ -22,7 +23,7 @@ const CATEGORIES: { id: WidgetCategory; name: string }[] = [
 ];
 
 const PRESET_COLORS = [
-  '#000000', '#ffffff', '#ff0000', '#007aff', '#39ff14', 
+  '#000000', '#ffffff', '#7C9EFF', '#007aff', '#39ff14', 
   '#ff2d55', '#dfba6b', '#1a0826', '#e0e0e0', '#f7ebec'
 ];
 
@@ -42,6 +43,7 @@ export const EditorScreen: React.FC = () => {
     applyPendingToGrid,
     googleUser,
     setGoogleUser,
+    showToast,
   } = useWidgetStore();
 
   const { triggerHaptic, triggerSound } = useFeedback();
@@ -87,38 +89,12 @@ export const EditorScreen: React.FC = () => {
       return;
     }
 
-    const isWeather = template.category === 'weather';
-    const isGithub = template.id.includes('github') || template.id.includes('git');
-    const isFinance = template.category === 'finance';
-    const isHealth = template.category === 'health';
-    const isDevMonitor = template.category === 'developer' && 
-                         (template.id.includes('cpu') || template.id.includes('ram') || template.id.includes('disk') || template.id.includes('server'));
+    // Only prompt for GitHub username for exactly the GitHub Activity widget
+    const needsGithubUser = template.id === 'developer_git';
 
-    if (isWeather || isGithub || isFinance || isHealth || isDevMonitor) {
+    if (needsGithubUser) {
       setPromptTemplate(template);
-      if (isWeather) {
-        setPromptInputVal('London');
-      } else if (isGithub) {
-        setPromptInputVal('octocat');
-      } else if (isFinance) {
-        setPromptInputVal('BTC');
-      } else if (isHealth) {
-        if (template.id.includes('step')) {
-          setPromptInputVal('8432');
-        } else if (template.id.includes('cal')) {
-          setPromptInputVal('482');
-        } else if (template.id.includes('water') || template.id.includes('hydra')) {
-          setPromptInputVal('5');
-        } else if (template.id.includes('sleep')) {
-          setPromptInputVal('7h 42m');
-        } else if (template.id.includes('stress') || template.id.includes('mood')) {
-          setPromptInputVal('38');
-        } else {
-          setPromptInputVal('100');
-        }
-      } else if (isDevMonitor) {
-        setPromptInputVal('12');
-      }
+      setPromptInputVal('octocat');
       return;
     }
 
@@ -156,31 +132,9 @@ export const EditorScreen: React.FC = () => {
     triggerHaptic('success');
     triggerSound('apply');
 
-    const isWeather = promptTemplate.category === 'weather';
-    const isGithub = promptTemplate.id.includes('github') || promptTemplate.id.includes('git');
-    const isFinance = promptTemplate.category === 'finance';
-    const isHealth = promptTemplate.category === 'health';
-    const isDevMonitor = promptTemplate.category === 'developer' && 
-                         (promptTemplate.id.includes('cpu') || promptTemplate.id.includes('ram') || promptTemplate.id.includes('disk') || promptTemplate.id.includes('server'));
-
     const customSettings: { titleText?: string; valueText?: string } = {};
-
-    if (isWeather) {
-      customSettings.titleText = promptInputVal.toUpperCase();
-      customSettings.valueText = `${promptInputVal} weather metrics`;
-    } else if (isGithub) {
-      customSettings.titleText = promptTemplate.defaultTitle;
-      customSettings.valueText = promptInputVal;
-    } else if (isFinance) {
-      customSettings.titleText = promptInputVal.toUpperCase();
-      customSettings.valueText = `$0.00`;
-    } else if (isHealth) {
-      customSettings.titleText = promptTemplate.defaultTitle;
-      customSettings.valueText = promptInputVal;
-    } else if (isDevMonitor) {
-      customSettings.titleText = promptTemplate.defaultTitle;
-      customSettings.valueText = `${promptInputVal}%`;
-    }
+    customSettings.titleText = promptTemplate.defaultTitle;
+    customSettings.valueText = promptInputVal;
 
     commitAddWidget(promptTemplate, customSettings);
     setPromptTemplate(null);
@@ -208,51 +162,12 @@ export const EditorScreen: React.FC = () => {
 
   const renderSettingsModal = () => {
     if (!promptTemplate) return null;
-    const isWeather = promptTemplate.category === 'weather';
-    const isGithub = promptTemplate.id.includes('github') || promptTemplate.id.includes('git');
-    const isFinance = promptTemplate.category === 'finance';
-    const isHealth = promptTemplate.category === 'health';
-    const isDevMonitor = promptTemplate.category === 'developer' && 
-                         (promptTemplate.id.includes('cpu') || promptTemplate.id.includes('ram') || promptTemplate.id.includes('disk') || promptTemplate.id.includes('server'));
+    const isGithub = promptTemplate.id === 'developer_git';
 
-    if (promptTemplate.category === 'ai') return null;
+    if (!isGithub) return null;
 
-    let promptLabel = 'Enter parameter details:';
-    let placeholder = 'Value';
-
-    if (isWeather) {
-      promptLabel = 'Enter City Name (e.g. London, Tokyo, Paris):';
-      placeholder = 'City Name';
-    } else if (isGithub) {
-      promptLabel = 'Enter GitHub Username (e.g. octocat, torvalds):';
-      placeholder = 'Username';
-    } else if (isFinance) {
-      promptLabel = 'Enter Stock/Crypto Symbol (e.g. AAPL, BTC, ETH):';
-      placeholder = 'Symbol';
-    } else if (isHealth) {
-      if (promptTemplate.id.includes('step')) {
-        promptLabel = 'Enter steps count (e.g. 8432):';
-        placeholder = 'Steps count';
-      } else if (promptTemplate.id.includes('cal')) {
-        promptLabel = 'Enter calorie count (kcal, e.g. 482):';
-        placeholder = 'Calories';
-      } else if (promptTemplate.id.includes('water') || promptTemplate.id.includes('hydra')) {
-        promptLabel = 'Enter cups logged (0-8, e.g. 5):';
-        placeholder = 'Cups';
-      } else if (promptTemplate.id.includes('sleep')) {
-        promptLabel = 'Enter sleep duration (e.g. 7h 42m):';
-        placeholder = 'Sleep duration';
-      } else if (promptTemplate.id.includes('stress') || promptTemplate.id.includes('mood')) {
-        promptLabel = 'Enter stress value (0-100, e.g. 38):';
-        placeholder = 'Stress value';
-      } else {
-        promptLabel = 'Enter starting health value:';
-        placeholder = 'Value';
-      }
-    } else if (isDevMonitor) {
-      promptLabel = `Enter initial ${promptTemplate.name.toUpperCase()} percentage (0-100):`;
-      placeholder = 'Usage %';
-    }
+    let promptLabel = 'Enter GitHub Username (e.g. octocat, torvalds):';
+    let placeholder = 'Username';
 
     return (
       <View style={styles.modalOverlay}>
@@ -358,7 +273,7 @@ export const EditorScreen: React.FC = () => {
     triggerHaptic('success');
     triggerSound('success');
     saveWidgetPreset(activeEditWidget);
-    alert('Widget configuration saved to your presets library!');
+    showToast('Widget preset saved to your library!', 'success');
   };
 
   const renderAddTab = () => {
@@ -393,27 +308,72 @@ export const EditorScreen: React.FC = () => {
 
         {/* Templates Grid */}
         <ScrollView contentContainerStyle={styles.templatesGrid} showsVerticalScrollIndicator={false}>
-          {templates.map((tpl) => (
-            <TouchableOpacity
-              key={tpl.id}
-              style={styles.templateCard}
-              onPress={() => handleAddWidget(tpl)}
-            >
-              <View style={styles.templateIconBox}>
-                <Text style={styles.templateIconText}>{tpl.name[0]}</Text>
-              </View>
-              <View style={styles.templateDetails}>
-                <Text style={styles.templateName}>{tpl.name}</Text>
-                <Text style={styles.templateSize}>
-                  Grid: {tpl.defaultWidth}x{tpl.defaultHeight}
-                </Text>
-                <Text style={styles.templateDesc} numberOfLines={1}>
-                  {tpl.description}
-                </Text>
-              </View>
-              <LucideIcons.PlusCircle size={20} color="#007aff" />
-            </TouchableOpacity>
-          ))}
+          {templates.map((tpl) => {
+            const PREVIEW_SIZE = 110;
+            const widgetWidth = tpl.defaultWidth * 80;
+            const widgetHeight = tpl.defaultHeight * 80;
+            const scale = Math.min(PREVIEW_SIZE / widgetWidth, PREVIEW_SIZE / widgetHeight);
+
+            const mockWidget: ActiveWidget = {
+              id: `preview_${tpl.id}`,
+              templateId: tpl.id,
+              x: 0,
+              y: 0,
+              w: tpl.defaultWidth,
+              h: tpl.defaultHeight,
+              customizations: {
+                fontId: 'inter',
+                fontSize: 10,
+                backgroundType: 'solid',
+                backgroundColor: '#0a0a0a',
+                borderRadius: 12,
+                transparency: 0,
+                blur: 0,
+                shadowType: 'none',
+                titleText: tpl.defaultTitle,
+                valueText: tpl.defaultValue,
+                themeOverride: 'none',
+              },
+            };
+
+            return (
+              <TouchableOpacity
+                key={tpl.id}
+                style={styles.templateCard}
+                onPress={() => handleAddWidget(tpl)}
+              >
+                {/* Scaled Widget Preview Box */}
+                <View style={styles.templatePreviewBox}>
+                  <View style={{
+                    width: widgetWidth,
+                    height: widgetHeight,
+                    transform: [{ scale }],
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                    <WidgetRenderer
+                      widget={mockWidget}
+                      globalTheme={activeTheme}
+                      interactive={false}
+                    />
+                  </View>
+                </View>
+
+                {/* Details Footer inside Card */}
+                <View style={styles.templateCardFooter}>
+                  <Text style={styles.templateName} numberOfLines={1}>
+                    {tpl.name}
+                  </Text>
+                  <View style={styles.templateMetaRow}>
+                    <Text style={styles.templateSize}>
+                      {tpl.defaultWidth}x{tpl.defaultHeight}
+                    </Text>
+                    <LucideIcons.PlusCircle size={14} color="#8e8e93" />
+                  </View>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
       </View>
     );
@@ -435,8 +395,9 @@ export const EditorScreen: React.FC = () => {
       <ScrollView contentContainerStyle={styles.stylesScroll} showsVerticalScrollIndicator={false}>
         {pendingWidget && (
           <View style={styles.previewBox}>
+            <DotGridBackground />
             <Text style={styles.previewLabel}>Studio Live Preview</Text>
-            <View style={{ transform: [{ scale: 0.95 }], marginVertical: 8, alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ transform: [{ scale: 0.95 }], marginVertical: 8, alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
               <WidgetRenderer
                 widget={pendingWidget}
                 globalTheme={activeTheme}
@@ -451,7 +412,7 @@ export const EditorScreen: React.FC = () => {
                 applyPendingToGrid();
               }}
             >
-              <LucideIcons.PlusCircle size={14} color="#ffffff" />
+              <LucideIcons.PlusCircle size={14} color="#000000" />
               <Text style={styles.addToHomeScreenBtnText}>Add to Home Screen</Text>
             </TouchableOpacity>
           </View>
@@ -612,8 +573,9 @@ export const EditorScreen: React.FC = () => {
       <ScrollView contentContainerStyle={styles.stylesScroll} showsVerticalScrollIndicator={false}>
         {pendingWidget && (
           <View style={styles.previewBox}>
+            <DotGridBackground />
             <Text style={styles.previewLabel}>Studio Live Preview</Text>
-            <View style={{ transform: [{ scale: 0.95 }], marginVertical: 8, alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ transform: [{ scale: 0.95 }], marginVertical: 8, alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
               <WidgetRenderer
                 widget={pendingWidget}
                 globalTheme={activeTheme}
@@ -628,7 +590,7 @@ export const EditorScreen: React.FC = () => {
                 applyPendingToGrid();
               }}
             >
-              <LucideIcons.PlusCircle size={14} color="#ffffff" />
+              <LucideIcons.PlusCircle size={14} color="#000000" />
               <Text style={styles.addToHomeScreenBtnText}>Add to Home Screen</Text>
             </TouchableOpacity>
           </View>
@@ -793,47 +755,53 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   templatesGrid: {
-    paddingBottom: 20,
-    gap: 10,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingBottom: 30,
   },
   templateCard: {
-    flexDirection: 'row',
+    width: '48%',
+    backgroundColor: '#0d0d0f',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#1d1d1f',
+    padding: 8,
     alignItems: 'center',
-    backgroundColor: '#1c1c1e',
-    borderRadius: 12,
-    padding: 10,
+    marginBottom: 12,
+    overflow: 'hidden',
   },
-  templateIconBox: {
-    width: 38,
-    height: 38,
-    borderRadius: 8,
-    backgroundColor: '#2c2c2e',
+  templatePreviewBox: {
+    width: '100%',
+    height: 110,
+    backgroundColor: '#000000',
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#18181a',
   },
-  templateIconText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  templateDetails: {
-    flex: 1,
-    marginLeft: 12,
+  templateCardFooter: {
+    width: '100%',
+    marginTop: 8,
+    paddingHorizontal: 4,
   },
   templateName: {
     color: '#ffffff',
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: 'bold',
+  },
+  templateMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 4,
   },
   templateSize: {
     color: '#8e8e93',
-    fontSize: 10,
-    marginTop: 1,
-  },
-  templateDesc: {
-    color: '#666666',
     fontSize: 9,
-    marginTop: 2,
+    fontWeight: '600',
   },
   noSelection: {
     flex: 1,
@@ -943,9 +911,11 @@ const styles = StyleSheet.create({
   },
   savePresetBtn: {
     flexDirection: 'row',
-    backgroundColor: '#34c759',
+    backgroundColor: '#161616',
+    borderWidth: 1.5,
+    borderColor: '#333',
     paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
@@ -975,42 +945,47 @@ const styles = StyleSheet.create({
   },
   previewBox: {
     backgroundColor: '#0a0a0a',
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 16,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#222',
+    borderColor: '#181818',
+    overflow: 'hidden',
+    position: 'relative',
   },
   previewLabel: {
-    color: '#8e8e93',
+    color: '#666666',
     fontSize: 9,
     fontWeight: 'bold',
-    letterSpacing: 1,
+    letterSpacing: 1.5,
     marginBottom: 10,
     textTransform: 'uppercase',
+    zIndex: 10,
   },
   addToHomeScreenBtn: {
     flexDirection: 'row',
-    backgroundColor: '#007aff',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 10,
+    backgroundColor: '#ffffff',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    marginTop: 12,
+    marginTop: 16,
     width: '100%',
-    shadowColor: '#007aff',
+    shadowColor: '#ffffff',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+    zIndex: 10,
   },
   addToHomeScreenBtnText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: 'bold',
+    color: '#000000',
+    fontSize: 12.5,
+    fontWeight: '900',
   },
   modalOverlay: {
     position: 'absolute',
@@ -1084,7 +1059,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   modalBtnTextCancel: {
-    color: '#ff3b30',
+    color: '#7C9EFF',
     fontSize: 11.5,
     fontWeight: 'bold',
   },

@@ -15,7 +15,7 @@ export const DigitalClock: React.FC<DigitalClockProps> = ({
   customizations,
   globalTheme,
 }) => {
-  const { textStyle, subtextStyle, accentColor, themeConfig } = useWidgetStyle(customizations, globalTheme);
+  const { textStyle, subtextStyle, accentColor } = useWidgetStyle(customizations, globalTheme);
 
   const pad = (n: number) => n.toString().padStart(2, '0');
   
@@ -23,41 +23,83 @@ export const DigitalClock: React.FC<DigitalClockProps> = ({
   let displayTime = currentTime;
   let labelSuffix = '';
 
-
-
   if (customizations.titleText?.toLowerCase().includes('tokyo') || customizations.titleText?.toLowerCase().includes('japan')) {
-    // GMT+9 (assume standard local is GMT+5:30)
     displayTime = new Date(currentTime.getTime() + (3.5 * 3600000));
-    labelSuffix = 'TKY (JST)';
+    labelSuffix = 'TKY';
   } else if (customizations.titleText?.toLowerCase().includes('london') || customizations.titleText?.toLowerCase().includes('uk')) {
-    // GMT+1
     displayTime = new Date(currentTime.getTime() - (4.5 * 3600000));
-    labelSuffix = 'LDN (BST)';
+    labelSuffix = 'LDN';
   } else if (customizations.titleText?.toLowerCase().includes('new york') || customizations.titleText?.toLowerCase().includes('nyc') || customizations.titleText?.toLowerCase().includes('us')) {
-    // GMT-4
     displayTime = new Date(currentTime.getTime() - (9.5 * 3600000));
-    labelSuffix = 'NYC (EDT)';
+    labelSuffix = 'NYC';
   } else if (customizations.titleText?.toLowerCase().includes('utc') || customizations.titleText?.toLowerCase().includes('gmt')) {
-    // GMT
     displayTime = new Date(currentTime.getTime() - (5.5 * 3600000));
     labelSuffix = 'UTC';
   }
 
   const hours = pad(displayTime.getHours());
   const mins = pad(displayTime.getMinutes());
-  const secs = pad(displayTime.getSeconds());
   
-  const title = customizations.titleText || 'DIGITAL CLOCK';
+  const title = customizations.titleText || 'CLOCK';
+  const isLight = customizations.backgroundColor === '#ffffff';
 
-  // Customize formatting based on clock categories
+  // Clock categories
   const isMilitary = title.toLowerCase().includes('military') || title.toLowerCase().includes('24h');
-  const formattedHours = isMilitary ? hours : ((displayTime.getHours() % 12 || 12).toString().padStart(2, '0'));
-  const amPm = displayTime.getHours() >= 12 ? 'PM' : 'AM';
-
-  // LED typography styling helper
+  const formattedHours = isMilitary ? hours : ((displayTime.getHours() % 12 || 12).toString());
+  
   const isLed = title.toLowerCase().includes('led') || title.toLowerCase().includes('retro');
   const isMatrix = title.toLowerCase().includes('matrix') || title.toLowerCase().includes('dot');
+  
+  // Standard radial tick clock frame (Image 4 Clock)
+  const isStandardClock = !isLed && !isMatrix;
 
+  if (isStandardClock) {
+    const totalTicks = 36;
+    const ticks = [];
+    
+    for (let i = 0; i < totalTicks; i++) {
+      const angle = (i * 360) / totalTicks;
+      ticks.push(
+        <View
+          key={i}
+          style={[
+            styles.tickMark,
+            {
+              transform: [
+                { rotate: `${angle}deg` },
+                { translateY: -27 }, // distance from center
+              ],
+              backgroundColor: isLight ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.25)',
+              // Bold major ticks (12, 3, 6, 9 o'clock)
+              height: i % 9 === 0 ? 5 : 3,
+              width: i % 9 === 0 ? 1.5 : 1,
+            }
+          ]}
+        />
+      );
+    }
+
+    return (
+      <View style={styles.radialClockContainer}>
+        {/* Dial ticks frame */}
+        <View style={styles.ticksCircle}>
+          {ticks}
+        </View>
+
+        {/* Central digital time */}
+        <View style={styles.radialTimeWrapper}>
+          <Text style={[styles.radialTimeText, textStyle, { color: isLight ? '#000000' : '#ffffff' }]}>
+            {formattedHours}:{mins}
+          </Text>
+          {labelSuffix ? (
+            <Text style={[styles.radialTimezone, subtextStyle]}>{labelSuffix}</Text>
+          ) : null}
+        </View>
+      </View>
+    );
+  }
+
+  // Fallback digital clock rendering (LED/Matrix/etc.)
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -77,14 +119,7 @@ export const DigitalClock: React.FC<DigitalClockProps> = ({
         >
           {formattedHours}:{mins}
         </Text>
-        {!isMilitary && (
-          <Text style={[styles.amPmLabel, textStyle, { color: accentColor }]}>{amPm}</Text>
-        )}
       </View>
-      
-      {isMatrix && (
-        <Text style={[styles.secsLabel, textStyle, { color: accentColor }]}>{secs}s</Text>
-      )}
     </View>
   );
 };
@@ -113,15 +148,39 @@ const styles = StyleSheet.create({
   timeLabel: {
     fontWeight: '900',
   },
-  amPmLabel: {
-    fontSize: 11,
-    fontWeight: '500',
-    marginLeft: 4,
+  
+  // Radial Tick Frame Styles
+  radialClockContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
   },
-  secsLabel: {
-    fontSize: 9,
+  ticksCircle: {
+    position: 'absolute',
+    width: 66,
+    height: 66,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tickMark: {
+    position: 'absolute',
+    borderRadius: 0.5,
+  },
+  radialTimeWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radialTimeText: {
+    fontSize: 20,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+  },
+  radialTimezone: {
+    fontSize: 7.5,
     fontWeight: 'bold',
-    marginTop: 2,
-    letterSpacing: 1,
+    opacity: 0.6,
+    marginTop: 1,
   },
 });
+

@@ -1,4 +1,7 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { syncOSWidget } from '../services/widgetUpdater';
 import { ThemeId } from '../themes/themes';
 import { FontId } from '../fonts/fonts';
 
@@ -57,13 +60,14 @@ interface WidgetState {
   pendingWidget: ActiveWidget | null;
   wallpapers: WallpaperConfig[];
   selectedWallpaper: WallpaperConfig;
-  activeDevice: 'ios' | 'android' | 'lockscreen';
   activeTheme: ThemeId;
   selectedWidgetId: string | null;
   downloadedPresets: ActiveWidget[];
   settings: SystemSettings;
   activeTab: 'editor' | 'marketplace' | 'wallpapers' | 'settings';
   googleUser: UserGoogleAccount | null;
+  toastMessage: string | null;
+  toastType: 'success' | 'error' | 'info' | 'warning' | null;
   
   // Widget Grid Actions
   addWidget: (templateId: string, w: number, h: number) => void;
@@ -85,12 +89,13 @@ interface WidgetState {
 
   // Global UI Actions
   selectWallpaper: (wallpaperId: string) => void;
-  setActiveDevice: (device: 'ios' | 'android' | 'lockscreen') => void;
   setActiveTheme: (theme: ThemeId) => void;
   setSelectedWidgetId: (id: string | null) => void;
   updateSettings: (updates: Partial<SystemSettings>) => void;
   setActiveTab: (tab: 'editor' | 'marketplace' | 'wallpapers' | 'settings') => void;
   setGoogleUser: (user: UserGoogleAccount | null) => void;
+  showToast: (msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void;
+  hideToast: () => void;
 }
 
 const DEFAULT_WALLPAPERS: WallpaperConfig[] = [
@@ -206,17 +211,22 @@ const INITIAL_WIDGETS: ActiveWidget[] = [
   },
 ];
 
-export const useWidgetStore = create<WidgetState>((set) => ({
-  widgets: INITIAL_WIDGETS,
-  pendingWidget: null,
-  wallpapers: DEFAULT_WALLPAPERS,
-  selectedWallpaper: DEFAULT_WALLPAPERS[0],
-  activeDevice: 'ios',
-  activeTheme: 'nos',
-  selectedWidgetId: null,
-  activeTab: 'editor',
-  googleUser: null,
-  downloadedPresets: [
+export const useWidgetStore = create<WidgetState>()(
+  persist(
+    (set) => ({
+      widgets: INITIAL_WIDGETS,
+      pendingWidget: null,
+      wallpapers: DEFAULT_WALLPAPERS,
+      selectedWallpaper: DEFAULT_WALLPAPERS[0],
+      activeTheme: 'nos',
+      selectedWidgetId: null,
+      activeTab: 'editor',
+      googleUser: null,
+      toastMessage: null,
+      toastType: null,
+      showToast: (msg, type = 'info') => set({ toastMessage: msg, toastType: type }),
+      hideToast: () => set({ toastMessage: null, toastType: null }),
+      downloadedPresets: [
     {
       id: 'preset_flip_clock',
       templateId: 'clock_flip',
@@ -481,8 +491,6 @@ export const useWidgetStore = create<WidgetState>((set) => ({
     return wall ? { selectedWallpaper: wall } : {};
   }),
 
-  setActiveDevice: (device) => set({ activeDevice: device }),
-  
   setActiveTheme: (theme) => set({ activeTheme: theme }),
 
   setSelectedWidgetId: (id) => set({ selectedWidgetId: id }),
@@ -494,4 +502,24 @@ export const useWidgetStore = create<WidgetState>((set) => ({
   setActiveTab: (tab) => set({ activeTab: tab }),
 
   setGoogleUser: (user) => set({ googleUser: user }),
-}));
+    }),
+    {
+      name: 'nos-gallery-widget-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        widgets: state.widgets,
+        selectedWallpaper: state.selectedWallpaper,
+        activeTheme: state.activeTheme,
+        settings: state.settings,
+        googleUser: state.googleUser,
+      }),
+    }
+  )
+);
+
+// Subscribe to store updates to keep Android system widget in sync
+useWidgetStore.subscribe((state, prevState) => {
+  if (state.widgets !== prevState.widgets || state.activeTheme !== prevState.activeTheme) {
+    syncOSWidget();
+  }
+});

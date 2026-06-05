@@ -5,17 +5,44 @@ import * as LucideIcons from 'lucide-react-native';
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { fetchLiveWeather, LiveWeatherData } from '../../services/apiService';
 import { ThemeId } from '../../themes/themes';
+import Svg, { Circle } from 'react-native-svg';
 
 interface WeatherAqiProps {
   customizations: WidgetCustomizations;
   globalTheme: ThemeId;
 }
 
+const ARC_SIZE = 60;
+const STROKE = 6;
+
+const AqiGauge: React.FC<{ aqi: number; color: string }> = ({ aqi, color }) => {
+  const radius = (ARC_SIZE - STROKE) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const fillPct = Math.min(aqi / 200, 1); // normalise to 0-200 scale
+  const strokeDashoffset = circumference - fillPct * circumference;
+  return (
+    <Svg width={ARC_SIZE} height={ARC_SIZE}>
+      <Circle cx={ARC_SIZE / 2} cy={ARC_SIZE / 2} r={radius} stroke="rgba(120,120,120,0.12)" strokeWidth={STROKE} fill="transparent" />
+      <Circle
+        cx={ARC_SIZE / 2} cy={ARC_SIZE / 2} r={radius}
+        stroke={color} strokeWidth={STROKE}
+        strokeDasharray={circumference}
+        strokeDashoffset={strokeDashoffset}
+        strokeLinecap="round"
+        fill="transparent"
+        rotation="-90"
+        originX={ARC_SIZE / 2}
+        originY={ARC_SIZE / 2}
+      />
+    </Svg>
+  );
+};
+
 export const WeatherAqi: React.FC<WeatherAqiProps> = ({
   customizations,
   globalTheme,
 }) => {
-  const { textStyle, subtextStyle, accentColor } = useWidgetStyle(customizations, globalTheme);
+  const { accentColor } = useWidgetStyle(customizations, globalTheme);
 
   const [weather, setWeather] = useState<LiveWeatherData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -24,51 +51,72 @@ export const WeatherAqi: React.FC<WeatherAqiProps> = ({
 
   useEffect(() => {
     let active = true;
-    const loadAqi = async () => {
-      let lat = 51.5074;
-      let lon = -0.1278;
-      const parsedCity = title.toLowerCase();
-      if (parsedCity.includes('new york') || parsedCity.includes('nyc')) {
-        lat = 40.7128; lon = -74.0060;
-      } else if (parsedCity.includes('tokyo') || parsedCity.includes('japan')) {
-        lat = 35.6762; lon = 139.6503;
-      }
-      const data = await fetchLiveWeather(lat, lon);
-      if (active) {
-        setWeather(data);
-        setLoading(false);
-      }
+    const load = async () => {
+      const data = await fetchLiveWeather(51.5074, -0.1278);
+      if (active) { setWeather(data); setLoading(false); }
     };
-    loadAqi();
+    load();
     return () => { active = false; };
-  }, [title]);
+  }, []);
 
   if (loading || !weather) {
     return (
-      <View style={styles.loaderContainer}>
+      <View style={styles.loader}>
         <ActivityIndicator size="small" color={accentColor} />
       </View>
     );
   }
 
-  const getAqiLabel = (aqi: number) => {
-    if (aqi <= 35) return 'GOOD';
-    if (aqi <= 75) return 'MODERATE';
-    return 'UNHEALTHY';
+  const aqi = weather.aqi;
+  const getAqiInfo = (a: number) => {
+    if (a <= 35) return { label: 'GOOD', color: '#39ff14', grade: 'A' };
+    if (a <= 75) return { label: 'MODERATE', color: '#ffcc00', grade: 'B' };
+    if (a <= 115) return { label: 'UNHEALTHY', color: '#ff9500', grade: 'C' };
+    return { label: 'HAZARDOUS', color: '#7C9EFF', grade: 'D' };
   };
+
+  const aqiInfo = getAqiInfo(aqi);
+  const isLight = customizations.backgroundColor === '#ffffff';
+  const textColor = isLight ? '#000' : '#fff';
+  const dimColor = isLight ? '#888' : '#666';
+
+  const POLLUTANTS = [
+    { label: 'PM2.5', val: '12μg' },
+    { label: 'O₃', val: '28ppb' },
+    { label: 'NO₂', val: '8ppb' },
+  ];
 
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={[styles.title, subtextStyle]}>{title}</Text>
-        <LucideIcons.Wind size={12} color={accentColor} />
+        <View style={styles.titleRow}>
+          <LucideIcons.Wind size={10} color={accentColor} />
+          <Text style={[styles.title, { color: dimColor }]}>{title}</Text>
+        </View>
+        <View style={[styles.gradeBadge, { backgroundColor: aqiInfo.color + '22' }]}>
+          <Text style={[styles.gradeText, { color: aqiInfo.color }]}>{aqiInfo.grade}</Text>
+        </View>
       </View>
-      <Text style={[styles.value, textStyle, { color: accentColor }]}>{weather.aqi} AQI</Text>
-      <Text style={[styles.descText, textStyle, { fontSize: 10 }]}>
-        {getAqiLabel(weather.aqi)} AIR QUALITY
-      </Text>
-      <View style={styles.barBg}>
-        <View style={[styles.barFill, { width: `${Math.min(weather.aqi, 100)}%`, backgroundColor: accentColor }]} />
+
+      {/* Ring gauge + value */}
+      <View style={styles.gaugeRow}>
+        <View style={styles.gaugeStack}>
+          <AqiGauge aqi={aqi} color={aqiInfo.color} />
+          <View style={styles.gaugeCenter}>
+            <Text style={[styles.aqiValue, { color: aqiInfo.color }]}>{aqi}</Text>
+          </View>
+        </View>
+        {/* Right: label + pollutants */}
+        <View style={styles.rightBlock}>
+          <Text style={[styles.aqiLabel, { color: aqiInfo.color }]}>{aqiInfo.label}</Text>
+          {POLLUTANTS.map(p => (
+            <View key={p.label} style={styles.pollutantRow}>
+              <Text style={[styles.pollLabel, { color: dimColor }]}>{p.label}</Text>
+              <Text style={[styles.pollVal, { color: textColor }]}>{p.val}</Text>
+            </View>
+          ))}
+        </View>
       </View>
     </View>
   );
@@ -79,7 +127,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'space-between',
   },
-  loaderContainer: {
+  loader: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -89,28 +137,70 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  title: {
-    fontSize: 8.5,
-    fontWeight: 'bold',
-    letterSpacing: 1,
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
-  value: {
-    fontSize: 22,
+  title: {
+    fontSize: 7.5,
+    fontWeight: '900',
+    letterSpacing: 0.8,
+  },
+  gradeBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gradeText: {
+    fontSize: 11,
     fontWeight: '900',
   },
-  descText: {
-    opacity: 0.7,
+  gaugeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
   },
-  barBg: {
-    height: 4,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 2,
-    width: '100%',
-    marginTop: 4,
-    overflow: 'hidden',
+  gaugeStack: {
+    position: 'relative',
+    width: ARC_SIZE,
+    height: ARC_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  barFill: {
-    height: '100%',
-    borderRadius: 2,
+  gaugeCenter: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  aqiValue: {
+    fontSize: 16,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+  },
+  rightBlock: {
+    flex: 1,
+    gap: 4,
+  },
+  aqiLabel: {
+    fontSize: 8,
+    fontWeight: '900',
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  pollutantRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  pollLabel: {
+    fontSize: 8,
+    fontWeight: '600',
+  },
+  pollVal: {
+    fontSize: 8,
+    fontWeight: '900',
   },
 });

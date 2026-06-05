@@ -8,7 +8,8 @@ export type ThemeId =
   | 'cyberpunk'
   | 'luxury'
   | 'minimalwhite'
-  | 'materialyou';
+  | 'materialyou'
+  | 'android17';
 
 export interface ThemeConfig {
   id: ThemeId;
@@ -38,8 +39,8 @@ export const themes: Record<ThemeId, ThemeConfig> = {
     backgroundColor: '#000000',
     textColor: '#ffffff',
     subtextColor: '#888888',
-    accentColor: '#ff0000',
-    borderColor: '#333333',
+    accentColor: '#7C9EFF',
+    borderColor: '#252528',
     borderWidth: 1,
     borderRadius: 16,
     shadowColor: '#000000',
@@ -201,5 +202,22 @@ export const themes: Record<ThemeId, ThemeConfig> = {
     shadowRadius: 6,
     elevation: 2,
     gradient: ['#f7ebec', '#e9dcde'],
+  },
+  android17: {
+    id: 'android17',
+    name: 'Android 17 Dot Grid',
+    backgroundColor: '#000000',
+    textColor: '#ffffff',
+    subtextColor: '#8e8e93',
+    accentColor: '#7C9EFF',
+    borderColor: '#1a1a1c',
+    borderWidth: 1.5,
+    borderRadius: 24,
+    shadowColor: '#7C9EFF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+    hasDots: true,
   },
 };

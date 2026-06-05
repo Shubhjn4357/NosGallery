@@ -8,13 +8,12 @@ import * as LucideIcons from 'lucide-react-native';
 export const SettingsScreen: React.FC = () => {
   const {
     settings,
-    activeDevice,
     activeTheme,
     widgets,
     updateSettings,
-    setActiveDevice,
     setActiveTheme,
     clearWidgets,
+    showToast,
   } = useWidgetStore();
 
   const { triggerHaptic, triggerSound } = useFeedback();
@@ -55,33 +54,6 @@ export const SettingsScreen: React.FC = () => {
       {/* Device & Design System Settings */}
       <View style={styles.sectionCard}>
         <Text style={styles.sectionHeader}>Studio Environment</Text>
-        
-        {/* Device Picker */}
-        <View style={styles.settingRow}>
-          <View style={styles.settingDetails}>
-            <Text style={styles.settingTitle}>Preview Device</Text>
-            <Text style={styles.settingDesc}>Simulator viewport shell styling</Text>
-          </View>
-          <View style={styles.selectorGroup}>
-            {(['ios', 'android', 'lockscreen'] as const).map((dev) => (
-              <TouchableOpacity
-                key={dev}
-                style={[
-                  styles.selectorBtn,
-                  activeDevice === dev && styles.activeSelectorBtn,
-                ]}
-                onPress={() => {
-                  triggerHaptic('selection');
-                  setActiveDevice(dev);
-                }}
-              >
-                <Text style={[styles.selectorBtnText, activeDevice === dev && styles.activeSelectorBtnText]}>
-                  {dev.toUpperCase()}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
 
         {/* Theme Picker */}
         <View style={styles.settingRow}>
@@ -130,7 +102,7 @@ export const SettingsScreen: React.FC = () => {
                 styles.estBarFill,
                 {
                   width: `${Math.min(Number(getBatteryEstimation()) * 80, 100)}%`,
-                  backgroundColor: Number(getBatteryEstimation()) > 0.6 ? '#ff3b30' : '#39ff14',
+                  backgroundColor: Number(getBatteryEstimation()) > 0.6 ? '#7C9EFF' : '#39ff14',
                 },
               ]}
             />
@@ -261,7 +233,7 @@ export const SettingsScreen: React.FC = () => {
             triggerHaptic('heavy');
             triggerSound('error');
             clearWidgets();
-            alert('Active widgets canvas cleared!');
+            showToast('Active widgets canvas cleared!', 'info');
           }}
         >
           <LucideIcons.Trash2 size={13} color="#ffffff" />
@@ -444,7 +416,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: '#ff3b30',
+    backgroundColor: '#7C9EFF',
     borderRadius: 8,
     paddingVertical: 10,
     marginTop: 12,

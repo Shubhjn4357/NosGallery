@@ -31,6 +31,24 @@
       "expo-router",
       "expo-dev-client",
       [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "NOSGalleryWidget",
+              "label": "NOS Gallery Widget",
+              "minWidth": "160dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "updatePeriodMillis": 900000,
+              "resizeMode": "horizontal|vertical",
+              "previewImage": "./assets/images/logo_vibrant.png"
+            }
+          ]
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#080111",

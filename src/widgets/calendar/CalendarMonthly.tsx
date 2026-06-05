@@ -11,93 +11,83 @@ interface CalendarMonthlyProps {
   globalTheme: ThemeId;
 }
 
+const WEEK_DAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
 export const CalendarMonthly: React.FC<CalendarMonthlyProps> = ({
   currentTime,
   customizations,
   globalTheme,
 }) => {
-  const { textStyle, subtextStyle, accentColor } = useWidgetStyle(customizations, globalTheme);
-
-  const daysInMonth = new Date(currentTime.getFullYear(), currentTime.getMonth() + 1, 0).getDate();
-  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-  const currentDay = currentTime.getDate();
+  const { accentColor } = useWidgetStyle(customizations, globalTheme);
   const title = customizations.titleText || 'CALENDAR';
 
-  // Customize layouts for Chinese, Hijri, Panchang, or Week/Day views
-  const lowercaseTitle = title.toLowerCase();
+  const year = currentTime.getFullYear();
+  const month = currentTime.getMonth();
+  const currentDay = currentTime.getDate();
 
-  if (lowercaseTitle.includes('panchang')) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.rowSpace}>
-          <Text style={[styles.title, subtextStyle]}>{title}</Text>
-          <LucideIcons.Compass size={12} color={accentColor} />
-        </View>
-        <View style={styles.detailBox}>
-          <Text style={[styles.detailText, textStyle]}>Tithi: Dwadashi (Shukla)</Text>
-          <Text style={[styles.detailText, textStyle, { color: accentColor }]}>Nakshatra: Swati</Text>
-          <Text style={[styles.detailText, textStyle]}>Rashi: Kanya (Virgo)</Text>
-        </View>
-      </View>
-    );
-  }
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayOfWeek = new Date(year, month, 1).getDay();
 
-  if (lowercaseTitle.includes('chinese') || lowercaseTitle.includes('lunar')) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.rowSpace}>
-          <Text style={[styles.title, subtextStyle]}>{title}</Text>
-          <LucideIcons.Moon size={12} color={accentColor} />
-        </View>
-        <View style={styles.detailBox}>
-          <Text style={[styles.detailText, textStyle]}>Lunar: Month 4 Day 19</Text>
-          <Text style={[styles.detailText, textStyle, { color: accentColor }]}>Year of the Horse</Text>
-          <Text style={[styles.detailText, textStyle]}>Solar Term: Mangzhong</Text>
-        </View>
-      </View>
-    );
-  }
+  const isLight = customizations.backgroundColor === '#ffffff';
+  const textColor = isLight ? '#111' : '#fff';
+  const dimColor = isLight ? '#aaa' : '#555';
+  const todayBg = accentColor;
 
-  if (lowercaseTitle.includes('islamic') || lowercaseTitle.includes('hijri')) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.rowSpace}>
-          <Text style={[styles.title, subtextStyle]}>{title}</Text>
-          <LucideIcons.MoonStar size={12} color={accentColor} />
-        </View>
-        <View style={styles.detailBox}>
-          <Text style={[styles.detailText, textStyle]}>Hijri: 19 Dhu al-Hijjah</Text>
-          <Text style={[styles.detailText, textStyle, { color: accentColor }]}>Year: 1447 AH</Text>
-          <Text style={[styles.detailText, textStyle]}>Phase: Waning Gibbous</Text>
-        </View>
-      </View>
-    );
-  }
+  // Build full 6-week grid
+  const TOTAL_CELLS = 42;
+  const cells: (number | null)[] = [
+    ...Array(firstDayOfWeek).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+    ...Array(TOTAL_CELLS - firstDayOfWeek - daysInMonth).fill(null),
+  ];
 
   return (
     <View style={styles.container}>
-      <View style={styles.rowSpace}>
-        <Text style={[styles.title, subtextStyle]}>{title}</Text>
-        <LucideIcons.Calendar size={12} color={accentColor} />
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.titleRow}>
+          <LucideIcons.Calendar size={10} color={accentColor} />
+          <Text style={[styles.monthLabel, { color: textColor }]}>
+            {MONTHS[month]} <Text style={{ color: dimColor, fontSize: 9 }}>{year}</Text>
+          </Text>
+        </View>
+        <Text style={[styles.todayBadge, { color: accentColor }]}>
+          Day {currentDay}
+        </Text>
       </View>
-      <View style={styles.calendarGrid}>
-        {days.map((day) => (
+
+      {/* Weekday headers */}
+      <View style={styles.weekRow}>
+        {WEEK_DAYS.map((d, i) => (
+          <Text key={i} style={[styles.weekDayLabel, { color: (i === 0 || i === 6) ? '#7C9EFF' : dimColor }]}>
+            {d}
+          </Text>
+        ))}
+      </View>
+
+      {/* Date grid */}
+      <View style={styles.grid}>
+        {cells.slice(0, 35).map((day, i) => (
           <View
-            key={day}
+            key={i}
             style={[
-              styles.calDayBox,
-              day === currentDay && { backgroundColor: accentColor, borderRadius: 4 },
+              styles.dayCell,
+              day === currentDay && { backgroundColor: todayBg, borderRadius: 5 },
             ]}
           >
-            <Text
-              style={[
-                styles.calDayLabel,
-                textStyle,
-                { color: day === currentDay ? '#ffffff' : textStyle.color },
-              ]}
-            >
-              {day}
-            </Text>
+            {day !== null && (
+              <Text
+                style={[
+                  styles.dayText,
+                  { color: day === currentDay ? '#000' : textColor },
+                  !day && { opacity: 0 },
+                ]}
+              >
+                {day}
+              </Text>
+            )}
           </View>
         ))}
       </View>
@@ -110,38 +100,49 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'space-between',
   },
-  rowSpace: {
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
+  },
+  monthLabel: {
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  todayBadge: {
+    fontSize: 7.5,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  weekRow: {
+    flexDirection: 'row',
     justifyContent: 'space-between',
+    marginVertical: 3,
   },
-  title: {
-    fontSize: 8.5,
-    fontWeight: 'bold',
-    letterSpacing: 1,
+  weekDayLabel: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 7,
+    fontWeight: '900',
   },
-  calendarGrid: {
+  grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 3,
-    marginTop: 4,
+    flex: 1,
   },
-  calDayBox: {
-    width: 13,
-    height: 13,
+  dayCell: {
+    width: `${100 / 7}%` as any,
+    aspectRatio: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  calDayLabel: {
-    fontSize: 8.5,
-    textAlign: 'center',
-  },
-  detailBox: {
-    marginTop: 6,
-    gap: 3,
-  },
-  detailText: {
-    fontSize: 10,
-    fontWeight: 'bold',
+  dayText: {
+    fontSize: 7.5,
+    fontWeight: '600',
   },
 });

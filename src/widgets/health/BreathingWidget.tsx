@@ -1,8 +1,9 @@
 import { WidgetCustomizations } from '../../store/widgetStore';
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Animated } from 'react-native';
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';
+import * as LucideIcons from 'lucide-react-native';
 
 interface BreathingWidgetProps {
   customizations: WidgetCustomizations;
@@ -10,74 +11,104 @@ interface BreathingWidgetProps {
   interactive?: boolean;
 }
 
+const PHASES = [
+  { label: 'INHALE', duration: 4000, scaleTarget: 1.5 },
+  { label: 'HOLD', duration: 4000, scaleTarget: 1.5 },
+  { label: 'EXHALE', duration: 6000, scaleTarget: 1.0 },
+  { label: 'HOLD', duration: 2000, scaleTarget: 1.0 },
+];
+
 export const BreathingWidget: React.FC<BreathingWidgetProps> = ({
   customizations,
   globalTheme,
   interactive = false,
 }) => {
-  const { textStyle, accentColor } = useWidgetStyle(customizations, globalTheme);
+  const { accentColor } = useWidgetStyle(customizations, globalTheme);
+  const title = customizations.titleText || 'BREATH WORK';
 
-  const [breathPhase, setBreathPhase] = useState<'inhale' | 'hold' | 'exhale'>('inhale');
-  const [breathScale, setBreathScale] = useState(1.0);
-  const [breathCounter, setBreathCounter] = useState(4);
+  const scaleAnim = useRef(new Animated.Value(1.0)).current;
+  const opacityAnim = useRef(new Animated.Value(0.4)).current;
+  const phaseIdxRef = useRef(0);
+  const phaseAnim = useRef<Animated.CompositeAnimation | null>(null);
+
+  const [phaseLabel, setPhaseLabel] = React.useState('INHALE');
 
   useEffect(() => {
-    if (!interactive) {
-      setBreathScale(1.0);
-      setBreathPhase('inhale');
-      setBreathCounter(4);
-      return;
-    }
-    const timer = setInterval(() => {
-      setBreathCounter((prev) => {
-        if (prev <= 1) {
-          // Advance phase using functional update to avoid stale closure
-          setBreathPhase((curr) => {
-            if (curr === 'inhale') {
-              setBreathScale(1.35);
-              return 'hold';
-            }
-            if (curr === 'hold') {
-              setBreathScale(0.85);
-              return 'exhale';
-            }
-            setBreathScale(1.0);
-            return 'inhale';
-          });
-          return 4;
+    const runPhase = (idx: number) => {
+      const phase = PHASES[idx];
+      setPhaseLabel(phase.label);
+      phaseAnim.current = Animated.parallel([
+        Animated.timing(scaleAnim, {
+          toValue: phase.scaleTarget,
+          duration: phase.duration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: phase.scaleTarget > 1 ? 0.9 : 0.4,
+          duration: phase.duration,
+          useNativeDriver: true,
+        }),
+      ]);
+      phaseAnim.current.start(({ finished }) => {
+        if (finished) {
+          phaseIdxRef.current = (idx + 1) % PHASES.length;
+          runPhase(phaseIdxRef.current);
         }
-        // Nudge scale using functional update (no stale read needed)
-        setBreathPhase((curr) => {
-          setBreathScale((scale) => {
-            if (curr === 'inhale') return Math.min(1.35, scale + 0.08);
-            if (curr === 'exhale') return Math.max(0.85, scale - 0.04);
-            return scale;
-          });
-          return curr;
-        });
-        return prev - 1;
       });
-    }, 1000);
+    };
+    runPhase(0);
+    return () => phaseAnim.current?.stop();
+  }, []);
 
-    return () => clearInterval(timer);
-  }, [interactive]); // Only re-create when interactive changes, not on every phase tick
+  const isLight = customizations.backgroundColor === '#ffffff';
+  const textColor = isLight ? '#000' : '#fff';
+  const dimColor = isLight ? '#888' : '#666';
+
+  const PHASE_COLORS: Record<string, string> = {
+    INHALE: accentColor,
+    HOLD: '#ffcc00',
+    EXHALE: '#007aff',
+  };
+  const phaseColor = PHASE_COLORS[phaseLabel] || accentColor;
 
   return (
     <View style={styles.container}>
-      <View
-        style={[
-          styles.circle,
-          {
-            transform: [{ scale: breathScale }],
-            backgroundColor: `${accentColor}18`,
-            borderColor: accentColor,
-          },
-        ]}
-      >
-        <Text style={[styles.phase, textStyle, { color: accentColor }]}>
-          {breathPhase.toUpperCase()}
-        </Text>
-        <Text style={[styles.timer, textStyle]}>{breathCounter}s</Text>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.titleRow}>
+          <LucideIcons.Wind size={10} color={accentColor} />
+          <Text style={[styles.title, { color: dimColor }]}>{title}</Text>
+        </View>
+        <Text style={[styles.technique, { color: dimColor }]}>4-4-6-2</Text>
+      </View>
+
+      {/* Animated breathing orb */}
+      <View style={styles.orbContainer}>
+        {/* Outer glow ring */}
+        <Animated.View
+          style={[
+            styles.outerRing,
+            {
+              transform: [{ scale: scaleAnim }],
+              opacity: opacityAnim,
+              borderColor: phaseColor,
+            },
+          ]}
+        />
+        {/* Inner orb */}
+        <Animated.View
+          style={[
+            styles.innerOrb,
+            {
+              transform: [{ scale: scaleAnim }],
+              backgroundColor: phaseColor + '33',
+            },
+          ]}
+        />
+        {/* Phase label centered */}
+        <View style={styles.centerLabel}>
+          <Text style={[styles.phaseLabel, { color: phaseColor }]}>{phaseLabel}</Text>
+        </View>
       </View>
     </View>
   );
@@ -86,24 +117,55 @@ export const BreathingWidget: React.FC<BreathingWidgetProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    justifyContent: 'space-between',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  title: {
+    fontSize: 7.5,
+    fontWeight: '900',
+    letterSpacing: 0.8,
+  },
+  technique: {
+    fontSize: 7.5,
+    fontWeight: '600',
+  },
+  orbContainer: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
   },
-  circle: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
+  outerRing: {
+    position: 'absolute',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     borderWidth: 1.5,
+    borderStyle: 'dashed',
+  },
+  innerOrb: {
+    position: 'absolute',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  centerLabel: {
+    position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  phase: {
+  phaseLabel: {
     fontSize: 8,
-    fontWeight: 'bold',
-  },
-  timer: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    marginTop: 1,
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
 });

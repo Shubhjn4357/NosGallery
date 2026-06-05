@@ -1,6 +1,6 @@
 import { WidgetCustomizations } from '../../store/widgetStore';
-import React, { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, StyleSheet, Animated } from 'react-native';
 import * as LucideIcons from 'lucide-react-native';
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { fetchBitcoinPrice, LiveFinanceData } from '../../services/apiService';
@@ -11,95 +11,119 @@ interface FinanceStockCryptoProps {
   globalTheme: ThemeId;
 }
 
+const SPARK_DATA = [62, 68, 65, 72, 69, 75, 71, 78, 73, 80, 77, 84];
+
 export const FinanceStockCrypto: React.FC<FinanceStockCryptoProps> = ({
   customizations,
   globalTheme,
 }) => {
-  const { textStyle, subtextStyle, accentColor } = useWidgetStyle(customizations, globalTheme);
+  const { accentColor } = useWidgetStyle(customizations, globalTheme);
 
   const [finance, setFinance] = useState<LiveFinanceData | null>(null);
   const [loading, setLoading] = useState(true);
+  const flashAnim = useRef(new Animated.Value(1)).current;
 
-  const title = customizations.titleText || 'FINANCIALS';
+  const title = customizations.titleText || 'BTC / USD';
 
   useEffect(() => {
     let active = true;
-    const loadPrices = async () => {
+    const load = async () => {
       const data = await fetchBitcoinPrice();
-      if (active) {
-        setFinance(data);
-        setLoading(false);
-      }
+      if (active) { setFinance(data); setLoading(false); }
     };
-    loadPrices();
-    
-    // Ticker updates every 5 seconds
+    load();
     const interval = setInterval(() => {
-      if (active) loadPrices();
+      if (active) {
+        load();
+        // Flash animation on update
+        Animated.sequence([
+          Animated.timing(flashAnim, { toValue: 0.4, duration: 120, useNativeDriver: true }),
+          Animated.timing(flashAnim, { toValue: 1, duration: 180, useNativeDriver: true }),
+        ]).start();
+      }
     }, 5000);
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
+    return () => { active = false; clearInterval(interval); };
   }, []);
 
-  if (loading || !finance) {
-    return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="small" color={accentColor} />
-      </View>
-    );
-  }
-
-  // Dynamic tickers map
   const getTickerData = () => {
+    if (!finance) return { symbol: 'BTC', price: 67490, change: 0.8 };
     const symbol = title.trim().toUpperCase();
-    
-    const tickers: Record<string, { base: number; isCrypto: boolean; change: number }> = {
-      BTC: { base: finance.btcPrice, isCrypto: true, change: finance.btcChange24h },
-      ETH: { base: 3450.25, isCrypto: true, change: 2.85 },
-      SOL: { base: 142.50, isCrypto: true, change: -1.42 },
-      DOGE: { base: 0.1352, isCrypto: true, change: 5.67 },
-      AAPL: { base: finance.aaplPrice, isCrypto: false, change: finance.aaplChange24h },
-      TSLA: { base: 174.50, isCrypto: false, change: -2.31 },
-      MSFT: { base: 415.80, isCrypto: false, change: 0.94 },
-      GOOG: { base: 172.30, isCrypto: false, change: 1.15 },
-      NVDA: { base: 875.12, isCrypto: false, change: 3.42 },
-      NFLX: { base: 610.50, isCrypto: false, change: -0.22 },
+    const tickers: Record<string, { base: number; change: number }> = {
+      BTC: { base: finance.btcPrice, change: finance.btcChange24h },
+      ETH: { base: 3450.25, change: 2.85 },
+      SOL: { base: 142.50, change: -1.42 },
+      AAPL: { base: finance.aaplPrice, change: finance.aaplChange24h },
+      TSLA: { base: 174.50, change: -2.31 },
+      NVDA: { base: 875.12, change: 3.42 },
     };
-
-    const s = Object.keys(tickers).find(key => symbol.includes(key)) || 'BTC';
-    const config = tickers[s];
-    
-    // Pseudo-random shift based on current second to simulate tickers tick
+    const s = Object.keys(tickers).find(k => symbol.includes(k)) || 'BTC';
     const secOffset = new Date().getSeconds();
-    const drift = ((secOffset % 10) - 5) * (config.base * 0.0005);
-    const price = config.base + drift;
-    const finalPrice = price < 1 ? parseFloat(price.toFixed(4)) : parseFloat(price.toFixed(2));
-    const finalChange = parseFloat((config.change + ((secOffset % 5) - 2) * 0.1).toFixed(2));
-    
-    return {
-      symbol: s,
-      price: finalPrice,
-      change: finalChange,
-    };
+    const drift = ((secOffset % 10) - 5) * (tickers[s].base * 0.0005);
+    return { symbol: s, price: parseFloat((tickers[s].base + drift).toFixed(2)), change: parseFloat(tickers[s].change.toFixed(2)) };
   };
 
   const ticker = getTickerData();
   const isUp = ticker.change >= 0;
+  const changeColor = isUp ? '#39ff14' : '#7C9EFF';
+
+  const isLight = customizations.backgroundColor === '#ffffff';
+  const textColor = isLight ? '#000' : '#fff';
+  const dimColor = isLight ? '#888' : '#666';
+  const sparkBg = isLight ? '#efeff4' : '#1c1c1e';
+
+  // Sparkline bars
+  const maxVal = Math.max(...SPARK_DATA);
+  const minVal = Math.min(...SPARK_DATA);
 
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={[styles.title, subtextStyle]}>{title}</Text>
-        <LucideIcons.Coins size={12} color={accentColor} />
+        <View style={styles.titleRow}>
+          <LucideIcons.TrendingUp size={10} color={accentColor} />
+          <Text style={[styles.title, { color: dimColor }]}>{ticker.symbol}</Text>
+        </View>
+        <View style={[styles.changeBadge, { backgroundColor: changeColor + '22' }]}>
+          <Text style={[styles.changeBadgeText, { color: changeColor }]}>
+            {isUp ? '+' : ''}{ticker.change}%
+          </Text>
+        </View>
       </View>
-      <Text style={[styles.price, textStyle]}>
-        ${ticker.price.toLocaleString(undefined, { minimumFractionDigits: ticker.price < 1 ? 4 : 2 })}
-      </Text>
-      <Text style={[styles.trend, textStyle, { color: isUp ? '#39ff14' : '#ff3b30' }]}>
-        {isUp ? '▲' : '▼'} {isUp ? '+' : ''}{ticker.change}% (24h)
-      </Text>
+
+      {/* Price display */}
+      <Animated.View style={{ opacity: flashAnim }}>
+        <Text style={[styles.price, { color: textColor }]}>
+          ${ticker.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </Text>
+      </Animated.View>
+
+      {/* Sparkline mini chart */}
+      <View style={styles.sparkRow}>
+        {SPARK_DATA.map((val, i) => {
+          const normalized = (val - minVal) / (maxVal - minVal);
+          const barH = 6 + normalized * 14;
+          return (
+            <View
+              key={i}
+              style={[
+                styles.sparkBar,
+                {
+                  height: barH,
+                  backgroundColor: i === SPARK_DATA.length - 1 ? accentColor : (isUp ? '#39ff1455' : '#7C9EFF55'),
+                },
+              ]}
+            />
+          );
+        })}
+      </View>
+
+      {/* 24h label */}
+      <View style={styles.footer}>
+        <Text style={[styles.footerLabel, { color: dimColor }]}>24H CHANGE</Text>
+        <Text style={[styles.footerValue, { color: changeColor }]}>
+          {isUp ? '▲' : '▼'} {Math.abs(ticker.change)}%
+        </Text>
+      </View>
     </View>
   );
 };
@@ -109,27 +133,57 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'space-between',
   },
-  loaderContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   title: {
-    fontSize: 8.5,
-    fontWeight: 'bold',
-    letterSpacing: 1,
+    fontSize: 8,
+    fontWeight: '900',
+    letterSpacing: 1.2,
+  },
+  changeBadge: {
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 5,
+  },
+  changeBadgeText: {
+    fontSize: 7.5,
+    fontWeight: '900',
   },
   price: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: -0.5,
   },
-  trend: {
-    fontSize: 10.5,
-    fontWeight: 'bold',
+  sparkRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 2,
+    height: 22,
+  },
+  sparkBar: {
+    flex: 1,
+    borderRadius: 1.5,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  footerLabel: {
+    fontSize: 7,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  footerValue: {
+    fontSize: 9,
+    fontWeight: '900',
   },
 });
