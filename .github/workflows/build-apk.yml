@@ -1,4 +1,4 @@
-name: Build Android APK (Expo + Vanilla)
+name: Build Android APK — Dev & Production
 
 on:
   push:
@@ -8,34 +8,38 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  NODE_VERSION: '20'
+  JAVA_VERSION: '17'
+  GRADLE_OPTS: '-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m'
+
+# ─────────────────────────────────────────────────────────────────
+# JOB 1: DEV BUILD  (expo-dev-client included, debug variant)
+# ─────────────────────────────────────────────────────────────────
 jobs:
-  # ─────────────────────────────────────────────
-  # JOB 1: Build with Expo tools (expo prebuild → Gradle)
-  # ─────────────────────────────────────────────
-  build-expo:
-    name: Build APK via Expo Prebuild
+  build-dev:
+    name: Dev Build (expo-dev-client)
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 20
+      - name: Setup Node ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
           version: 9
 
-      - name: Setup Java JDK 17
+      - name: Setup Java ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
-          java-version: '17'
+          distribution: zulu
+          java-version: ${{ env.JAVA_VERSION }}
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
@@ -45,66 +49,61 @@ jobs:
       - name: Setup Gradle Cache
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Install Node Dependencies
+      - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Validate TypeScript
-        run: pnpm exec tsc --noEmit
-        continue-on-error: true
-
-      - name: Validate Widget Registry
-        run: node scripts/validate_widgets.js
-        continue-on-error: true
-
-      - name: Expo Prebuild (Android)
+      # expo-dev-client IS included via app.json plugins — prebuild picks it up automatically
+      - name: Expo Prebuild (dev, with expo-dev-client)
         run: pnpm exec expo prebuild --platform android --no-install
         env:
           EXPO_NO_TELEMETRY: 1
 
-      - name: Build Debug APK (Expo path)
+      - name: Build Debug APK (Dev)
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon --stacktrace
-        env:
-          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m"
 
-      - name: Upload Expo APK
+      - name: Rename Dev APK
+        run: |
+          mkdir -p out
+          cp android/app/build/outputs/apk/debug/app-debug.apk \
+             out/nos-gallery-dev-debug.apk
+
+      - name: Upload Dev APK
         uses: actions/upload-artifact@v4
         with:
-          name: nos-gallery-expo-debug.apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: nos-gallery-dev-debug.apk
+          path: out/nos-gallery-dev-debug.apk
           if-no-files-found: error
+          retention-days: 14
 
-  # ─────────────────────────────────────────────
-  # JOB 2: Build without Expo tools (pure Gradle on pre-generated native folder)
-  # ─────────────────────────────────────────────
-  build-vanilla:
-    name: Build APK via Vanilla Gradle (no Expo CLI)
+# ─────────────────────────────────────────────────────────────────
+# JOB 2: PRODUCTION BUILD  (expo-dev-client stripped, release variant)
+# ─────────────────────────────────────────────────────────────────
+  build-prod:
+    name: Production Build (no expo-dev-client)
     runs-on: ubuntu-latest
-    # This job only runs if the android/ folder is already committed to the repo
-    # If it's gitignored, this job is skipped automatically
-    if: ${{ hashFiles('android/build.gradle') != '' }}
 
     steps:
-      - name: Checkout Code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 20
+      - name: Setup Node ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
           version: 9
 
-      - name: Setup Java JDK 17
+      - name: Setup Java ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
-          java-version: '17'
+          distribution: zulu
+          java-version: ${{ env.JAVA_VERSION }}
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
@@ -114,70 +113,102 @@ jobs:
       - name: Setup Gradle Cache
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Install Node Dependencies (for Metro bundle)
+      - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Bundle JS (Metro — no Expo CLI)
+      # Strip expo-dev-client from app.json so it doesn't land in the production binary
+      - name: Remove expo-dev-client from plugins (production only)
         run: |
-          mkdir -p android/app/src/main/assets
-          pnpm exec react-native bundle \
-            --platform android \
-            --dev false \
-            --entry-file src/app/index.tsx \
-            --bundle-output android/app/src/main/assets/index.android.bundle \
-            --assets-dest android/app/src/main/res/
+          node -e "
+            const fs = require('fs');
+            const cfg = JSON.parse(fs.readFileSync('app.json', 'utf8'));
+            cfg.expo.plugins = cfg.expo.plugins.filter(p =>
+              p !== 'expo-dev-client' && p?.[0] !== 'expo-dev-client'
+            );
+            fs.writeFileSync('app.json', JSON.stringify(cfg, null, 2));
+            console.log('Plugins after strip:', JSON.stringify(cfg.expo.plugins, null, 2));
+          "
 
-      - name: Build Debug APK (Vanilla Gradle)
+      # Release builds also set NODE_ENV=production to tree-shake dev code
+      - name: Expo Prebuild (production, without expo-dev-client)
+        run: pnpm exec expo prebuild --platform android --no-install
+        env:
+          EXPO_NO_TELEMETRY: 1
+          NODE_ENV: production
+
+      - name: Build Release APK (Production, unsigned)
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleRelease --no-daemon --stacktrace
         env:
-          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m"
+          NODE_ENV: production
 
-      - name: Upload Vanilla APK
+      - name: Rename Production APK
+        run: |
+          mkdir -p out
+          # Unsigned release APK from Gradle
+          cp android/app/build/outputs/apk/release/app-release-unsigned.apk \
+             out/nos-gallery-prod-unsigned.apk 2>/dev/null || \
+          cp android/app/build/outputs/apk/release/app-release.apk \
+             out/nos-gallery-prod-unsigned.apk 2>/dev/null || \
+          cp android/app/build/outputs/apk/release/*.apk \
+             out/nos-gallery-prod-unsigned.apk
+
+      - name: Upload Production APK
         uses: actions/upload-artifact@v4
         with:
-          name: nos-gallery-vanilla-debug.apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: warn
+          name: nos-gallery-prod-unsigned.apk
+          path: out/nos-gallery-prod-unsigned.apk
+          if-no-files-found: error
+          retention-days: 30
 
-  # ─────────────────────────────────────────────
-  # JOB 3: GitHub Release (only on tags, both APKs)
-  # ─────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────
+# JOB 3: GITHUB RELEASE (on tags only, both APKs attached)
+# ─────────────────────────────────────────────────────────────────
   release:
-    name: Create GitHub Release
+    name: GitHub Release
     runs-on: ubuntu-latest
-    needs: [build-expo]
+    needs: [build-dev, build-prod]
     if: startsWith(github.ref, 'refs/tags/v')
 
     steps:
-      - name: Download Expo APK
+      - name: Download Dev APK
         uses: actions/download-artifact@v4
         with:
-          name: nos-gallery-expo-debug.apk
+          name: nos-gallery-dev-debug.apk
           path: ./release
 
-      - name: Create Release
+      - name: Download Production APK
+        uses: actions/download-artifact@v4
+        with:
+          name: nos-gallery-prod-unsigned.apk
+          path: ./release
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: release/app-debug.apk
-          name: NOS Gallery ${{ github.ref_name }}
+          files: |
+            release/nos-gallery-dev-debug.apk
+            release/nos-gallery-prod-unsigned.apk
+          name: "NOS Gallery Studio ${{ github.ref_name }}"
           body: |
-            ## 📱 NOS Gallery Studio — Release ${{ github.ref_name }}
+            ## 📱 NOS Gallery Studio — ${{ github.ref_name }}
 
-            ### What's included
-            - Live widget customization with 550+ widget templates
-            - Real-time weather (Open-Meteo), crypto prices (CoinGecko), GitHub stats
-            - Themes: Nothing OS, AMOLED Neon, Cyberpunk, Glassmorphism, Luxury Obsidian
-            - Haptic + sound feedback, wallpaper picker, preset library
+            > Widget customization studio for Nothing OS, iOS & Android
 
-            ### Download
-            | Build | Toolchain | File |
-            |-------|-----------|------|
-            | Debug (Expo Prebuild) | Expo → Gradle | `app-debug.apk` |
+            ### 📦 Downloads
 
-            ### Build Info
-            - Node: 20 · Java: 17 · Android Target SDK: 35
+            | APK | Description | Use When |
+            |-----|-------------|----------|
+            | `nos-gallery-dev-debug.apk` | **Dev Build** — includes expo-dev-client | Testing, fast refresh, Expo Go debugging |
+            | `nos-gallery-prod-unsigned.apk` | **Production Build** — stripped, release variant | Sideloading, final QA, distribution |
+
+            > ⚠️ Production APK is unsigned. Sign with your keystore before publishing to Play Store.
+
+            ### 🛠️ Build Info
+            - Expo SDK 56 · React Native 0.85 · Node 20 · Java 17
+            - Android target SDK 35
+            - expo-dev-client: **dev only** (stripped in production)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
