@@ -1,10 +1,12 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useWidgetStore } from '../store/widgetStore';
+import { AnimatedSplashScreen } from '../components/AnimatedSplashScreen';
 
 export default function RootLayout() {
   const { settings } = useWidgetStore();
+  const [isSplashVisible, setIsSplashVisible] = useState(true);
 
   useEffect(() => {
     // Battery optimization simulated logging
@@ -33,6 +35,9 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#000000' } }}>
         <Stack.Screen name="index" />
       </Stack>
+      {isSplashVisible && (
+        <AnimatedSplashScreen onAnimationEnd={() => setIsSplashVisible(false)} />
+      )}
     </>
   );
 }

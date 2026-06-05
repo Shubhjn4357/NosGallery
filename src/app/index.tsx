@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Image } from 'react-native';
 import { PreviewContainer } from '../preview/previewContainer';
 import { EditorScreen } from '../editor/editorScreen';
 import { GalleryScreen } from '../gallery/galleryScreen';
@@ -39,9 +39,11 @@ export default function Index() {
         {/* Header Title */}
         <View style={styles.header}>
           <View style={styles.logoRow}>
-            <View style={styles.logoCircle}>
-              <Text style={styles.logoText}>N•</Text>
-            </View>
+            <Image
+              source={require('../../assets/images/logo_vibrant.png')}
+              style={styles.logoHeader}
+              resizeMode="contain"
+            />
             <Text style={styles.headerTitle}>NOS Gallery</Text>
           </View>
           <View style={styles.badge}>
@@ -140,20 +142,12 @@ const styles = StyleSheet.create({
   logoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
   },
-  logoCircle: {
+  logoHeader: {
     width: 24,
     height: 24,
-    borderRadius: 12,
-    backgroundColor: '#ffffff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoText: {
-    color: '#000000',
-    fontSize: 10,
-    fontWeight: '900',
+    borderRadius: 6,
   },
   headerTitle: {
     color: '#ffffff',
