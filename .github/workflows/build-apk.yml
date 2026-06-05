@@ -46,6 +46,15 @@ jobs:
         with:
           accept-android-sdk-licenses: true
 
+      - name: Accept Android SDK Licenses Manually
+        run: |
+          for cmd in sdkmanager "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "$ANDROID_HOME/cmdline-tools/20.0/bin/sdkmanager" "$ANDROID_HOME/cmdline-tools/12.0/bin/sdkmanager" "/usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager" "/usr/local/lib/android/sdk/cmdline-tools/20.0/bin/sdkmanager" "/usr/local/lib/android/sdk/tools/bin/sdkmanager"; do
+            if [ -x "$cmd" ] || command -v "$cmd" &>/dev/null; then
+              echo "Accepting licenses using: $cmd"
+              yes | "$cmd" --licenses || true
+            fi
+          done
+
       - name: Setup Gradle Cache
         uses: gradle/actions/setup-gradle@v4
 
@@ -109,6 +118,15 @@ jobs:
         uses: android-actions/setup-android@v4
         with:
           accept-android-sdk-licenses: true
+
+      - name: Accept Android SDK Licenses Manually
+        run: |
+          for cmd in sdkmanager "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "$ANDROID_HOME/cmdline-tools/20.0/bin/sdkmanager" "$ANDROID_HOME/cmdline-tools/12.0/bin/sdkmanager" "/usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager" "/usr/local/lib/android/sdk/cmdline-tools/20.0/bin/sdkmanager" "/usr/local/lib/android/sdk/tools/bin/sdkmanager"; do
+            if [ -x "$cmd" ] || command -v "$cmd" &>/dev/null; then
+              echo "Accepting licenses using: $cmd"
+              yes | "$cmd" --licenses || true
+            fi
+          done
 
       - name: Setup Gradle Cache
         uses: gradle/actions/setup-gradle@v4
