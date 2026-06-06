@@ -2,6 +2,24 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { useWidgetStore } from '../store/widgetStore';
+import { Platform } from 'react-native';
+
+if (Platform.OS === 'web') {
+  const originalWarn = console.warn;
+  console.warn = (...args: any[]) => {
+    const msg = args[0];
+    if (typeof msg === 'string') {
+      if (
+        msg.includes('useNativeDriver') ||
+        msg.includes('pointerEvents') ||
+        msg.includes('shadow*')
+      ) {
+        return;
+      }
+    }
+    originalWarn(...args);
+  };
+}
 
 export default function RootLayout() {
   const { settings } = useWidgetStore();

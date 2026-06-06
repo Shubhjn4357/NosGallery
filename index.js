@@ -1,26 +1,13 @@
-import { registerWidgetTaskHandler } from 'react-native-android-widget';
-import { widgetTaskHandler } from './widget-task-handler';
+// Bootstrap Expo Router application first to ensure globals, React Native core, and Expo are properly initialized.
+import 'expo-router/entry';
+
 import { Platform } from 'react-native';
 
-if (Platform.OS === 'web') {
-  const originalWarn = console.warn;
-  console.warn = (...args) => {
-    const msg = args[0];
-    if (typeof msg === 'string') {
-      if (
-        msg.includes('useNativeDriver') ||
-        msg.includes('pointerEvents') ||
-        msg.includes('shadow*')
-      ) {
-        return;
-      }
-    }
-    originalWarn(...args);
-  };
+// Register widget task handler for OS home screen widgets (Android only)
+if (Platform.OS === 'android') {
+  const { registerWidgetTaskHandler } = require('react-native-android-widget');
+  const { widgetTaskHandler } = require('./widget-task-handler');
+
+  registerWidgetTaskHandler(widgetTaskHandler);
 }
 
-// Register widget task handler for OS home screen widgets
-registerWidgetTaskHandler(widgetTaskHandler);
-
-// Bootstrap Expo Router application
-import 'expo-router/entry';
