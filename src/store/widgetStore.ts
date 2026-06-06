@@ -4,6 +4,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { syncOSWidget } from '../services/widgetUpdater';
 import { ThemeId } from '../themes/themes';
 import { FontId } from '../fonts/fonts';
+import { Platform } from 'react-native';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 
 export interface WidgetCustomizations {
   fontId: FontId;
@@ -519,7 +521,12 @@ export const useWidgetStore = create<WidgetState>()(
 
 // Subscribe to store updates to keep Android system widget in sync
 useWidgetStore.subscribe((state, prevState) => {
-  if (state.widgets !== prevState.widgets || state.activeTheme !== prevState.activeTheme) {
-    syncOSWidget();
+  if (Platform.OS === 'android') {
+    const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+    if (!isExpoGo) {
+      if (state.widgets !== prevState.widgets || state.activeTheme !== prevState.activeTheme) {
+        syncOSWidget();
+      }
+    }
   }
 });

@@ -1,10 +1,20 @@
 import React from 'react';
-import { requestWidgetUpdate } from 'react-native-android-widget';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
+import { requestWidgetUpdate } from 'react-native-android-widget';
 import { NOSWidgetComponent } from '../components/NOSWidgetComponent';
 
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+const isAndroid = Platform.OS === 'android';
+
 export const syncOSWidget = async () => {
+  if (!isAndroid || isExpoGo) {
+    return;
+  }
+
   try {
+
     await requestWidgetUpdate({
       widgetName: 'NOSGalleryWidget',
       renderWidget: async () => {
