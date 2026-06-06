@@ -34,7 +34,7 @@ export const useFeedback = () => {
             await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             break;
         }
-      } catch (err) {
+      } catch {
         // Fallback for environments without haptics (web/simulators)
         console.log(`[Haptic Fallback] ${type}`);
       }
@@ -70,7 +70,7 @@ export const useFeedback = () => {
           player.replace(soundUrl);
           player.play();
         }
-      } catch (err) {
+      } catch {
         console.log(`[Sound Fallback] ${soundType} playback failed`);
       }
     },

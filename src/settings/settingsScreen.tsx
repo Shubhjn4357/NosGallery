@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity } from 'react-native';
 import { useWidgetStore, SystemSettings } from '../store/widgetStore';
 import { useFeedback } from '../hooks/useFeedback';
-import { themes, ThemeId } from '../themes/themes';
+import { themes } from '../themes/themes';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as LucideIcons from 'lucide-react-native';
 

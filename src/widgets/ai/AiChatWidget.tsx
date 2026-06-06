@@ -47,7 +47,7 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
           <Text style={[styles.response, textStyle]}>{aiResponse}</Text>
         </ScrollView>
       ) : (
-        <Text style={[styles.desc, textStyle]}>Type "todo", "weather", or "stocks" below:</Text>
+        <Text style={[styles.desc, textStyle]}>Type &quot;todo&quot;, &quot;weather&quot;, or &quot;stocks&quot; below:</Text>
       )}
       {interactive && (
         <View style={styles.inputRow}>

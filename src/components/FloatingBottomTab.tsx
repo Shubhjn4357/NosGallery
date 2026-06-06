@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions } from 'react-native';
 import { useWidgetStore } from '../store/widgetStore';
 import { useFeedback } from '../hooks/useFeedback';
@@ -11,20 +11,19 @@ const TAB_WIDTH = CONTAINER_WIDTH / TAB_COUNT;
 
 type TabId = 'editor' | 'marketplace' | 'wallpapers' | 'settings';
 
+const tabIndices: Record<TabId, number> = {
+  editor: 0,
+  marketplace: 1,
+  wallpapers: 2,
+  settings: 3,
+};
+
 export const FloatingBottomTab: React.FC = () => {
   const { activeTab, setActiveTab } = useWidgetStore();
   const { triggerHaptic } = useFeedback();
 
   // Slide animation for background indicator pill
-  const slideAnim = useRef(new Animated.Value(0)).current;
-
-  // Map tabs to indices
-  const tabIndices: Record<TabId, number> = {
-    editor: 0,
-    marketplace: 1,
-    wallpapers: 2,
-    settings: 3,
-  };
+  const [slideAnim] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     const idx = tabIndices[activeTab] || 0;
@@ -34,7 +33,7 @@ export const FloatingBottomTab: React.FC = () => {
       tension: 65,
       friction: 8,
     }).start();
-  }, [activeTab]);
+  }, [activeTab, slideAnim]);
 
   const handleTabPress = (tab: TabId) => {
     triggerHaptic('selection');

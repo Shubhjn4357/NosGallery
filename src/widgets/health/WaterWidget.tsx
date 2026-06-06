@@ -16,7 +16,7 @@ export const WaterWidget: React.FC<WaterWidgetProps> = ({
   globalTheme,
   interactive,
 }) => {
-  const { textStyle, subtextStyle, accentColor } = useWidgetStyle(customizations, globalTheme);
+  const { accentColor } = useWidgetStyle(customizations, globalTheme);
 
   const [cups, setCups] = useState(4);
   const [waveAnim] = useState(new Animated.Value(0));
@@ -32,7 +32,7 @@ export const WaterWidget: React.FC<WaterWidgetProps> = ({
         Animated.timing(waveAnim, { toValue: 0, duration: 2200, useNativeDriver: true }),
       ])
     ).start();
-  }, []);
+  }, [waveAnim]);
 
   const waveTranslate = waveAnim.interpolate({
     inputRange: [0, 1],

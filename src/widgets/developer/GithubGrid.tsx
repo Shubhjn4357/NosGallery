@@ -19,14 +19,24 @@ export const GithubGrid: React.FC<GithubGridProps> = ({
 }) => {
   const { textStyle, subtextStyle, accentColor } = useWidgetStyle(customizations, globalTheme);
 
-  const [gitStats, setGitStats] = useState<LiveGithubData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [gitStats, setGitStats] = useState<LiveGithubData | null>(() => {
+    if (!interactive) {
+      return {
+        username: customizations.valueText || 'octocat',
+        name: 'Studio Developer',
+        followers: 142,
+        publicRepos: 32,
+        contributionsCount: 384
+      };
+    }
+    return null;
+  });
+  const [loading, setLoading] = useState(interactive);
 
   const title = customizations.titleText || 'GITHUB';
 
   useEffect(() => {
     if (!interactive) {
-      setLoading(false);
       return;
     }
     let active = true;

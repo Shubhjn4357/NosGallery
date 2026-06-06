@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react';
-import { View, Text, StyleSheet, Animated, PanResponder, Dimensions, Platform } from 'react-native';
+import React, { useRef, useState, useEffect } from 'react';
+import { View, StyleSheet, Animated, PanResponder, PanResponderInstance, Platform } from 'react-native';
 import * as LucideIcons from 'lucide-react-native';
 
 const THUMB_SIZE = 44;
@@ -19,67 +19,84 @@ export const AnimatedSlidingButton: React.FC<AnimatedSlidingButtonProps> = ({
   accentColor = '#7C9EFF',
 }) => {
   const [layoutWidth, setLayoutWidth] = useState(0);
-  const pan = useRef(new Animated.Value(0)).current;
+  const [pan] = useState(() => new Animated.Value(0));
   const [success, setSuccess] = useState(false);
 
   const range = layoutWidth ? (layoutWidth - THUMB_SIZE - (PADDING * 2)) : 0;
   const rangeRef = useRef(0);
-  rangeRef.current = range;
+  
+  useEffect(() => {
+    rangeRef.current = range;
+  }, [range]);
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => !success,
-      onMoveShouldSetPanResponder: () => !success,
-      onPanResponderMove: (e, gestureState) => {
-        const currentRange = rangeRef.current;
-        if (currentRange <= 0) return;
-        let newX = gestureState.dx;
-        if (newX < 0) newX = 0;
-        if (newX > currentRange) newX = currentRange;
-        pan.setValue(newX);
-      },
-      onPanResponderRelease: (e, gestureState) => {
-        if (success) return;
-        const currentRange = rangeRef.current;
-        if (currentRange <= 0) {
-          // Spring back
-          Animated.spring(pan, {
-            toValue: 0,
-            useNativeDriver: true,
-          }).start();
-          return;
-        }
+  const successRef = useRef(success);
+  useEffect(() => {
+    successRef.current = success;
+  }, [success]);
 
-        // Activation threshold at 80% of slide range
-        if (gestureState.dx >= currentRange * 0.8) {
-          setSuccess(true);
-          Animated.spring(pan, {
-            toValue: currentRange,
-            useNativeDriver: true,
-            friction: 7,
-          }).start(() => {
-            onSwipeSuccess();
-            // Reset after delay to allow re-swipe later
-            setTimeout(() => {
-              Animated.timing(pan, {
-                toValue: 0,
-                duration: 250,
-                useNativeDriver: true,
-              }).start(() => setSuccess(false));
-            }, 1800);
-          });
-        } else {
-          // Spring back to start
-          Animated.spring(pan, {
-            toValue: 0,
-            useNativeDriver: true,
-            tension: 40,
-            friction: 5,
-          }).start();
-        }
-      },
-    })
-  ).current;
+  const onSwipeSuccessRef = useRef(onSwipeSuccess);
+  useEffect(() => {
+    onSwipeSuccessRef.current = onSwipeSuccess;
+  }, [onSwipeSuccess]);
+
+  const [panResponder, setPanResponder] = useState<PanResponderInstance | null>(null);
+
+  useEffect(() => {
+    setPanResponder(
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => !successRef.current,
+        onMoveShouldSetPanResponder: () => !successRef.current,
+        onPanResponderMove: (e, gestureState) => {
+          const currentRange = rangeRef.current;
+          if (currentRange <= 0) return;
+          let newX = gestureState.dx;
+          if (newX < 0) newX = 0;
+          if (newX > currentRange) newX = currentRange;
+          pan.setValue(newX);
+        },
+        onPanResponderRelease: (e, gestureState) => {
+          if (successRef.current) return;
+          const currentRange = rangeRef.current;
+          if (currentRange <= 0) {
+            // Spring back
+            Animated.spring(pan, {
+              toValue: 0,
+              useNativeDriver: true,
+            }).start();
+            return;
+          }
+
+          // Activation threshold at 80% of slide range
+          if (gestureState.dx >= currentRange * 0.8) {
+            setSuccess(true);
+            Animated.spring(pan, {
+              toValue: currentRange,
+              useNativeDriver: true,
+              friction: 7,
+            }).start(() => {
+              onSwipeSuccessRef.current();
+              // Reset after delay to allow re-swipe later
+              setTimeout(() => {
+                Animated.timing(pan, {
+                  toValue: 0,
+                  duration: 250,
+                  useNativeDriver: true,
+                }).start(() => setSuccess(false));
+              }, 1800);
+            });
+          } else {
+            // Spring back to start
+            Animated.spring(pan, {
+              toValue: 0,
+              useNativeDriver: true,
+              tension: 40,
+              friction: 5,
+            }).start();
+          }
+        },
+      })
+    );
+  }, [pan]);
 
   // Text fade opacity based on thumb position
   const textOpacity = pan.interpolate({
@@ -122,7 +139,7 @@ export const AnimatedSlidingButton: React.FC<AnimatedSlidingButtonProps> = ({
 
       {/* Sliding Thumb Handle */}
       <Animated.View
-        {...panResponder.panHandlers}
+        {...(panResponder ? panResponder.panHandlers : {})}
         style={[
           styles.thumb,
           {

@@ -11,6 +11,8 @@ interface FocusWidgetProps {
   interactive: boolean;
 }
 
+const TOTAL = 25 * 60;
+
 export const FocusWidget: React.FC<FocusWidgetProps> = ({
   customizations,
   globalTheme,
@@ -19,13 +21,12 @@ export const FocusWidget: React.FC<FocusWidgetProps> = ({
   const { accentColor } = useWidgetStyle(customizations, globalTheme);
   const title = customizations.titleText || 'FOCUS MODE';
 
-  const TOTAL = 25 * 60;
   const [timeLeft, setTimeLeft] = useState(TOTAL);
   const [isActive, setIsActive] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Rotating ring animation
-  const spinAnim = useRef(new Animated.Value(0)).current;
+  const [spinAnim] = useState(() => new Animated.Value(0));
   const spinLoop = useRef<Animated.CompositeAnimation | null>(null);
 
   useEffect(() => {
@@ -45,7 +46,7 @@ export const FocusWidget: React.FC<FocusWidgetProps> = ({
       spinLoop.current?.stop();
     }
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [isActive]);
+  }, [isActive, spinAnim]);
 
   const handleToggle = () => { if (!interactive) return; setIsActive(p => !p); };
   const handleReset = () => {

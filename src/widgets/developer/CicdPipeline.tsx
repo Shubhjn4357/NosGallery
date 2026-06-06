@@ -24,7 +24,6 @@ export const CicdPipeline: React.FC<CicdPipelineProps> = ({
 }) => {
   const { textStyle, subtextStyle, accentColor, successColor, errorColor } = useWidgetStyle(customizations, globalTheme);
 
-  const title = customizations.titleText || 'FLIGHT TRACKER';
   const isLight = customizations.backgroundColor === '#ffffff';
   
   const startCity = "San Francisco";

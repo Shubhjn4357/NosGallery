@@ -1,14 +1,12 @@
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useWidgetStyle } from '../../hooks/useWidgetStyle';
-import { ThemeId } from '../../themes/themes';
 import * as LucideIcons from 'lucide-react-native';
 
 interface FlipClockProps {
   currentTime: Date;
   customizations: WidgetCustomizations;
-  globalTheme: ThemeId;
+  globalTheme: string;
 }
 
 export const FlipClock: React.FC<FlipClockProps> = ({
@@ -16,8 +14,6 @@ export const FlipClock: React.FC<FlipClockProps> = ({
   customizations,
   globalTheme,
 }) => {
-  const { containerStyle, textStyle, subtextStyle, accentColor } = useWidgetStyle(customizations, globalTheme);
-
   const title = customizations.titleText || 'THU 08 BOOKINGS';
   const lowercaseTitle = title.toLowerCase();
 

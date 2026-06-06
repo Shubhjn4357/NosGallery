@@ -1,5 +1,5 @@
 import { WidgetCustomizations } from '../../store/widgetStore';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import * as LucideIcons from 'lucide-react-native';
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
@@ -20,11 +20,11 @@ export const SmartHomeControls: React.FC<SmartHomeControlsProps> = ({
   interactive,
   toggleLight,
 }) => {
-  const { textStyle, subtextStyle, accentColor } = useWidgetStyle(customizations, globalTheme);
+  const { accentColor } = useWidgetStyle(customizations, globalTheme);
   const title = customizations.titleText || 'SMART ROOM';
 
-  const glowAnim = useRef(new Animated.Value(lightOn ? 1 : 0)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const [glowAnim] = useState(() => new Animated.Value(lightOn ? 1 : 0));
+  const [pulseAnim] = useState(() => new Animated.Value(1));
 
   useEffect(() => {
     Animated.timing(glowAnim, {
@@ -44,7 +44,7 @@ export const SmartHomeControls: React.FC<SmartHomeControlsProps> = ({
       pulseAnim.stopAnimation();
       pulseAnim.setValue(1.0);
     }
-  }, [lightOn]);
+  }, [lightOn, glowAnim, pulseAnim]);
 
   const isLight = customizations.backgroundColor === '#ffffff';
   const textColor = isLight ? '#000' : '#fff';

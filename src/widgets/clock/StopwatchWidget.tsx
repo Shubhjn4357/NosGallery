@@ -24,7 +24,7 @@ export const StopwatchWidget: React.FC<StopwatchWidgetProps> = ({
   handleStopwatch,
   handleStopwatchReset,
 }) => {
-  const { textStyle, subtextStyle, accentColor } = useWidgetStyle(customizations, globalTheme);
+  const { subtextStyle } = useWidgetStyle(customizations, globalTheme);
 
   const swSec = Math.floor(swTime / 10);
   const displaySec = swSec % 60;

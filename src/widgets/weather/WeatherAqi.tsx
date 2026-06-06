@@ -46,14 +46,25 @@ export const WeatherAqi: React.FC<WeatherAqiProps> = ({
 }) => {
   const { accentColor } = useWidgetStyle(customizations, globalTheme);
 
-  const [weather, setWeather] = useState<LiveWeatherData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [weather, setWeather] = useState<LiveWeatherData | null>(() => {
+    if (!interactive) {
+      return {
+        temp: 72,
+        condition: 'Sunny',
+        windSpeed: 14,
+        humidity: 62,
+        uvIndex: 5,
+        aqi: 42
+      };
+    }
+    return null;
+  });
+  const [loading, setLoading] = useState(interactive);
 
   const title = customizations.titleText || 'AIR QUALITY';
 
   useEffect(() => {
     if (!interactive) {
-      setLoading(false);
       return;
     }
     let active = true;

@@ -29,14 +29,25 @@ export const WeatherCurrent: React.FC<WeatherCurrentProps> = ({
 }) => {
   const { accentColor } = useWidgetStyle(customizations, globalTheme);
 
-  const [weather, setWeather] = useState<LiveWeatherData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [weather, setWeather] = useState<LiveWeatherData | null>(() => {
+    if (!interactive) {
+      return {
+        temp: 72,
+        condition: 'Sunny',
+        windSpeed: 14,
+        humidity: 62,
+        uvIndex: 5,
+        aqi: 42
+      };
+    }
+    return null;
+  });
+  const [loading, setLoading] = useState(interactive);
 
   const title = customizations.titleText || 'WEATHER';
 
   useEffect(() => {
     if (!interactive) {
-      setLoading(false);
       return;
     }
     let active = true;
@@ -69,7 +80,7 @@ export const WeatherCurrent: React.FC<WeatherCurrentProps> = ({
   }
 
   const condStyle = getConditionStyle(weather.condition);
-  const IconComp = (require('lucide-react-native') as any)[condStyle.icon];
+  const IconComp = (LucideIcons as any)[condStyle.icon];
 
   const isLight = customizations.backgroundColor === '#ffffff';
   const textColor = isLight ? '#000' : '#fff';
@@ -77,7 +88,7 @@ export const WeatherCurrent: React.FC<WeatherCurrentProps> = ({
   const cardBg = isLight ? '#f2f2f7' : '#111114';
 
   // Feels-like estimate
-  const feelsLike = (weather.temp - 2 + Math.random() * 3).toFixed(1);
+  const feelsLike = (weather.temp + (weather.humidity - 50) * 0.05 - weather.windSpeed * 0.1).toFixed(1);
 
   return (
     <View style={styles.container}>

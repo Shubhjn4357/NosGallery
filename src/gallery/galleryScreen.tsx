@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platfo
 import { useWidgetStore, ActiveWidget } from '../store/widgetStore';
 import { useFeedback } from '../hooks/useFeedback';
 import * as LucideIcons from 'lucide-react-native';
-import { widgetRegistry } from '../widgets/registry';
 import { WidgetRenderer } from '../widgets/widgetRenderer';
 import { DotGridBackground } from '../components/DotGridBackground';
 
@@ -292,7 +291,7 @@ export const GalleryScreen: React.FC = () => {
               <LucideIcons.Layers size={32} color="#222" />
               <Text style={styles.emptyTitle}>No saved presets yet</Text>
               <Text style={styles.emptyDesc}>
-                Customize a widget in the Studio Builder, then select "Save Preset" to store layout designs.
+                Customize a widget in the Studio Builder, then select &quot;Save Preset&quot; to store layout designs.
               </Text>
             </View>
           ) : (

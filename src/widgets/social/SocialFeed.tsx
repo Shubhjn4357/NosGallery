@@ -1,5 +1,5 @@
 import { WidgetCustomizations } from '../../store/widgetStore';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import * as LucideIcons from 'lucide-react-native';
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
@@ -22,11 +22,11 @@ export const SocialFeed: React.FC<SocialFeedProps> = ({
   globalTheme,
   interactive = false,
 }) => {
-  const { subtextStyle, accentColor } = useWidgetStyle(customizations, globalTheme);
+  const { accentColor } = useWidgetStyle(customizations, globalTheme);
   const title = customizations.titleText || 'SOCIAL INBOX';
 
   const [activeIdx, setActiveIdx] = useState(0);
-  const slideAnim = useRef(new Animated.Value(0)).current;
+  const [slideAnim] = useState(() => new Animated.Value(0));
 
   // Auto-cycle through feed items
   useEffect(() => {
@@ -46,7 +46,7 @@ export const SocialFeed: React.FC<SocialFeedProps> = ({
       });
     }, 3500);
     return () => clearInterval(interval);
-  }, []);
+  }, [slideAnim]);
 
   const item = FEED_ITEMS[activeIdx];
 

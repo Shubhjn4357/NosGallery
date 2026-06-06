@@ -1,10 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Animated, Dimensions, TouchableOpacity, ScrollView, Switch } from 'react-native';
 import { useWidgetStore } from '../store/widgetStore';
 import { useFeedback } from '../hooks/useFeedback';
 import * as LucideIcons from 'lucide-react-native';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SIDEBAR_WIDTH = SCREEN_WIDTH * 0.76;
 
 interface DrawerSidebarProps {
@@ -23,8 +23,8 @@ export const DrawerSidebar: React.FC<DrawerSidebarProps> = ({
   const { widgets, settings, updateSettings, activeTheme } = useWidgetStore();
   const { triggerHaptic } = useFeedback();
 
-  const slideAnim = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
-  const backdropOpacity = useRef(new Animated.Value(0)).current;
+  const [slideAnim] = useState(() => new Animated.Value(-SIDEBAR_WIDTH));
+  const [backdropOpacity] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     if (visible) {
@@ -55,7 +55,7 @@ export const DrawerSidebar: React.FC<DrawerSidebarProps> = ({
         }),
       ]).start();
     }
-  }, [visible]);
+  }, [visible, slideAnim, backdropOpacity]);
 
   const handleToggleBattery = (val: boolean) => {
     triggerHaptic('selection');

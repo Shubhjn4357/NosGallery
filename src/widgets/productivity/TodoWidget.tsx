@@ -1,5 +1,5 @@
 import { WidgetCustomizations } from '../../store/widgetStore';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import * as LucideIcons from 'lucide-react-native';
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';

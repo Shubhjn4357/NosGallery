@@ -54,7 +54,7 @@ export const StepsWidget: React.FC<StepsWidgetProps> = ({
   globalTheme,
   interactive = false,
 }) => {
-  const { containerStyle, textStyle, subtextStyle, accentColor } = useWidgetStyle(customizations, globalTheme);
+  const { accentColor } = useWidgetStyle(customizations, globalTheme);
 
   const title = customizations.titleText || 'TOTAL THIS WEEK';
   const lowercaseTitle = title.toLowerCase();

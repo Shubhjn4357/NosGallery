@@ -21,7 +21,6 @@ export const CalendarMonthly: React.FC<CalendarMonthlyProps> = ({
   globalTheme,
 }) => {
   const { accentColor } = useWidgetStyle(customizations, globalTheme);
-  const title = customizations.titleText || 'CALENDAR';
 
   const year = currentTime.getFullYear();
   const month = currentTime.getMonth();

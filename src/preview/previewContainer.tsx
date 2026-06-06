@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ImageBackground, TouchableOpacity, ScrollView, Dimensions, PanResponder, Animated, Modal, TextInput, Platform } from 'react-native';
+import { View, Text, StyleSheet, ImageBackground, TouchableOpacity, ScrollView, Dimensions, PanResponder, PanResponderInstance, Animated, Modal, TextInput, Platform } from 'react-native';
 import { useWidgetStore, ActiveWidget, WidgetCustomizations } from '../store/widgetStore';
 import { WidgetRenderer } from '../widgets/widgetRenderer';
 import { useFeedback } from '../hooks/useFeedback';
@@ -34,7 +34,6 @@ export const PreviewContainer: React.FC = () => {
     activeTheme,
     selectedWidgetId,
     removeWidget,
-    duplicateWidget,
     setSelectedWidgetId,
     updateWidgetPosition,
     updateWidgetSize,
@@ -469,7 +468,7 @@ const DraggableWidgetWrapper: React.FC<DraggableWidgetWrapperProps> = ({
   triggerHaptic,
   triggerSound,
 }) => {
-  const pan = useRef(new Animated.ValueXY()).current;
+  const [pan] = useState(() => new Animated.ValueXY());
   const [isDragging, setIsDragging] = useState(false);
 
   // Position based on grid
@@ -480,68 +479,86 @@ const DraggableWidgetWrapper: React.FC<DraggableWidgetWrapperProps> = ({
     if (!isDragging) {
       pan.setValue({ x: initialLeft, y: initialTop });
     }
-  }, [widget.x, widget.y, isDragging]);
+  }, [widget.x, widget.y, isDragging, initialLeft, initialTop, pan]);
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (evt, gestureState) => {
-        return Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5;
-      },
-      onPanResponderGrant: () => {
-        setIsDragging(true);
-        triggerHaptic('light');
-        pan.setOffset({
-          x: (pan.x as any)._value,
-          y: (pan.y as any)._value,
-        });
-        pan.setValue({ x: 0, y: 0 });
-      },
-      onPanResponderMove: Animated.event(
-        [null, { dx: pan.x, dy: pan.y }],
-        { useNativeDriver: false }
-      ),
-      onPanResponderRelease: (e, gestureState) => {
-        setIsDragging(false);
-        pan.flattenOffset();
+  // Keep props references updated to avoid stale closures in PanResponder callbacks
+  const widgetsRef = useRef(widgets);
+  const widgetRef = useRef(widget);
+  const updateWidgetPositionRef = useRef(updateWidgetPosition);
 
-        const releaseX = (pan.x as any)._value;
-        const releaseY = (pan.y as any)._value;
+  useEffect(() => {
+    widgetsRef.current = widgets;
+    widgetRef.current = widget;
+    updateWidgetPositionRef.current = updateWidgetPosition;
+  }, [widgets, widget, updateWidgetPosition]);
 
-        let gridX = Math.round((releaseX - GRID_PADDING) / CELL_SIZE);
-        let gridY = Math.round((releaseY - GRID_PADDING) / CELL_SIZE);
+  const [panResponder, setPanResponder] = useState<PanResponderInstance | null>(null);
 
-        gridX = Math.max(0, Math.min(GRID_COLS - widget.w, gridX));
-        gridY = Math.max(0, gridY);
+  useEffect(() => {
+    setPanResponder(
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: (evt, gestureState) => {
+          return Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5;
+        },
+        onPanResponderGrant: () => {
+          setIsDragging(true);
+          triggerHaptic('light');
+          pan.setOffset({
+            x: (pan.x as any)._value,
+            y: (pan.y as any)._value,
+          });
+          pan.setValue({ x: 0, y: 0 });
+        },
+        onPanResponderMove: Animated.event(
+          [null, { dx: pan.x, dy: pan.y }],
+          { useNativeDriver: false }
+        ),
+        onPanResponderRelease: (e, gestureState) => {
+          setIsDragging(false);
+          pan.flattenOffset();
 
-        const hasCollision = widgets.some((other) => {
-          if (other.id === widget.id) return false;
-          return (
-            gridX < other.x + other.w &&
-            gridX + widget.w > other.x &&
-            gridY < other.y + other.h &&
-            gridY + widget.h > other.y
-          );
-        });
+          const currentWidget = widgetRef.current;
+          const currentWidgets = widgetsRef.current;
 
-        if (!hasCollision) {
-          triggerHaptic('medium');
-          updateWidgetPosition(widget.id, gridX, gridY);
-        } else {
-          triggerHaptic('warning');
-          triggerSound('error');
-          Animated.spring(pan, {
-            toValue: { x: initialLeft, y: initialTop },
-            useNativeDriver: false,
-          }).start();
-        }
-      },
-    })
-  ).current;
+          const releaseX = (pan.x as any)._value;
+          const releaseY = (pan.y as any)._value;
+
+          let gridX = Math.round((releaseX - GRID_PADDING) / CELL_SIZE);
+          let gridY = Math.round((releaseY - GRID_PADDING) / CELL_SIZE);
+
+          gridX = Math.max(0, Math.min(GRID_COLS - currentWidget.w, gridX));
+          gridY = Math.max(0, gridY);
+
+          const hasCollision = currentWidgets.some((other) => {
+            if (other.id === currentWidget.id) return false;
+            return (
+              gridX < other.x + other.w &&
+              gridX + currentWidget.w > other.x &&
+              gridY < other.y + other.h &&
+              gridY + currentWidget.h > other.y
+            );
+          });
+
+          if (!hasCollision) {
+            triggerHaptic('medium');
+            updateWidgetPositionRef.current(currentWidget.id, gridX, gridY);
+          } else {
+            triggerHaptic('warning');
+            triggerSound('error');
+            Animated.spring(pan, {
+              toValue: { x: currentWidget.x * CELL_SIZE + GRID_PADDING, y: currentWidget.y * CELL_SIZE + GRID_PADDING },
+              useNativeDriver: false,
+            }).start();
+          }
+        },
+      })
+    );
+  }, [pan, triggerHaptic, triggerSound, CELL_SIZE, GRID_COLS, GRID_PADDING]);
 
   return (
     <Animated.View
-      {...panResponder.panHandlers}
+      {...(panResponder ? panResponder.panHandlers : {})}
       style={[
         styles.widgetWrapper,
         {

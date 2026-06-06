@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Switch, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform } from 'react-native';
 import { useWidgetStore, ActiveWidget, WidgetCustomizations } from '../store/widgetStore';
 import { widgetRegistry, WidgetTemplate, getTemplatesByCategory, WidgetCategory } from '../widgets/registry';
 import { WidgetRenderer } from '../widgets/widgetRenderer';
-import { themes, ThemeId } from '../themes/themes';
-import { fonts, FontId } from '../fonts/fonts';
+import { themes } from '../themes/themes';
+import { fonts } from '../fonts/fonts';
 import { useFeedback } from '../hooks/useFeedback';
 import { DotGridBackground } from '../components/DotGridBackground';
 import * as LucideIcons from 'lucide-react-native';
@@ -36,7 +36,6 @@ export const EditorScreen: React.FC = () => {
     selectedWidgetId,
     activeTheme,
     updateWidgetCustomizations,
-    addWidget,
     saveWidgetPreset,
     pendingWidget,
     setPendingWidget,
@@ -61,13 +60,15 @@ export const EditorScreen: React.FC = () => {
     if (pendingWidget && pendingWidget.templateId.startsWith('ai_') && !googleUser && !showGoogleModal) {
       const template = widgetRegistry[pendingWidget.templateId];
       if (template) {
-        setPromptTemplate(template);
-        setSimulatedEmail('nothing.dev@gmail.com');
-        setSimulatedPassword('••••••••');
-        setShowGoogleModal(true);
+        setTimeout(() => {
+          setPromptTemplate(template);
+          setSimulatedEmail('nothing.dev@gmail.com');
+          setSimulatedPassword('••••••••');
+          setShowGoogleModal(true);
+        }, 0);
       }
     }
-  }, [pendingWidget, googleUser]);
+  }, [pendingWidget, googleUser, showGoogleModal]);
 
   const activeEditWidget = pendingWidget || widgets.find(w => w.id === selectedWidgetId);
 

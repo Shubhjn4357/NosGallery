@@ -1,5 +1,5 @@
 import { WidgetCustomizations } from '../../store/widgetStore';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import * as LucideIcons from 'lucide-react-native';
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
@@ -22,20 +22,18 @@ export const FinanceStockCrypto: React.FC<FinanceStockCryptoProps> = ({
   const { accentColor } = useWidgetStyle(customizations, globalTheme);
 
   const [finance, setFinance] = useState<LiveFinanceData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const flashAnim = useRef(new Animated.Value(1)).current;
+  const [flashAnim] = useState(() => new Animated.Value(1));
 
   const title = customizations.titleText || 'BTC / USD';
 
   useEffect(() => {
     if (!interactive) {
-      setLoading(false);
       return;
     }
     let active = true;
     const load = async () => {
       const data = await fetchBitcoinPrice();
-      if (active) { setFinance(data); setLoading(false); }
+      if (active) { setFinance(data); }
     };
     load();
     const interval = setInterval(() => {
@@ -49,7 +47,7 @@ export const FinanceStockCrypto: React.FC<FinanceStockCryptoProps> = ({
       }
     }, 60000);
     return () => { active = false; clearInterval(interval); };
-  }, [interactive]);
+  }, [interactive, flashAnim]);
 
   const getTickerData = () => {
     if (!finance) return { symbol: 'BTC', price: 67490, change: 0.8 };
@@ -75,7 +73,6 @@ export const FinanceStockCrypto: React.FC<FinanceStockCryptoProps> = ({
   const isLight = customizations.backgroundColor === '#ffffff';
   const textColor = isLight ? '#000' : '#fff';
   const dimColor = isLight ? '#888' : '#666';
-  const sparkBg = isLight ? '#efeff4' : '#1c1c1e';
 
   // Sparkline bars
   const maxVal = Math.max(...SPARK_DATA);

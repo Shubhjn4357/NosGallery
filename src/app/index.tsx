@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -25,7 +25,7 @@ import { AnimatedSlidingButton } from '../components/AnimatedSlidingButton';
 import NosWidgetPinning from '../../modules/nos-widget-pinning/src/NosWidgetPinningModule';
 import * as LucideIcons from 'lucide-react-native';
 
-const { width: SW, height: SH } = Dimensions.get('window');
+const { width: SW } = Dimensions.get('window');
 
 // App accent – soft periwinkle blue
 const ACCENT = '#7C9EFF';
@@ -132,12 +132,15 @@ export default function Index() {
     showToast,
   } = useWidgetStore();
   
+  const currentTheme = themes[activeTheme as ThemeId] || themes.nos;
+  const currentAccent = currentTheme.accentColor;
+  
   const { triggerHaptic, triggerSound } = useFeedback();
 
   // Navigation Sliding Indicator
   const TAB_IDS: TabId[] = ['editor', 'settings'];
-  const slideX = useRef(new Animated.Value(activeTab === 'settings' ? TAB_W : 0)).current;
-  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const [slideX] = useState(() => new Animated.Value(activeTab === 'settings' ? TAB_W : 0));
+  const [scaleAnim] = useState(() => new Animated.Value(1));
 
   // View state
   const [activeCategory, setActiveCategory] = useState<WidgetCategory | 'all'>('all');
@@ -244,11 +247,11 @@ export default function Index() {
       {/* ── HEADER ── */}
       <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
         <View style={styles.logoRow}>
-          <View style={styles.accentDotWrap}><View style={styles.accentDot} /></View>
+          <View style={[styles.accentDotWrap, { backgroundColor: `${currentAccent}22` }]}><View style={[styles.accentDot, { backgroundColor: currentAccent }]} /></View>
           <Text style={styles.headerTitle}>NOS  ·  STUDIO</Text>
         </View>
-        <View style={styles.headerBadge}>
-          <Text style={styles.headerBadgeText}>
+        <View style={[styles.headerBadge, { backgroundColor: `${currentAccent}18`, borderColor: `${currentAccent}55` }]}>
+          <Text style={[styles.headerBadgeText, { color: currentAccent }]}>
             {activeTab === 'editor' ? `${filtered.length} WIDGETS` : 'SYSTEM SETTINGS'}
           </Text>
         </View>
@@ -267,17 +270,18 @@ export default function Index() {
               {CATEGORIES.map(cat => {
                 const IconComp = (LucideIcons as any)[cat.icon] as React.ComponentType<{ size?: number; color?: string }>;
                 const isActive = activeCategory === cat.id;
+                const activeTextThemeColor = currentAccent === '#000000' || currentTheme.backgroundColor === '#ffffff' ? '#ffffff' : '#0a0a0c';
                 return (
                   <TouchableOpacity
                     key={cat.id}
-                    style={[styles.categoryChip, isActive && styles.activeCategoryChip]}
+                    style={[styles.categoryChip, isActive && [styles.activeCategoryChip, { backgroundColor: currentAccent, borderColor: currentAccent }]]}
                     onPress={() => {
                       triggerHaptic('selection');
                       setActiveCategory(cat.id);
                     }}
                   >
-                    {IconComp && <IconComp size={11} color={isActive ? '#0a0a0c' : '#555'} />}
-                    <Text style={[styles.categoryChipText, isActive && styles.activeCategoryChipText]}>
+                    {IconComp && <IconComp size={11} color={isActive ? activeTextThemeColor : '#555'} />}
+                    <Text style={[styles.categoryChipText, isActive && [styles.activeCategoryChipText, { color: activeTextThemeColor }]]}>
                       {cat.label}
                     </Text>
                   </TouchableOpacity>
@@ -317,13 +321,14 @@ export default function Index() {
           <Animated.View
             style={[
               styles.tabSlider,
-              { transform: [{ translateX: slideX }, { scale: scaleAnim }] },
+              { transform: [{ translateX: slideX }, { scale: scaleAnim }], backgroundColor: currentAccent },
             ]}
           />
 
           {TABS.map((tab) => {
             const IconComp = (LucideIcons as any)[tab.icon] as React.ComponentType<{ size?: number; color?: string }>;
             const isActive = activeTab === tab.id;
+            const activeTextThemeColor = currentAccent === '#000000' || currentTheme.backgroundColor === '#ffffff' ? '#ffffff' : '#0a0a0c';
             return (
               <TouchableOpacity
                 key={tab.id}
@@ -335,11 +340,11 @@ export default function Index() {
                   {IconComp && (
                     <IconComp
                       size={isActive ? 19 : 17}
-                      color={isActive ? '#000000' : '#666'}
+                      color={isActive ? activeTextThemeColor : '#666'}
                     />
                   )}
                 </View>
-                <Text style={[styles.tabLabel, isActive && styles.activeTabLabel]} numberOfLines={1}>
+                <Text style={[styles.tabLabel, isActive && [styles.activeTabLabel, { color: activeTextThemeColor }]]} numberOfLines={1}>
                   {tab.label}
                 </Text>
               </TouchableOpacity>

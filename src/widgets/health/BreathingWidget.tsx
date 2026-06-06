@@ -1,5 +1,5 @@
 import { WidgetCustomizations } from '../../store/widgetStore';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';
@@ -26,8 +26,8 @@ export const BreathingWidget: React.FC<BreathingWidgetProps> = ({
   const { accentColor } = useWidgetStyle(customizations, globalTheme);
   const title = customizations.titleText || 'BREATH WORK';
 
-  const scaleAnim = useRef(new Animated.Value(1.0)).current;
-  const opacityAnim = useRef(new Animated.Value(0.4)).current;
+  const [scaleAnim] = useState(() => new Animated.Value(1.0));
+  const [opacityAnim] = useState(() => new Animated.Value(0.4));
   const phaseIdxRef = useRef(0);
   const phaseAnim = useRef<Animated.CompositeAnimation | null>(null);
 
@@ -58,10 +58,9 @@ export const BreathingWidget: React.FC<BreathingWidgetProps> = ({
     };
     runPhase(0);
     return () => phaseAnim.current?.stop();
-  }, []);
+  }, [scaleAnim, opacityAnim]);
 
   const isLight = customizations.backgroundColor === '#ffffff';
-  const textColor = isLight ? '#000' : '#fff';
   const dimColor = isLight ? '#888' : '#666';
 
   const PHASE_COLORS: Record<string, string> = {

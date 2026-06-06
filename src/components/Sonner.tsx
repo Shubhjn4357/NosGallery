@@ -1,18 +1,34 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Dimensions, TouchableOpacity, Platform } from 'react-native';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, Animated, TouchableOpacity, Platform } from 'react-native';
 import { useWidgetStore } from '../store/widgetStore';
 import * as LucideIcons from 'lucide-react-native';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const TOAST_TIMEOUT = 3000;
 
 export const Sonner: React.FC = () => {
   const { toastMessage, toastType, hideToast } = useWidgetStore();
-  const slideAnim = useRef(new Animated.Value(100)).current; // starts off-screen bottom
-  const opacityAnim = useRef(new Animated.Value(0)).current;
-  const progressAnim = useRef(new Animated.Value(1)).current; // 1 to 0 progress timeline
+  const [slideAnim] = useState(() => new Animated.Value(100)); // starts off-screen bottom
+  const [opacityAnim] = useState(() => new Animated.Value(0));
+  const [progressAnim] = useState(() => new Animated.Value(1)); // 1 to 0 progress timeline
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const dismissToast = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: 100,
+        duration: 220,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      hideToast();
+    });
+  }, [slideAnim, opacityAnim, hideToast]);
 
   useEffect(() => {
     if (toastMessage) {
@@ -53,24 +69,7 @@ export const Sonner: React.FC = () => {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [toastMessage]);
-
-  const dismissToast = () => {
-    Animated.parallel([
-      Animated.timing(slideAnim, {
-        toValue: 100,
-        duration: 220,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacityAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      hideToast();
-    });
-  };
+  }, [toastMessage, slideAnim, opacityAnim, progressAnim, dismissToast]);
 
   if (!toastMessage) return null;
 

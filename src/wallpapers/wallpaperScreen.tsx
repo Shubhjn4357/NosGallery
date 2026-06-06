@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { useWidgetStore, WallpaperConfig } from '../store/widgetStore';
 import { useFeedback } from '../hooks/useFeedback';
 import * as LucideIcons from 'lucide-react-native';
@@ -86,7 +86,7 @@ export const WallpaperScreen: React.FC = () => {
           <View style={{ flex: 1, marginLeft: 12 }}>
             <Text style={styles.bannerTitle}>Material You Dynamics</Text>
             <Text style={styles.bannerDesc}>
-              Applying a new wallpaper will automatically re-extract color hues to update widgets configured with the "Material You" theme.
+              Applying a new wallpaper will automatically re-extract color hues to update widgets configured with the &quot;Material You&quot; theme.
             </Text>
           </View>
         </View>
