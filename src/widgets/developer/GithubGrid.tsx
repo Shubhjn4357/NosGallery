@@ -9,11 +9,13 @@ import { ThemeId } from '../../themes/themes';
 interface GithubGridProps {
   customizations: WidgetCustomizations;
   globalTheme: ThemeId;
+  interactive?: boolean;
 }
 
 export const GithubGrid: React.FC<GithubGridProps> = ({
   customizations,
   globalTheme,
+  interactive = false,
 }) => {
   const { textStyle, subtextStyle, accentColor } = useWidgetStyle(customizations, globalTheme);
 
@@ -23,6 +25,10 @@ export const GithubGrid: React.FC<GithubGridProps> = ({
   const title = customizations.titleText || 'GITHUB';
 
   useEffect(() => {
+    if (!interactive) {
+      setLoading(false);
+      return;
+    }
     let active = true;
     const loadGithub = async () => {
       // Find customized username from widget labels
@@ -39,7 +45,7 @@ export const GithubGrid: React.FC<GithubGridProps> = ({
     };
     loadGithub();
     return () => { active = false; };
-  }, [customizations.valueText]);
+  }, [customizations.valueText, interactive]);
 
   if (loading || !gitStats) {
     return (

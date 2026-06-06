@@ -9,6 +9,7 @@ import { ThemeId } from '../../themes/themes';
 interface WeatherCurrentProps {
   customizations: WidgetCustomizations;
   globalTheme: ThemeId;
+  interactive?: boolean;
 }
 
 const CONDITION_ICONS: Record<string, { icon: string; color: string }> = {
@@ -24,6 +25,7 @@ const CONDITION_ICONS: Record<string, { icon: string; color: string }> = {
 export const WeatherCurrent: React.FC<WeatherCurrentProps> = ({
   customizations,
   globalTheme,
+  interactive = false,
 }) => {
   const { accentColor } = useWidgetStyle(customizations, globalTheme);
 
@@ -33,6 +35,10 @@ export const WeatherCurrent: React.FC<WeatherCurrentProps> = ({
   const title = customizations.titleText || 'WEATHER';
 
   useEffect(() => {
+    if (!interactive) {
+      setLoading(false);
+      return;
+    }
     let active = true;
     const load = async () => {
       let lat = 51.5074; let lon = -0.1278;
@@ -45,7 +51,7 @@ export const WeatherCurrent: React.FC<WeatherCurrentProps> = ({
     };
     load();
     return () => { active = false; };
-  }, [title]);
+  }, [title, interactive]);
 
   const getConditionStyle = (condition: string) => {
     const c = condition.toLowerCase();

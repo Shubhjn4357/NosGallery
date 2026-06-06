@@ -1,11 +1,9 @@
 import React, { useRef, useState } from 'react';
-import { View, Text, StyleSheet, Animated, PanResponder, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Animated, PanResponder, Dimensions, Platform } from 'react-native';
 import * as LucideIcons from 'lucide-react-native';
 
-const BUTTON_WIDTH = Dimensions.get('window').width - 40; // Full drawer width padding (20px each side)
 const THUMB_SIZE = 44;
 const PADDING = 3;
-const SLIDE_RANGE = BUTTON_WIDTH - THUMB_SIZE - (PADDING * 2);
 
 interface AnimatedSlidingButtonProps {
   onSwipeSuccess: () => void;
@@ -20,29 +18,43 @@ export const AnimatedSlidingButton: React.FC<AnimatedSlidingButtonProps> = ({
   successTitle = 'Added to Home Screen',
   accentColor = '#7C9EFF',
 }) => {
+  const [layoutWidth, setLayoutWidth] = useState(0);
   const pan = useRef(new Animated.Value(0)).current;
   const [success, setSuccess] = useState(false);
+
+  const range = layoutWidth ? (layoutWidth - THUMB_SIZE - (PADDING * 2)) : 0;
+  const rangeRef = useRef(0);
+  rangeRef.current = range;
 
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => !success,
       onMoveShouldSetPanResponder: () => !success,
       onPanResponderMove: (e, gestureState) => {
-        // Constrain movement between 0 and maximum slide range
+        const currentRange = rangeRef.current;
+        if (currentRange <= 0) return;
         let newX = gestureState.dx;
         if (newX < 0) newX = 0;
-        if (newX > SLIDE_RANGE) newX = SLIDE_RANGE;
+        if (newX > currentRange) newX = currentRange;
         pan.setValue(newX);
       },
       onPanResponderRelease: (e, gestureState) => {
         if (success) return;
+        const currentRange = rangeRef.current;
+        if (currentRange <= 0) {
+          // Spring back
+          Animated.spring(pan, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
+          return;
+        }
 
-        // Activation threshold at 85% of slide range
-        if (gestureState.dx >= SLIDE_RANGE * 0.85) {
-          // Success state
+        // Activation threshold at 80% of slide range
+        if (gestureState.dx >= currentRange * 0.8) {
           setSuccess(true);
           Animated.spring(pan, {
-            toValue: SLIDE_RANGE,
+            toValue: currentRange,
             useNativeDriver: true,
             friction: 7,
           }).start(() => {
@@ -54,7 +66,7 @@ export const AnimatedSlidingButton: React.FC<AnimatedSlidingButtonProps> = ({
                 duration: 250,
                 useNativeDriver: true,
               }).start(() => setSuccess(false));
-            }, 1500);
+            }, 1800);
           });
         } else {
           // Spring back to start
@@ -71,28 +83,34 @@ export const AnimatedSlidingButton: React.FC<AnimatedSlidingButtonProps> = ({
 
   // Text fade opacity based on thumb position
   const textOpacity = pan.interpolate({
-    inputRange: [0, SLIDE_RANGE * 0.6],
+    inputRange: [0, Math.max(range * 0.6, 1)],
     outputRange: [1, 0],
     extrapolate: 'clamp',
   });
 
-  // Green/accent glow line expansion
+  // Background glow line expansion
   const glowWidth = pan.interpolate({
-    inputRange: [0, SLIDE_RANGE],
-    outputRange: [THUMB_SIZE, BUTTON_WIDTH],
+    inputRange: [0, Math.max(range, 1)],
+    outputRange: [THUMB_SIZE + PADDING * 2, layoutWidth || 100],
     extrapolate: 'clamp',
   });
 
   return (
-    <View style={styles.track}>
+    <View 
+      style={styles.track}
+      onLayout={(e) => {
+        const { width } = e.nativeEvent.layout;
+        setLayoutWidth(width);
+      }}
+    >
       {/* Background Track Fill Indicator */}
       <Animated.View
         style={[
           styles.trackGlow,
           {
             width: glowWidth,
-            backgroundColor: success ? '#34c759' : accentColor,
-            opacity: success ? 0.9 : 0.25,
+            backgroundColor: success ? '#ff2d2d' : '#ffffff',
+            opacity: success ? 0.95 : 0.12,
           },
         ]}
       />
@@ -109,12 +127,12 @@ export const AnimatedSlidingButton: React.FC<AnimatedSlidingButtonProps> = ({
           styles.thumb,
           {
             transform: [{ translateX: pan }],
-            backgroundColor: success ? '#34c759' : '#ffffff',
+            backgroundColor: success ? '#ff2d2d' : '#ffffff',
           },
         ]}
       >
         {success ? (
-          <LucideIcons.Check size={18} color="#000000" strokeWidth={3} />
+          <LucideIcons.Check size={18} color="#ffffff" strokeWidth={3} />
         ) : (
           <LucideIcons.ArrowRight size={18} color="#000000" strokeWidth={3} />
         )}
@@ -144,7 +162,10 @@ const styles = StyleSheet.create({
     borderRadius: (THUMB_SIZE + PADDING * 2) / 2,
   },
   trackText: {
-    alignSelf: 'center',
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    textAlign: 'center',
     color: '#8e8e93',
     fontSize: 10.5,
     fontWeight: '900',
@@ -160,9 +181,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 20,
     elevation: 4,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 3,
+    ...Platform.select({
+      web: {
+        boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.4)',
+      },
+      default: {
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.4,
+        shadowRadius: 3,
+      },
+    }),
   },
 });

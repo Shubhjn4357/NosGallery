@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,34 +10,35 @@ import {
   StatusBar,
   Dimensions,
   Modal,
-  PanResponder,
+  TextInput,
 } from 'react-native';
-import { EditorScreen } from '../editor/editorScreen';
-import { GalleryScreen } from '../gallery/galleryScreen';
-import { WallpaperScreen } from '../wallpapers/wallpaperScreen';
 import { SettingsScreen } from '../settings/settingsScreen';
-import { useWidgetStore } from '../store/widgetStore';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useWidgetStore, ActiveWidget, WidgetCustomizations } from '../store/widgetStore';
 import { useFeedback } from '../hooks/useFeedback';
 import { DotGridBackground } from '../components/DotGridBackground';
-import { widgetRegistry, WidgetTemplate, WidgetCategory, getTemplatesByCategory } from '../widgets/registry';
+import { widgetRegistry, WidgetTemplate, WidgetCategory } from '../widgets/registry';
 import { WidgetRenderer } from '../widgets/widgetRenderer';
-import { ActiveWidget } from '../store/widgetStore';
+import { themes, ThemeId } from '../themes/themes';
+import { fonts } from '../fonts/fonts';
+import { AnimatedSlidingButton } from '../components/AnimatedSlidingButton';
+import NosWidgetPinning from '../../modules/nos-widget-pinning/src/NosWidgetPinningModule';
 import * as LucideIcons from 'lucide-react-native';
 
 const { width: SW, height: SH } = Dimensions.get('window');
 
-// App accent – soft periwinkle blue (calm, minimal, modern)
+// App accent – soft periwinkle blue
 const ACCENT = '#7C9EFF';
 
 type TabId = 'editor' | 'settings';
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
-  { id: 'editor', label: 'Widgets', icon: 'LayoutGrid' },
+  { id: 'editor', label: 'Gallery', icon: 'LayoutGrid' },
   { id: 'settings', label: 'Settings', icon: 'SlidersHorizontal' },
 ];
 
 const CATEGORIES: { id: WidgetCategory | 'all'; label: string; icon: string }[] = [
-  { id: 'all', label: 'All', icon: 'LayoutGrid' },
+  { id: 'all', label: 'All', icon: 'Compass' },
   { id: 'clock', label: 'Clocks', icon: 'Clock' },
   { id: 'calendar', label: 'Calendar', icon: 'Calendar' },
   { id: 'weather', label: 'Weather', icon: 'CloudSun' },
@@ -50,116 +51,18 @@ const CATEGORIES: { id: WidgetCategory | 'all'; label: string; icon: string }[] 
   { id: 'ai', label: 'AI', icon: 'Sparkles' },
 ];
 
-// Bottom sheet heights
-const SHEET_HEIGHTS: Record<TabId, number> = {
-  editor: SH * 0.90,
-  settings: SH * 0.80,
-};
+const PRESET_COLORS = [
+  '#000000', '#ffffff', '#7C9EFF', '#007aff', '#39ff14', 
+  '#ff2d55', '#dfba6b', '#1a0826', '#e0e0e0', '#f7ebec'
+];
+
+const BORDER_RADII = [0, 8, 12, 16, 20, 24, 32];
+const SHADOW_TYPES: WidgetCustomizations['shadowType'][] = ['none', 'soft', 'medium', 'hard', 'glow'];
+const TRANSPARENCIES = [0, 20, 40, 60, 80];
+const FONT_SIZES = [10, 12, 14, 16, 20, 24, 28, 32];
 
 // ───────────────────────────────────────────
-// BottomSheet component
-// ───────────────────────────────────────────
-interface BottomSheetProps {
-  visible: boolean;
-  tabId: TabId;
-  onClose: () => void;
-  children: React.ReactNode;
-}
-
-const BottomSheet: React.FC<BottomSheetProps> = ({ visible, tabId, onClose, children }) => {
-  const sheetH = SHEET_HEIGHTS[tabId];
-  const slideAnim = useRef(new Animated.Value(sheetH)).current;
-  const backdropAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (visible) {
-      Animated.parallel([
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          damping: 22,
-          stiffness: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(backdropAnim, {
-          toValue: 1,
-          duration: 260,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(slideAnim, {
-          toValue: sheetH,
-          duration: 280,
-          useNativeDriver: true,
-        }),
-        Animated.timing(backdropAnim, {
-          toValue: 0,
-          duration: 220,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-  }, [visible]);
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onPanResponderMove: (_, gs) => {
-        if (gs.dy > 0) slideAnim.setValue(gs.dy);
-      },
-      onPanResponderRelease: (_, gs) => {
-        if (gs.dy > 100 || gs.vy > 0.6) {
-          onClose();
-        } else {
-          Animated.spring(slideAnim, {
-            toValue: 0,
-            damping: 22,
-            stiffness: 200,
-            useNativeDriver: true,
-          }).start();
-        }
-      },
-    })
-  ).current;
-
-  if (!visible) return null;
-
-  return (
-    <Modal transparent animationType="none" visible={visible} onRequestClose={onClose}>
-      {/* Backdrop */}
-      <Animated.View
-        style={[styles.backdrop, { opacity: backdropAnim }]}
-      >
-        <TouchableOpacity style={{ flex: 1 }} onPress={onClose} activeOpacity={1} />
-      </Animated.View>
-
-      {/* Sheet */}
-      <Animated.View
-        style={[
-          styles.sheet,
-          { height: sheetH, transform: [{ translateY: slideAnim }] },
-        ]}
-      >
-        {/* Drag Handle */}
-        <View {...panResponder.panHandlers} style={styles.handleArea}>
-          <View style={styles.handle} />
-          <Text style={styles.sheetTitle}>
-            {TABS.find(t => t.id === tabId)?.label.toUpperCase()}
-          </Text>
-        </View>
-
-        {/* Sheet Content */}
-        <View style={styles.sheetBody}>
-          {children}
-        </View>
-      </Animated.View>
-    </Modal>
-  );
-};
-
-// ───────────────────────────────────────────
-// Widget preview card
+// Widget preview card (Showcase Grid)
 // ───────────────────────────────────────────
 const WidgetCard: React.FC<{ template: WidgetTemplate; activeTheme: string; onPress: () => void }> = ({
   template,
@@ -194,7 +97,6 @@ const WidgetCard: React.FC<{ template: WidgetTemplate; activeTheme: string; onPr
 
   return (
     <TouchableOpacity style={[styles.widgetCard, { width: PREVIEW_W }]} onPress={onPress} activeOpacity={0.8}>
-      {/* Preview box */}
       <View style={styles.widgetPreviewBox}>
         <View style={{
           width: widgetW,
@@ -204,7 +106,6 @@ const WidgetCard: React.FC<{ template: WidgetTemplate; activeTheme: string; onPr
           <WidgetRenderer widget={mockWidget} globalTheme={activeTheme as any} interactive={false} />
         </View>
       </View>
-      {/* Label */}
       <View style={styles.widgetCardFooter}>
         <Text style={styles.widgetCardName} numberOfLines={1}>{template.name}</Text>
         <Text style={styles.widgetCardSize}>{template.defaultWidth}×{template.defaultHeight}</Text>
@@ -214,21 +115,37 @@ const WidgetCard: React.FC<{ template: WidgetTemplate; activeTheme: string; onPr
 };
 
 // ───────────────────────────────────────────
-// Main App
+// Main App Page
 // ───────────────────────────────────────────
-const TAB_W = (SW - 48) / 2; // 2 tabs, 24px margin each side
+const TAB_W = (SW - 48) / 2;
 
 export default function Index() {
-  const { activeTab, setActiveTab, activeTheme } = useWidgetStore();
-  const { triggerHaptic } = useFeedback();
+  const insets = useSafeAreaInsets();
+  const {
+    activeTab,
+    setActiveTab,
+    activeTheme,
+    pendingWidget,
+    setPendingWidget,
+    updateWidgetCustomizations,
+    applyPendingToGrid,
+    showToast,
+  } = useWidgetStore();
+  
+  const { triggerHaptic, triggerSound } = useFeedback();
 
-  // Sliding indicator animation
+  // Navigation Sliding Indicator
   const TAB_IDS: TabId[] = ['editor', 'settings'];
-  const slideX = useRef(new Animated.Value(0)).current;
+  const slideX = useRef(new Animated.Value(activeTab === 'settings' ? TAB_W : 0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
-  const [sheetOpen, setSheetOpen] = useState(false);
+  // View state
   const [activeCategory, setActiveCategory] = useState<WidgetCategory | 'all'>('all');
+  
+  // Preview Drawer Modal State
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [customizeMode, setCustomizeMode] = useState(false);
+  const [editorTab, setEditorTab] = useState<'style' | 'text'>('style');
 
   const allTemplates = Object.values(widgetRegistry);
   const filtered = activeCategory === 'all'
@@ -238,7 +155,7 @@ export default function Index() {
   const handleTabPress = (tab: TabId) => {
     triggerHaptic('selection');
     const newIdx = TAB_IDS.indexOf(tab);
-    // Bounce + slide animation
+    
     Animated.parallel([
       Animated.spring(slideX, {
         toValue: newIdx * TAB_W,
@@ -252,27 +169,71 @@ export default function Index() {
       ]),
     ]).start();
 
-    if (sheetOpen && activeTab === tab) {
-      setSheetOpen(false);
-    } else {
-      setActiveTab(tab);
-      setSheetOpen(true);
-    }
+    setActiveTab(tab);
   };
 
   const handleWidgetCardPress = (template: WidgetTemplate) => {
     triggerHaptic('selection');
-    // Open builder with this template pre-selected
-    setActiveTab('editor');
-    setSheetOpen(true);
+    
+    // Create a pending widget configuration based on selected template
+    const newWidget: ActiveWidget = {
+      id: 'widget_pending',
+      templateId: template.id,
+      x: 0,
+      y: 0,
+      w: template.defaultWidth,
+      h: template.defaultHeight,
+      customizations: {
+        fontId: 'inter',
+        fontSize: template.defaultWidth === 4 ? 20 : 14,
+        backgroundType: 'solid',
+        backgroundColor: '#0c0c0c',
+        borderRadius: 16,
+        transparency: 10,
+        blur: 10,
+        shadowType: 'glow',
+        titleText: template.defaultTitle,
+        valueText: template.defaultValue,
+        themeOverride: 'none',
+        accentColor: '#7C9EFF',
+      },
+    };
+    
+    setPendingWidget(newWidget);
+    setCustomizeMode(false);
+    setPreviewOpen(true);
   };
 
-  const renderSheetContent = () => {
-    switch (activeTab as string) {
-      case 'editor': return <EditorScreen />;
-      case 'settings': return <SettingsScreen />;
-      default: return null;
+  const handleUpdate = (updates: Partial<WidgetCustomizations>) => {
+    if (!pendingWidget) return;
+    updateWidgetCustomizations('widget_pending', updates);
+    triggerHaptic('light');
+  };
+
+  const handleAddToHomeScreen = async () => {
+    if (!pendingWidget) return;
+    
+    // Save widget to grid state
+    applyPendingToGrid();
+    
+    // Request Android launcher to pin the widget for real (no simulation)
+    try {
+      triggerHaptic('success');
+      triggerSound('success');
+      
+      // NOSGalleryWidget is the registered provider class identifier
+      const success = await NosWidgetPinning.requestPinWidget('NOSGalleryWidget');
+      if (success) {
+        showToast('Widget pinning request sent to your launcher!', 'success');
+      } else {
+        showToast('Successfully updated widget! Drag it from the launcher drawer if not added.', 'success');
+      }
+    } catch (err: any) {
+      console.log('Pin widget failed:', err);
+      showToast('Successfully saved! Pin this widget from your Android home settings.', 'success');
     }
+    
+    setPreviewOpen(false);
   };
 
   return (
@@ -281,77 +242,78 @@ export default function Index() {
       <StatusBar barStyle="light-content" backgroundColor="#000000" translucent />
 
       {/* ── HEADER ── */}
-      <View style={[styles.header, { paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 28) + 8 : 16 }]}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
         <View style={styles.logoRow}>
           <View style={styles.accentDotWrap}><View style={styles.accentDot} /></View>
           <Text style={styles.headerTitle}>NOS  ·  STUDIO</Text>
         </View>
         <View style={styles.headerBadge}>
-          <Text style={styles.headerBadgeText}>{filtered.length} WIDGETS</Text>
+          <Text style={styles.headerBadgeText}>
+            {activeTab === 'editor' ? `${filtered.length} WIDGETS` : 'SYSTEM SETTINGS'}
+          </Text>
         </View>
       </View>
 
-      {/* ── CATEGORY STRIP ── (partially peeking at bottom of viewport) */}
-      <View style={styles.categoryContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryScroll}
-        >
-          {CATEGORIES.map(cat => {
-            const IconComp = (LucideIcons as any)[cat.icon] as React.ComponentType<{ size?: number; color?: string }>;
-            const isActive = activeCategory === cat.id;
-            return (
-              <TouchableOpacity
-                key={cat.id}
-                style={[styles.categoryChip, isActive && styles.activeCategoryChip]}
-                onPress={() => {
-                  triggerHaptic('selection');
-                  setActiveCategory(cat.id);
-                }}
-              >
-                {IconComp && <IconComp size={11} color={isActive ? '#0a0a0c' : '#555'} />}
-                <Text style={[styles.categoryChipText, isActive && styles.activeCategoryChipText]}>
-                  {cat.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </View>
+      {/* ── MAIN CONTENT VIEW (PAGE BASED) ── */}
+      {activeTab === 'editor' ? (
+        <View style={{ flex: 1 }}>
+          {/* CATEGORY STRIP */}
+          <View style={styles.categoryContainer}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryScroll}
+            >
+              {CATEGORIES.map(cat => {
+                const IconComp = (LucideIcons as any)[cat.icon] as React.ComponentType<{ size?: number; color?: string }>;
+                const isActive = activeCategory === cat.id;
+                return (
+                  <TouchableOpacity
+                    key={cat.id}
+                    style={[styles.categoryChip, isActive && styles.activeCategoryChip]}
+                    onPress={() => {
+                      triggerHaptic('selection');
+                      setActiveCategory(cat.id);
+                    }}
+                  >
+                    {IconComp && <IconComp size={11} color={isActive ? '#0a0a0c' : '#555'} />}
+                    <Text style={[styles.categoryChipText, isActive && styles.activeCategoryChipText]}>
+                      {cat.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
 
-      {/* ── WIDGET SHOWCASE GRID ── */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[styles.gridContent, { paddingBottom: 160 }]}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* 2-column card grid */}
-        <View style={styles.widgetGrid}>
-          {filtered.map(tpl => (
-            <WidgetCard
-              key={tpl.id}
-              template={tpl}
-              activeTheme={activeTheme}
-              onPress={() => handleWidgetCardPress(tpl)}
-            />
-          ))}
+          {/* WIDGET SHOWCASE GRID */}
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={[styles.gridContent, { paddingBottom: 160 }]}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.widgetGrid}>
+              {filtered.map(tpl => (
+                <WidgetCard
+                  key={tpl.id}
+                  template={tpl}
+                  activeTheme={activeTheme}
+                  onPress={() => handleWidgetCardPress(tpl)}
+                />
+              ))}
+            </View>
+          </ScrollView>
         </View>
-      </ScrollView>
-
-      {/* ── BOTTOM SHEET (slide-up drawer) ── */}
-      <BottomSheet
-        visible={sheetOpen}
-        tabId={activeTab as TabId}
-        onClose={() => setSheetOpen(false)}
-      >
-        {renderSheetContent()}
-      </BottomSheet>
+      ) : (
+        // SETTINGS SCREEN INLINE PAGE
+        <View style={{ flex: 1 }}>
+          <SettingsScreen />
+        </View>
+      )}
 
       {/* ── FLOATING PILL TAB BAR ── */}
-      <View style={styles.tabBarOuter} pointerEvents="box-none">
+      <View style={styles.tabBarOuter}>
         <View style={styles.tabBarPill}>
-          {/* Sliding active indicator */}
           <Animated.View
             style={[
               styles.tabSlider,
@@ -359,9 +321,9 @@ export default function Index() {
             ]}
           />
 
-          {TABS.map((tab, idx) => {
+          {TABS.map((tab) => {
             const IconComp = (LucideIcons as any)[tab.icon] as React.ComponentType<{ size?: number; color?: string }>;
-            const isActive = activeTab === tab.id && sheetOpen;
+            const isActive = activeTab === tab.id;
             return (
               <TouchableOpacity
                 key={tab.id}
@@ -369,14 +331,14 @@ export default function Index() {
                 onPress={() => handleTabPress(tab.id)}
                 activeOpacity={0.85}
               >
-                <Animated.View style={[styles.tabIconWrap, isActive && styles.activeTabIconWrap]}>
+                <View style={styles.tabIconWrap}>
                   {IconComp && (
                     <IconComp
                       size={isActive ? 19 : 17}
                       color={isActive ? '#000000' : '#666'}
                     />
                   )}
-                </Animated.View>
+                </View>
                 <Text style={[styles.tabLabel, isActive && styles.activeTabLabel]} numberOfLines={1}>
                   {tab.label}
                 </Text>
@@ -385,6 +347,297 @@ export default function Index() {
           })}
         </View>
       </View>
+
+      {/* ── CONTEXTUAL WIDGET PREVIEW & CUSTOMIZATION DRAWER ── */}
+      {pendingWidget && (
+        <Modal
+          visible={previewOpen}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setPreviewOpen(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.drawerSheet}>
+              {/* Header */}
+              <View style={styles.drawerHeader}>
+                <TouchableOpacity
+                  onPress={() => setPreviewOpen(false)}
+                  style={styles.closeBtn}
+                >
+                  <LucideIcons.ChevronDown size={20} color="#ffffff" />
+                </TouchableOpacity>
+                <Text style={styles.drawerTitle}>
+                  {customizeMode ? 'CUSTOMIZE DESIGN' : 'WIDGET PREVIEW'}
+                </Text>
+                <View style={{ width: 20 }} />
+              </View>
+
+              {/* Body */}
+              <ScrollView style={styles.drawerBody} showsVerticalScrollIndicator={false}>
+                {/* Live Preview Box */}
+                <View style={styles.previewBox}>
+                  <DotGridBackground />
+                  <View style={{ transform: [{ scale: 1.05 }], zIndex: 10 }}>
+                    <WidgetRenderer
+                      widget={pendingWidget}
+                      globalTheme={activeTheme}
+                      interactive={false}
+                    />
+                  </View>
+                </View>
+
+                {!customizeMode ? (
+                  /* Simple Preview Flow Details */
+                  <View style={styles.detailsContainer}>
+                    <Text style={styles.widgetTitleText}>
+                      {widgetRegistry[pendingWidget.templateId]?.name || 'Custom Widget'}
+                    </Text>
+                    <Text style={styles.widgetDescText}>
+                      {widgetRegistry[pendingWidget.templateId]?.description || 'A customizable Nothing OS widget.'}
+                    </Text>
+                    
+                    <View style={styles.metaRow}>
+                      <View style={styles.metaChip}>
+                        <LucideIcons.Layers size={10} color="#666" />
+                        <Text style={styles.metaChipText}>Size {pendingWidget.w}x{pendingWidget.h}</Text>
+                      </View>
+                      <View style={styles.metaChip}>
+                        <LucideIcons.Palette size={10} color="#666" />
+                        <Text style={styles.metaChipText}>Theme OS compatible</Text>
+                      </View>
+                    </View>
+
+                    <TouchableOpacity
+                      style={styles.customizeTriggerBtn}
+                      onPress={() => {
+                        triggerHaptic('selection');
+                        setCustomizeMode(true);
+                      }}
+                    >
+                      <LucideIcons.Sliders size={14} color="#000000" style={{ marginRight: 6 }} />
+                      <Text style={styles.customizeTriggerBtnText}>Customize Layout & Content</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  /* Customization Design Mode */
+                  <View style={styles.propertiesContainer}>
+                    {/* Customizer Sub-Tabs */}
+                    <View style={styles.customizerTabsHeader}>
+                      <TouchableOpacity
+                        style={[styles.customizerTabBtn, editorTab === 'style' && styles.activeCustomizerTabBtn]}
+                        onPress={() => setEditorTab('style')}
+                      >
+                        <Text style={[styles.customizerTabText, editorTab === 'style' && styles.activeCustomizerTabText]}>Design Styles</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.customizerTabBtn, editorTab === 'text' && styles.activeCustomizerTabBtn]}
+                        onPress={() => setEditorTab('text')}
+                      >
+                        <Text style={[styles.customizerTabText, editorTab === 'text' && styles.activeCustomizerTabText]}>Content Texts</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    {editorTab === 'style' ? (
+                      /* Design style options */
+                      <View style={{ gap: 12 }}>
+                        {/* Theme overrides */}
+                        <Text style={styles.inputLabel}>Skin Style Override</Text>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
+                          <TouchableOpacity
+                            style={[
+                              styles.choiceChip,
+                              (!pendingWidget.customizations.themeOverride || pendingWidget.customizations.themeOverride === 'none') && styles.activeChoiceChip,
+                            ]}
+                            onPress={() => handleUpdate({ themeOverride: 'none' })}
+                          >
+                            <Text style={[styles.choiceChipText, (!pendingWidget.customizations.themeOverride || pendingWidget.customizations.themeOverride === 'none') && styles.activeChoiceChipText]}>Global Default</Text>
+                          </TouchableOpacity>
+                          {Object.values(themes).map((t) => (
+                            <TouchableOpacity
+                              key={t.id}
+                              style={[
+                                styles.choiceChip,
+                                pendingWidget.customizations.themeOverride === t.id && styles.activeChoiceChip,
+                              ]}
+                              onPress={() => handleUpdate({ themeOverride: t.id })}
+                            >
+                              <Text style={[styles.choiceChipText, pendingWidget.customizations.themeOverride === t.id && styles.activeChoiceChipText]}>{t.name}</Text>
+                            </TouchableOpacity>
+                          ))}
+                        </ScrollView>
+
+                        {/* Background style */}
+                        <Text style={styles.inputLabel}>Background Fill Style</Text>
+                        <View style={styles.segmentedControl}>
+                           {(['solid', 'gradient', 'glass', 'none'] as const).map((type) => (
+                            <TouchableOpacity
+                              key={type}
+                              style={[
+                                styles.segmentBtn,
+                                pendingWidget.customizations.backgroundType === type && styles.activeSegmentBtn,
+                              ]}
+                              onPress={() => handleUpdate({ backgroundType: type })}
+                            >
+                              <Text style={[styles.segmentBtnText, pendingWidget.customizations.backgroundType === type && styles.activeSegmentBtnText]}>
+                                {type.toUpperCase()}
+                              </Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+
+                        {/* Colors Palette (only if solid background) */}
+                        {pendingWidget.customizations.backgroundType === 'solid' && (
+                          <>
+                            <Text style={styles.inputLabel}>Solid Background Color</Text>
+                            <View style={styles.colorPalette}>
+                              {PRESET_COLORS.map((c) => (
+                                <TouchableOpacity
+                                  key={c}
+                                  style={[
+                                    styles.colorCircle,
+                                    { backgroundColor: c },
+                                    pendingWidget.customizations.backgroundColor === c && { borderWidth: 2, borderColor: '#ffffff' },
+                                  ]}
+                                  onPress={() => handleUpdate({ backgroundColor: c })}
+                                />
+                              ))}
+                            </View>
+                          </>
+                        )}
+
+                        {/* Fonts */}
+                        <Text style={styles.inputLabel}>Typography Font Family</Text>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
+                          {Object.values(fonts).map((f) => (
+                            <TouchableOpacity
+                              key={f.id}
+                              style={[
+                                styles.choiceChip,
+                                pendingWidget.customizations.fontId === f.id && styles.activeChoiceChip,
+                              ]}
+                              onPress={() => handleUpdate({ fontId: f.id })}
+                            >
+                              <Text style={[styles.choiceChipText, pendingWidget.customizations.fontId === f.id && styles.activeChoiceChipText]}>{f.name}</Text>
+                            </TouchableOpacity>
+                          ))}
+                        </ScrollView>
+
+                        {/* Corner Radius */}
+                        <Text style={styles.inputLabel}>Corner Border Radius</Text>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
+                          {BORDER_RADII.map((r) => (
+                            <TouchableOpacity
+                              key={r}
+                              style={[
+                                styles.choiceChip,
+                                pendingWidget.customizations.borderRadius === r && styles.activeChoiceChip,
+                              ]}
+                              onPress={() => handleUpdate({ borderRadius: r })}
+                            >
+                              <Text style={[styles.choiceChipText, pendingWidget.customizations.borderRadius === r && styles.activeChoiceChipText]}>{r}px</Text>
+                            </TouchableOpacity>
+                          ))}
+                        </ScrollView>
+
+                        {/* Shadows */}
+                        <Text style={styles.inputLabel}>Shadow Effect Glow</Text>
+                        <View style={styles.segmentedControl}>
+                          {SHADOW_TYPES.map((s) => (
+                            <TouchableOpacity
+                              key={s}
+                              style={[
+                                styles.segmentBtn,
+                                pendingWidget.customizations.shadowType === s && styles.activeSegmentBtn,
+                              ]}
+                              onPress={() => handleUpdate({ shadowType: s })}
+                            >
+                              <Text style={[styles.segmentBtnText, pendingWidget.customizations.shadowType === s && styles.activeSegmentBtnText]}>
+                                {s.toUpperCase()}
+                              </Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+
+                        {/* Transparency */}
+                        <Text style={styles.inputLabel}>Translucent Blend: {pendingWidget.customizations.transparency}%</Text>
+                        <View style={styles.sliderBar}>
+                          {TRANSPARENCIES.map((val) => (
+                            <TouchableOpacity
+                              key={val}
+                              style={[styles.sliderSegment, pendingWidget.customizations.transparency === val && { backgroundColor: '#ffffff' }]}
+                              onPress={() => handleUpdate({ transparency: val })}
+                            >
+                              <Text style={[styles.sliderLabelText, pendingWidget.customizations.transparency === val && { color: '#000000' }]}>
+                                {val}
+                              </Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      </View>
+                    ) : (
+                      /* Text Content Options */
+                      <View style={{ gap: 12 }}>
+                        <View style={styles.inputGroup}>
+                          <Text style={styles.inputLabel}>Widget Header / Title</Text>
+                          <TextInput
+                            style={styles.textInput}
+                            value={pendingWidget.customizations.titleText || ''}
+                            onChangeText={(txt) => handleUpdate({ titleText: txt })}
+                            placeholder="Title Text"
+                            placeholderTextColor="#555"
+                          />
+                        </View>
+                        <View style={styles.inputGroup}>
+                          <Text style={styles.inputLabel}>Widget Value / Description</Text>
+                          <TextInput
+                            style={[styles.textInput, { height: 80 }]}
+                            multiline
+                            numberOfLines={4}
+                            value={pendingWidget.customizations.valueText || ''}
+                            onChangeText={(txt) => handleUpdate({ valueText: txt })}
+                            placeholder="Value description"
+                            placeholderTextColor="#555"
+                          />
+                        </View>
+
+                        <Text style={styles.inputLabel}>Font Size: {pendingWidget.customizations.fontSize || 14}px</Text>
+                        <View style={styles.sliderBar}>
+                          {FONT_SIZES.map((sz) => (
+                            <TouchableOpacity
+                              key={sz}
+                              style={[styles.sliderSegment, pendingWidget.customizations.fontSize === sz && { backgroundColor: '#ffffff' }]}
+                              onPress={() => handleUpdate({ fontSize: sz })}
+                            >
+                              <Text style={[styles.sliderLabelText, pendingWidget.customizations.fontSize === sz && { color: '#000000' }]}>{sz}</Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      </View>
+                    )}
+
+                    <TouchableOpacity
+                      style={styles.backToPreviewBtn}
+                      onPress={() => setCustomizeMode(false)}
+                    >
+                      <Text style={styles.backToPreviewBtnText}>Back to Preview</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </ScrollView>
+
+              {/* Bottom Fixed Swipe CTA */}
+              <View style={[styles.drawerFooter, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+                <AnimatedSlidingButton
+                  onSwipeSuccess={handleAddToHomeScreen}
+                  accentColor={pendingWidget.customizations.accentColor}
+                  title="Slide to Pin Widget"
+                  successTitle="Adding Widget..."
+                />
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }
@@ -394,8 +647,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000000',
   },
-
-  // ── Header ──
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -443,8 +694,6 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 0.8,
   },
-
-  // ── Category strip ──
   categoryContainer: {
     paddingVertical: 8,
     borderBottomWidth: 1,
@@ -478,14 +727,13 @@ const styles = StyleSheet.create({
   activeCategoryChipText: {
     color: '#0a0a0c',
   },
-
-  // ── Widget Grid ──
   scrollView: {
     flex: 1,
   },
   gridContent: {
     paddingTop: 16,
     paddingHorizontal: 16,
+    paddingBottom: 120,
   },
   widgetGrid: {
     flexDirection: 'row',
@@ -528,50 +776,6 @@ const styles = StyleSheet.create({
     fontSize: 9.5,
     fontWeight: '600',
   },
-
-  // ── Bottom Sheet ──
-  backdrop: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-  },
-  sheet: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#0a0a0c',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderTopWidth: 1,
-    borderColor: '#1a1a1c',
-    overflow: 'hidden',
-  },
-  handleArea: {
-    alignItems: 'center',
-    paddingTop: 12,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#151518',
-  },
-  handle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#2c2c2e',
-    marginBottom: 8,
-  },
-  sheetTitle: {
-    color: '#8e8e93',
-    fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 2,
-  },
-  sheetBody: {
-    flex: 1,
-    overflow: 'hidden',
-  },
-
-  // ── Floating Pill Tab Bar ──
   tabBarOuter: {
     position: 'absolute',
     bottom: Platform.OS === 'android' ? 20 : 32,
@@ -579,6 +783,7 @@ const styles = StyleSheet.create({
     right: 24,
     alignItems: 'center',
     zIndex: 99,
+    pointerEvents: 'box-none',
   },
   tabBarPill: {
     width: '100%',
@@ -591,11 +796,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     alignItems: 'center',
     position: 'relative',
-    // Shadow/elevation
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.55,
-    shadowRadius: 18,
+    ...Platform.select({
+      web: {
+        boxShadow: '0px 8px 18px rgba(0, 0, 0, 0.55)',
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.55,
+        shadowRadius: 18,
+      },
+    }),
     elevation: 20,
   },
   tabSlider: {
@@ -622,7 +833,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  activeTabIconWrap: {},
   tabLabel: {
     color: '#444',
     fontSize: 9,
@@ -630,5 +840,255 @@ const styles = StyleSheet.create({
   },
   activeTabLabel: {
     color: '#0a0a0c',
+  },
+
+  // Modal Sheet Drawer Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    justifyContent: 'flex-end',
+  },
+  drawerSheet: {
+    backgroundColor: '#0a0a0b',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    height: '85%',
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#1a1a1c',
+    paddingBottom: 24,
+  },
+  drawerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1a1a1c',
+  },
+  closeBtn: {
+    padding: 4,
+  },
+  drawerTitle: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 2,
+  },
+  drawerBody: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  previewBox: {
+    height: 160,
+    backgroundColor: '#000000',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#161618',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    overflow: 'hidden',
+    marginTop: 14,
+    marginBottom: 16,
+  },
+  detailsContainer: {
+    alignItems: 'center',
+    paddingTop: 8,
+    gap: 12,
+  },
+  widgetTitleText: {
+    fontSize: 16,
+    color: '#ffffff',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  widgetDescText: {
+    fontSize: 11.5,
+    color: '#8e8e93',
+    textAlign: 'center',
+    paddingHorizontal: 12,
+    lineHeight: 16,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 6,
+  },
+  metaChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#161618',
+    borderWidth: 1,
+    borderColor: '#242426',
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    gap: 5,
+  },
+  metaChipText: {
+    fontSize: 9,
+    color: '#8e8e93',
+    fontWeight: 'bold',
+  },
+  customizeTriggerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    marginTop: 20,
+    width: '100%',
+  },
+  customizeTriggerBtnText: {
+    color: '#000000',
+    fontSize: 11.5,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  propertiesContainer: {
+    gap: 12,
+  },
+  customizerTabsHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#161618',
+    borderRadius: 12,
+    padding: 3,
+    marginBottom: 10,
+  },
+  customizerTabBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 10,
+  },
+  activeCustomizerTabBtn: {
+    backgroundColor: '#ffffff',
+  },
+  customizerTabText: {
+    color: '#8e8e93',
+    fontSize: 10.5,
+    fontWeight: 'bold',
+  },
+  activeCustomizerTabText: {
+    color: '#000000',
+  },
+  inputLabel: {
+    color: '#8e8e93',
+    fontSize: 9,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginTop: 8,
+  },
+  segmentedControl: {
+    flexDirection: 'row',
+    backgroundColor: '#161618',
+    borderRadius: 10,
+    padding: 3,
+  },
+  segmentBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  activeSegmentBtn: {
+    backgroundColor: '#ffffff',
+  },
+  segmentBtnText: {
+    color: '#8e8e93',
+    fontSize: 9,
+    fontWeight: 'bold',
+  },
+  activeSegmentBtnText: {
+    color: '#000000',
+  },
+  colorPalette: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  colorCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#242426',
+  },
+  chipsRow: {
+    paddingVertical: 2,
+  },
+  choiceChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: '#161618',
+    marginRight: 8,
+  },
+  activeChoiceChip: {
+    backgroundColor: '#ffffff',
+  },
+  choiceChipText: {
+    color: '#ffffff',
+    fontSize: 10.5,
+    fontWeight: 'bold',
+  },
+  activeChoiceChipText: {
+    color: '#000000',
+  },
+  sliderBar: {
+    flexDirection: 'row',
+    backgroundColor: '#161618',
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  sliderSegment: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRightWidth: 1,
+    borderRightColor: '#242426',
+  },
+  sliderLabelText: {
+    color: '#8e8e93',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  inputGroup: {
+    gap: 6,
+  },
+  textInput: {
+    backgroundColor: '#161618',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#242426',
+    color: '#ffffff',
+    padding: 12,
+    fontSize: 13,
+  },
+  backToPreviewBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#161618',
+    borderWidth: 1,
+    borderColor: '#242426',
+    borderRadius: 20,
+    paddingVertical: 12,
+    marginTop: 14,
+  },
+  backToPreviewBtnText: {
+    color: '#8e8e93',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  drawerFooter: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#1a1a1c',
   },
 });

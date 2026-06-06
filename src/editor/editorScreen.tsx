@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Switch } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Switch, Platform } from 'react-native';
 import { useWidgetStore, ActiveWidget, WidgetCustomizations } from '../store/widgetStore';
 import { widgetRegistry, WidgetTemplate, getTemplatesByCategory, WidgetCategory } from '../widgets/registry';
 import { WidgetRenderer } from '../widgets/widgetRenderer';
@@ -975,10 +975,17 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 16,
     width: '100%',
-    shadowColor: '#ffffff',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
+    ...Platform.select({
+      web: {
+        boxShadow: '0px 4px 8px rgba(255, 255, 255, 0.2)',
+      },
+      default: {
+        shadowColor: '#ffffff',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+      },
+    }),
     elevation: 4,
     zIndex: 10,
   },

@@ -5,6 +5,7 @@ import { useWidgetStore, ActiveWidget } from '../store/widgetStore';
 import { ThemeId } from '../themes/themes';
 import { useWidgetStyle } from '../hooks/useWidgetStyle';
 import { useFeedback } from '../hooks/useFeedback';
+import { widgetRegistry } from './registry';
 
 // Modular Component Imports
 import { DigitalClock } from './clock/DigitalClock';
@@ -240,6 +241,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
           <WeatherAqi
             customizations={customizations}
             globalTheme={globalTheme}
+            interactive={interactive}
           />
         );
       }
@@ -247,6 +249,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
         <WeatherCurrent
           customizations={customizations}
           globalTheme={globalTheme}
+          interactive={interactive}
         />
       );
     }
@@ -306,6 +309,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
         <FinanceStockCrypto
           customizations={customizations}
           globalTheme={globalTheme}
+          interactive={interactive}
         />
       );
     }
@@ -317,10 +321,11 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
           <GithubGrid
             customizations={customizations}
             globalTheme={globalTheme}
+            interactive={interactive}
           />
         );
       }
-      if (template === 'developer_build' || template.includes('build') || template.includes('ci/cd') || template.includes('deploy')) {
+      if (template === 'developer_build' || template.includes('build') || template.includes('ci/cd') || template.includes('cicd') || template.includes('deploy')) {
         return (
           <CicdPipeline
             buildStatus={buildStatus}
@@ -394,7 +399,9 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
     }
 
     // Fallback general icons card
-    const IconComponent = (LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number; color?: string }>>)[customizations.fontId] || LucideIcons.Layout;
+    const templateConfig = widgetRegistry[template];
+    const iconName = templateConfig?.iconName || 'Layout';
+    const IconComponent = (LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number; color?: string }>>)[iconName] || LucideIcons.Layout;
     return (
       <View style={styles.fallbackContainer}>
         <IconComponent size={14} color={accentColor} />

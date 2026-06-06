@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity } from 're
 import { useWidgetStore, SystemSettings } from '../store/widgetStore';
 import { useFeedback } from '../hooks/useFeedback';
 import { themes, ThemeId } from '../themes/themes';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as LucideIcons from 'lucide-react-native';
 
 export const SettingsScreen: React.FC = () => {
@@ -17,6 +18,7 @@ export const SettingsScreen: React.FC = () => {
   } = useWidgetStore();
 
   const { triggerHaptic, triggerSound } = useFeedback();
+  const insets = useSafeAreaInsets();
 
   const handleToggle = (key: keyof SystemSettings, value: boolean) => {
     triggerHaptic('selection');
@@ -49,7 +51,25 @@ export const SettingsScreen: React.FC = () => {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView 
+      contentContainerStyle={[
+        styles.container, 
+        { 
+          paddingTop: insets.top + 16, 
+          paddingBottom: insets.bottom + 120 
+        }
+      ]} 
+      showsVerticalScrollIndicator={false}
+    >
+      {/* ── PAGE HEADER ── */}
+      <View style={styles.header}>
+        <View style={styles.headerTitleRow}>
+          <LucideIcons.Sliders size={18} color="#ff2d2d" style={{ marginRight: 8 }} />
+          <Text style={styles.headerTitle}>STUDIO SETTINGS</Text>
+        </View>
+        <Text style={styles.headerSubtitle}>Configure the dashboard widgets engine and theme settings</Text>
+        <View style={styles.headerDivider} />
+      </View>
       
       {/* Device & Design System Settings */}
       <View style={styles.sectionCard}>
@@ -61,7 +81,7 @@ export const SettingsScreen: React.FC = () => {
             <Text style={styles.settingTitle}>Global Theme</Text>
             <Text style={styles.settingDesc}>Active skin for the gallery dashboard</Text>
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }}>
             {Object.values(themes).map((t) => (
               <TouchableOpacity
                 key={t.id}
@@ -75,7 +95,7 @@ export const SettingsScreen: React.FC = () => {
                 }}
               >
                 <Text style={[styles.themeChipText, activeTheme === t.id && styles.activeThemeChipText]}>
-                  {t.name}
+                  {t.name.toUpperCase()}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -87,14 +107,14 @@ export const SettingsScreen: React.FC = () => {
       <View style={styles.sectionCard}>
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionHeader}>Battery Optimizer</Text>
-          <LucideIcons.Zap size={14} color="#39ff14" />
+          <LucideIcons.Zap size={13} color="#ff2d2d" />
         </View>
 
         {/* Battery cost readout */}
         <View style={styles.batteryEstimationPanel}>
           <View style={styles.rowSpace}>
             <Text style={styles.estTitle}>ESTIMATED DRAIN COST</Text>
-            <Text style={styles.estValue}>{getBatteryEstimation()}% / hour</Text>
+            <Text style={styles.estValue}>{getBatteryEstimation()}% / HR</Text>
           </View>
           <View style={styles.estBarBg}>
             <View
@@ -102,13 +122,13 @@ export const SettingsScreen: React.FC = () => {
                 styles.estBarFill,
                 {
                   width: `${Math.min(Number(getBatteryEstimation()) * 80, 100)}%`,
-                  backgroundColor: Number(getBatteryEstimation()) > 0.6 ? '#7C9EFF' : '#39ff14',
+                  backgroundColor: Number(getBatteryEstimation()) > 0.4 ? '#ff2d2d' : '#ffffff',
                 },
               ]}
             />
           </View>
           <Text style={styles.estFootnote}>
-            Target rate: &lt; 1% battery/hour. Current settings are highly optimized.
+            Target rate: &lt; 1% battery/hour. The widgets engine operates under throttled background cycles.
           </Text>
         </View>
 
@@ -121,7 +141,8 @@ export const SettingsScreen: React.FC = () => {
           <Switch
             value={settings.autoRefresh}
             onValueChange={(val) => handleToggle('autoRefresh', val)}
-            trackColor={{ false: '#333', true: '#007aff' }}
+            trackColor={{ false: '#222224', true: '#ffffff' }}
+            thumbColor={settings.autoRefresh ? '#000000' : '#8e8e93'}
           />
         </View>
 
@@ -146,7 +167,7 @@ export const SettingsScreen: React.FC = () => {
                   }}
                 >
                   <Text style={[styles.selectorBtnText, settings.refreshInterval === interval && styles.activeSelectorBtnText]}>
-                    {interval === 'realtime' ? 'LIVE' : interval}
+                    {interval === 'realtime' ? 'LIVE' : interval.toUpperCase()}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -162,7 +183,8 @@ export const SettingsScreen: React.FC = () => {
           <Switch
             value={settings.batterySaver}
             onValueChange={(val) => handleToggle('batterySaver', val)}
-            trackColor={{ false: '#333', true: '#39ff14' }}
+            trackColor={{ false: '#222224', true: '#ffffff' }}
+            thumbColor={settings.batterySaver ? '#000000' : '#8e8e93'}
           />
         </View>
       </View>
@@ -179,7 +201,8 @@ export const SettingsScreen: React.FC = () => {
           <Switch
             value={settings.hapticsEnabled}
             onValueChange={(val) => handleToggle('hapticsEnabled', val)}
-            trackColor={{ false: '#333', true: '#007aff' }}
+            trackColor={{ false: '#222224', true: '#ffffff' }}
+            thumbColor={settings.hapticsEnabled ? '#000000' : '#8e8e93'}
           />
         </View>
 
@@ -191,14 +214,15 @@ export const SettingsScreen: React.FC = () => {
           <Switch
             value={settings.soundEnabled}
             onValueChange={(val) => handleToggle('soundEnabled', val)}
-            trackColor={{ false: '#333', true: '#007aff' }}
+            trackColor={{ false: '#222224', true: '#ffffff' }}
+            thumbColor={settings.soundEnabled ? '#000000' : '#8e8e93'}
           />
         </View>
 
         {/* Sound triggers */}
         {settings.soundEnabled && (
-          <View style={{ marginTop: 10 }}>
-            <Text style={styles.settingDesc}>Test Sound Effects:</Text>
+          <View style={{ marginTop: 14 }}>
+            <Text style={styles.settingDesc}>TEST SOUND EFFECTS:</Text>
             <View style={styles.soundTestGrid}>
               {(['click', 'apply', 'success', 'error'] as const).map((snd) => (
                 <TouchableOpacity
@@ -224,7 +248,7 @@ export const SettingsScreen: React.FC = () => {
         </View>
         <View style={styles.diagRow}>
           <Text style={styles.diagLabel}>Persistence Store</Text>
-          <Text style={[styles.diagValue, { color: '#39ff14' }]}>MMKV CACHE ACTIVE</Text>
+          <Text style={[styles.diagValue, { color: '#ff2d2d' }]}>MMKV CACHE ACTIVE</Text>
         </View>
         
         <TouchableOpacity
@@ -236,12 +260,12 @@ export const SettingsScreen: React.FC = () => {
             showToast('Active widgets canvas cleared!', 'info');
           }}
         >
-          <LucideIcons.Trash2 size={13} color="#ffffff" />
-          <Text style={styles.clearAllText}>Clear Preview Canvas</Text>
+          <LucideIcons.Trash2 size={13} color="#ff2d2d" />
+          <Text style={styles.clearAllText}>CLEAR PREVIEW CANVAS</Text>
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.versionFooter}>NOS Gallery Studio v1.0.0 • Google DeepMind Agentic Coding</Text>
+      <Text style={styles.versionFooter}>NOS GALLERY STUDIO v1.0.0 • GOOGLE DEEPMIND ANTIGRAVITY</Text>
     </ScrollView>
   );
 };
@@ -249,22 +273,45 @@ export const SettingsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    paddingBottom: 40,
     backgroundColor: '#000000',
     gap: 16,
   },
+  header: {
+    marginBottom: 8,
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  headerTitle: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '900',
+    letterSpacing: 2,
+  },
+  headerSubtitle: {
+    color: '#8e8e93',
+    fontSize: 11,
+    lineHeight: 15,
+  },
+  headerDivider: {
+    height: 1,
+    backgroundColor: '#1f1f22',
+    marginTop: 12,
+  },
   sectionCard: {
-    backgroundColor: '#1c1c1e',
+    backgroundColor: '#0b0b0c',
     borderRadius: 16,
-    padding: 14,
+    padding: 16,
     borderWidth: 1,
-    borderColor: '#222',
+    borderColor: '#1f1f22',
   },
   sectionHeader: {
     color: '#ffffff',
-    fontSize: 12,
-    fontWeight: 'bold',
-    letterSpacing: 1.2,
+    fontSize: 11.5,
+    fontWeight: '900',
+    letterSpacing: 1.5,
     textTransform: 'uppercase',
     marginBottom: 12,
   },
@@ -277,11 +324,11 @@ const styles = StyleSheet.create({
   settingRow: {
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#2c2c2e',
+    borderBottomColor: '#1a1a1c',
   },
   settingDetails: {
     flex: 1,
-    marginBottom: 6,
+    marginBottom: 8,
   },
   settingTitle: {
     color: '#ffffff',
@@ -295,49 +342,56 @@ const styles = StyleSheet.create({
   },
   selectorGroup: {
     flexDirection: 'row',
-    backgroundColor: '#2c2c2e',
-    borderRadius: 6,
+    backgroundColor: '#161618',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#242426',
     padding: 2,
-    marginTop: 4,
+    marginTop: 6,
   },
   selectorBtn: {
     flex: 1,
-    paddingVertical: 6,
+    paddingVertical: 8,
     alignItems: 'center',
-    borderRadius: 4,
+    borderRadius: 10,
   },
   activeSelectorBtn: {
-    backgroundColor: '#007aff',
+    backgroundColor: '#ffffff',
   },
   selectorBtnText: {
     color: '#8e8e93',
-    fontSize: 9,
-    fontWeight: 'bold',
+    fontSize: 9.5,
+    fontWeight: '900',
   },
   activeSelectorBtnText: {
-    color: '#ffffff',
+    color: '#000000',
   },
   themeChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    backgroundColor: '#2c2c2e',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#161618',
+    borderWidth: 1,
+    borderColor: '#242426',
     marginRight: 8,
   },
   activeThemeChip: {
-    backgroundColor: '#007aff',
+    backgroundColor: '#ffffff',
+    borderColor: '#ffffff',
   },
   themeChipText: {
     color: '#8e8e93',
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: '900',
   },
   activeThemeChipText: {
-    color: '#ffffff',
+    color: '#000000',
   },
   batteryEstimationPanel: {
-    backgroundColor: '#2c2c2e',
+    backgroundColor: '#161618',
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#242426',
     padding: 12,
     marginBottom: 10,
   },
@@ -348,30 +402,33 @@ const styles = StyleSheet.create({
   },
   estTitle: {
     color: '#8e8e93',
-    fontSize: 8,
-    letterSpacing: 1,
-    fontWeight: 'bold',
+    fontSize: 8.5,
+    letterSpacing: 1.5,
+    fontWeight: '900',
   },
   estValue: {
     color: '#ffffff',
-    fontSize: 15,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: '900',
   },
   estBarBg: {
-    height: 6,
-    backgroundColor: '#1c1c1e',
-    borderRadius: 3,
+    height: 8,
+    backgroundColor: '#0a0a0c',
+    borderRadius: 4,
     marginTop: 8,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#242426',
   },
   estBarFill: {
     height: '100%',
-    borderRadius: 3,
+    borderRadius: 4,
   },
   estFootnote: {
     color: '#666666',
-    fontSize: 8,
+    fontSize: 8.5,
     marginTop: 6,
+    lineHeight: 11,
   },
   soundTestGrid: {
     flexDirection: 'row',
@@ -384,52 +441,58 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
-    backgroundColor: '#2c2c2e',
-    paddingVertical: 6,
-    borderRadius: 6,
-    minWidth: 60,
+    gap: 6,
+    backgroundColor: '#161618',
+    borderWidth: 1,
+    borderColor: '#242426',
+    paddingVertical: 8,
+    borderRadius: 8,
+    minWidth: 70,
   },
   soundTestBtnText: {
     color: '#ffffff',
-    fontSize: 8,
-    fontWeight: 'bold',
+    fontSize: 8.5,
+    fontWeight: '900',
   },
   diagRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#2c2c2e',
+    borderBottomColor: '#1a1a1c',
   },
   diagLabel: {
     color: '#8e8e93',
-    fontSize: 11,
+    fontSize: 11.5,
   },
   diagValue: {
     color: '#ffffff',
-    fontSize: 11,
+    fontSize: 11.5,
     fontWeight: 'bold',
   },
   clearAllBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    backgroundColor: '#7C9EFF',
-    borderRadius: 8,
-    paddingVertical: 10,
-    marginTop: 12,
+    gap: 8,
+    backgroundColor: '#161618',
+    borderWidth: 1,
+    borderColor: '#ff2d2d',
+    borderRadius: 24,
+    paddingVertical: 12,
+    marginTop: 14,
   },
   clearAllText: {
-    color: '#ffffff',
+    color: '#ff2d2d',
     fontSize: 11,
-    fontWeight: 'bold',
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
   versionFooter: {
     color: '#444444',
     fontSize: 9,
     textAlign: 'center',
-    marginTop: 10,
+    marginTop: 12,
+    letterSpacing: 1,
   },
 });

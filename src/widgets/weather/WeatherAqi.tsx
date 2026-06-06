@@ -10,6 +10,7 @@ import Svg, { Circle } from 'react-native-svg';
 interface WeatherAqiProps {
   customizations: WidgetCustomizations;
   globalTheme: ThemeId;
+  interactive?: boolean;
 }
 
 const ARC_SIZE = 60;
@@ -41,6 +42,7 @@ const AqiGauge: React.FC<{ aqi: number; color: string }> = ({ aqi, color }) => {
 export const WeatherAqi: React.FC<WeatherAqiProps> = ({
   customizations,
   globalTheme,
+  interactive = false,
 }) => {
   const { accentColor } = useWidgetStyle(customizations, globalTheme);
 
@@ -50,6 +52,10 @@ export const WeatherAqi: React.FC<WeatherAqiProps> = ({
   const title = customizations.titleText || 'AIR QUALITY';
 
   useEffect(() => {
+    if (!interactive) {
+      setLoading(false);
+      return;
+    }
     let active = true;
     const load = async () => {
       const data = await fetchLiveWeather(51.5074, -0.1278);
@@ -57,7 +63,7 @@ export const WeatherAqi: React.FC<WeatherAqiProps> = ({
     };
     load();
     return () => { active = false; };
-  }, []);
+  }, [interactive]);
 
   if (loading || !weather) {
     return (

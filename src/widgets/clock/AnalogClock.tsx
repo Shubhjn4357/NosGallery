@@ -45,9 +45,15 @@ export const AnalogClock: React.FC<AnalogClockProps> = ({
         )}
 
         {/* Hands */}
-        <View style={[styles.hand, styles.hourHand, { transform: [{ rotate: `${angleHr}deg` }], backgroundColor: isLuxury ? '#dfba6b' : themeConfig.textColor }]} />
-        <View style={[styles.hand, styles.minuteHand, { transform: [{ rotate: `${angleMin}deg` }], backgroundColor: isLuxury ? '#dfba6b' : themeConfig.textColor }]} />
-        <View style={[styles.hand, styles.secondHand, { transform: [{ rotate: `${angleSec}deg` }], backgroundColor: isLuxury ? '#dfba6b' : accentColor }]} />
+        <View style={[styles.handContainer, { height: 28, transform: [{ rotate: `${angleHr}deg` }] }]}>
+          <View style={[styles.handVisible, { height: 14, width: 3, backgroundColor: isLuxury ? '#dfba6b' : themeConfig.textColor }]} />
+        </View>
+        <View style={[styles.handContainer, { height: 40, transform: [{ rotate: `${angleMin}deg` }] }]}>
+          <View style={[styles.handVisible, { height: 20, width: 2, backgroundColor: isLuxury ? '#dfba6b' : themeConfig.textColor }]} />
+        </View>
+        <View style={[styles.handContainer, { height: 46, transform: [{ rotate: `${angleSec}deg` }] }]}>
+          <View style={[styles.handVisible, { height: 23, width: 1, backgroundColor: isLuxury ? '#dfba6b' : accentColor }]} />
+        </View>
         <View style={[styles.centerPoint, { backgroundColor: isLuxury ? '#dfba6b' : accentColor }]} />
       </View>
     </View>
@@ -85,36 +91,18 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: '#fff',
   },
-  hand: {
+  handContainer: {
     position: 'absolute',
-    left: '50%',
-    bottom: '50%',
-    transformOrigin: 'bottom center',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+  },
+  handVisible: {
     borderRadius: 1,
-  },
-  hourHand: {
-    width: 3,
-    height: 14,
-    marginLeft: -1.5,
-  },
-  minuteHand: {
-    width: 2,
-    height: 20,
-    marginLeft: -1,
-  },
-  secondHand: {
-    width: 1,
-    height: 23,
-    marginLeft: -0.5,
   },
   centerPoint: {
     width: 4,
     height: 4,
     borderRadius: 2,
     position: 'absolute',
-    left: '50%',
-    top: '50%',
-    marginLeft: -2,
-    marginTop: -2,
   },
 });

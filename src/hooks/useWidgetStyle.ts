@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ViewStyle, TextStyle } from 'react-native';
+import { ViewStyle, TextStyle, Platform } from 'react-native';
 import { ThemeId, themes, ThemeConfig } from '../themes/themes';
 import { getFontStyle } from '../fonts/fonts';
 import { WidgetCustomizations } from '../store/widgetStore';
@@ -53,38 +53,58 @@ export const useWidgetStyle = (customizations: WidgetCustomizations, globalTheme
 
     // 3. Resolve Shadow Style
     let shadowStyle: ViewStyle = {};
-    if (customizations.shadowType === 'glow') {
-      shadowStyle = {
-        shadowColor: accent,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.8,
-        shadowRadius: 12,
-        elevation: 8,
-      };
-    } else if (customizations.shadowType === 'soft') {
-      shadowStyle = {
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 6,
-        elevation: 2,
-      };
-    } else if (customizations.shadowType === 'medium') {
-      shadowStyle = {
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.2,
-        shadowRadius: 10,
-        elevation: 5,
-      };
-    } else if (customizations.shadowType === 'hard') {
-      shadowStyle = {
-        shadowColor: themeConfig.textColor,
-        shadowOffset: { width: 4, height: 4 },
-        shadowOpacity: 0.8,
-        shadowRadius: 0,
-        elevation: 4,
-      };
+    if (Platform.OS === 'web') {
+      if (customizations.shadowType === 'glow') {
+        shadowStyle = {
+          boxShadow: `0px 0px 12px ${accent}`,
+        } as any;
+      } else if (customizations.shadowType === 'soft') {
+        shadowStyle = {
+          boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)',
+        } as any;
+      } else if (customizations.shadowType === 'medium') {
+        shadowStyle = {
+          boxShadow: '0px 6px 10px rgba(0, 0, 0, 0.2)',
+        } as any;
+      } else if (customizations.shadowType === 'hard') {
+        shadowStyle = {
+          boxShadow: `4px 4px 0px ${themeConfig.textColor}`,
+        } as any;
+      }
+    } else {
+      if (customizations.shadowType === 'glow') {
+        shadowStyle = {
+          shadowColor: accent,
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: 0.8,
+          shadowRadius: 12,
+          elevation: 8,
+        };
+      } else if (customizations.shadowType === 'soft') {
+        shadowStyle = {
+          shadowColor: '#000000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.1,
+          shadowRadius: 6,
+          elevation: 2,
+        };
+      } else if (customizations.shadowType === 'medium') {
+        shadowStyle = {
+          shadowColor: '#000000',
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: 0.2,
+          shadowRadius: 10,
+          elevation: 5,
+        };
+      } else if (customizations.shadowType === 'hard') {
+        shadowStyle = {
+          shadowColor: themeConfig.textColor,
+          shadowOffset: { width: 4, height: 4 },
+          shadowOpacity: 0.8,
+          shadowRadius: 0,
+          elevation: 4,
+        };
+      }
     }
 
     // 4. Resolve Typography Styles

@@ -9,6 +9,7 @@ import { ThemeId } from '../../themes/themes';
 interface FinanceStockCryptoProps {
   customizations: WidgetCustomizations;
   globalTheme: ThemeId;
+  interactive?: boolean;
 }
 
 const SPARK_DATA = [62, 68, 65, 72, 69, 75, 71, 78, 73, 80, 77, 84];
@@ -16,6 +17,7 @@ const SPARK_DATA = [62, 68, 65, 72, 69, 75, 71, 78, 73, 80, 77, 84];
 export const FinanceStockCrypto: React.FC<FinanceStockCryptoProps> = ({
   customizations,
   globalTheme,
+  interactive = false,
 }) => {
   const { accentColor } = useWidgetStyle(customizations, globalTheme);
 
@@ -26,6 +28,10 @@ export const FinanceStockCrypto: React.FC<FinanceStockCryptoProps> = ({
   const title = customizations.titleText || 'BTC / USD';
 
   useEffect(() => {
+    if (!interactive) {
+      setLoading(false);
+      return;
+    }
     let active = true;
     const load = async () => {
       const data = await fetchBitcoinPrice();
@@ -41,9 +47,9 @@ export const FinanceStockCrypto: React.FC<FinanceStockCryptoProps> = ({
           Animated.timing(flashAnim, { toValue: 1, duration: 180, useNativeDriver: true }),
         ]).start();
       }
-    }, 5000);
+    }, 60000);
     return () => { active = false; clearInterval(interval); };
-  }, []);
+  }, [interactive]);
 
   const getTickerData = () => {
     if (!finance) return { symbol: 'BTC', price: 67490, change: 0.8 };

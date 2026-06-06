@@ -1,8 +1,9 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ImageBackground, TouchableOpacity, ScrollView, Dimensions, PanResponder, Animated, Modal, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ImageBackground, TouchableOpacity, ScrollView, Dimensions, PanResponder, Animated, Modal, TextInput, Platform } from 'react-native';
 import { useWidgetStore, ActiveWidget, WidgetCustomizations } from '../store/widgetStore';
 import { WidgetRenderer } from '../widgets/widgetRenderer';
 import { useFeedback } from '../hooks/useFeedback';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DotGridBackground } from '../components/DotGridBackground';
 import { themes } from '../themes/themes';
 import { fonts } from '../fonts/fonts';
@@ -26,6 +27,7 @@ const BORDER_RADII = [0, 8, 12, 16, 20, 24, 32];
 const SHADOW_TYPES: WidgetCustomizations['shadowType'][] = ['none', 'soft', 'medium', 'hard', 'glow'];
 
 export const PreviewContainer: React.FC = () => {
+  const insets = useSafeAreaInsets();
   const {
     widgets,
     selectedWallpaper,
@@ -176,7 +178,7 @@ export const PreviewContainer: React.FC = () => {
       >
         {editingWidget && (
           <View style={styles.modalOverlay}>
-            <View style={styles.drawerSheet}>
+            <View style={[styles.drawerSheet, { paddingBottom: insets.bottom + 16 }]}>
               {/* Drawer Header */}
               <View style={styles.drawerHeader}>
                 <TouchableOpacity
@@ -190,7 +192,7 @@ export const PreviewContainer: React.FC = () => {
                 </TouchableOpacity>
                 <Text style={styles.drawerTitle}>CUSTOMIZE WIDGET</Text>
                 <TouchableOpacity onPress={() => setShowDeleteAlert(true)} style={styles.deleteBtn}>
-                  <LucideIcons.Trash2 size={16} color="#7C9EFF" />
+                  <LucideIcons.Trash2 size={16} color="#ff2d2d" />
                 </TouchableOpacity>
               </View>
 
@@ -210,10 +212,17 @@ export const PreviewContainer: React.FC = () => {
                       backgroundColor: editingWidget.customizations.accentColor || '#ff9500',
                       borderRadius: 70,
                       opacity: 0.15,
-                      shadowColor: editingWidget.customizations.accentColor || '#ff9500',
-                      shadowOffset: { width: 0, height: 0 },
-                      shadowOpacity: 0.9,
-                      shadowRadius: 40,
+                      ...Platform.select({
+                        web: {
+                          boxShadow: `0px 0px 40px ${editingWidget.customizations.accentColor || '#ff9500'}`,
+                        },
+                        default: {
+                          shadowColor: editingWidget.customizations.accentColor || '#ff9500',
+                          shadowOffset: { width: 0, height: 0 },
+                          shadowOpacity: 0.9,
+                          shadowRadius: 40,
+                        },
+                      }),
                       elevation: 10,
                       zIndex: 1,
                     }}
@@ -285,7 +294,7 @@ export const PreviewContainer: React.FC = () => {
                     ))}
                   </View>
 
-                  {/* Color Palette (only if solid background) */}
+                   {/* Color Palette (only if solid background) */}
                   {editingWidget.customizations.backgroundType === 'solid' && (
                     <>
                       <Text style={styles.inputLabel}>Background Color</Text>
@@ -296,7 +305,7 @@ export const PreviewContainer: React.FC = () => {
                             style={[
                               styles.colorCircle,
                               { backgroundColor: c },
-                              editingWidget.customizations.backgroundColor === c && { borderWidth: 2, borderColor: '#7C9EFF' },
+                              editingWidget.customizations.backgroundColor === c && { borderWidth: 2, borderColor: '#ffffff' },
                             ]}
                             onPress={() => handleUpdate({ backgroundColor: c })}
                           />
@@ -315,7 +324,7 @@ export const PreviewContainer: React.FC = () => {
                       ]}
                       onPress={() => handleUpdate({ themeOverride: 'none' })}
                     >
-                      <Text style={styles.choiceChipText}>Default</Text>
+                      <Text style={[styles.choiceChipText, (!editingWidget.customizations.themeOverride || editingWidget.customizations.themeOverride === 'none') && styles.activeChoiceChipText]}>Default</Text>
                     </TouchableOpacity>
                     {Object.values(themes).map((t) => (
                       <TouchableOpacity
@@ -326,7 +335,7 @@ export const PreviewContainer: React.FC = () => {
                         ]}
                         onPress={() => handleUpdate({ themeOverride: t.id })}
                       >
-                        <Text style={styles.choiceChipText}>{t.name}</Text>
+                        <Text style={[styles.choiceChipText, editingWidget.customizations.themeOverride === t.id && styles.activeChoiceChipText]}>{t.name}</Text>
                       </TouchableOpacity>
                     ))}
                   </ScrollView>
@@ -343,7 +352,7 @@ export const PreviewContainer: React.FC = () => {
                         ]}
                         onPress={() => handleUpdate({ fontId: f.id })}
                       >
-                        <Text style={styles.choiceChipText}>{f.name}</Text>
+                        <Text style={[styles.choiceChipText, editingWidget.customizations.fontId === f.id && styles.activeChoiceChipText]}>{f.name}</Text>
                       </TouchableOpacity>
                     ))}
                   </ScrollView>
@@ -360,7 +369,7 @@ export const PreviewContainer: React.FC = () => {
                         ]}
                         onPress={() => handleUpdate({ borderRadius: r })}
                       >
-                        <Text style={styles.choiceChipText}>{r}px</Text>
+                        <Text style={[styles.choiceChipText, editingWidget.customizations.borderRadius === r && styles.activeChoiceChipText]}>{r}px</Text>
                       </TouchableOpacity>
                     ))}
                   </ScrollView>
@@ -390,10 +399,10 @@ export const PreviewContainer: React.FC = () => {
                     {[0, 20, 40, 60, 80].map((val) => (
                       <TouchableOpacity
                         key={val}
-                        style={[styles.sliderSegment, editingWidget.customizations.transparency === val && { backgroundColor: '#7C9EFF' }]}
+                        style={[styles.sliderSegment, editingWidget.customizations.transparency === val && { backgroundColor: '#ffffff' }]}
                         onPress={() => handleUpdate({ transparency: val })}
                       >
-                        <Text style={[styles.sliderLabelText, editingWidget.customizations.transparency === val && { color: '#fff' }]}>
+                        <Text style={[styles.sliderLabelText, editingWidget.customizations.transparency === val && { color: '#000000' }]}>
                           {val}
                         </Text>
                       </TouchableOpacity>
@@ -403,7 +412,7 @@ export const PreviewContainer: React.FC = () => {
               </ScrollView>
 
               {/* Bottom Fixed Action CTAs */}
-              <View style={styles.drawerFooter}>
+              <View style={[styles.drawerFooter, { paddingBottom: Math.max(insets.bottom, 20) }]}>
                 <AnimatedSlidingButton
                   onSwipeSuccess={handleAddToHomeScreen}
                   accentColor={editingWidget.customizations.accentColor}
@@ -720,7 +729,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   activeSegmentBtn: {
-    backgroundColor: '#7C9EFF',
+    backgroundColor: '#ffffff',
   },
   segmentBtnText: {
     color: '#8e8e93',
@@ -728,7 +737,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   activeSegmentBtnText: {
-    color: '#ffffff',
+    color: '#000000',
   },
   colorPalette: {
     flexDirection: 'row',
@@ -754,12 +763,15 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   activeChoiceChip: {
-    backgroundColor: '#7C9EFF',
+    backgroundColor: '#ffffff',
   },
   choiceChipText: {
     color: '#ffffff',
     fontSize: 10.5,
     fontWeight: 'bold',
+  },
+  activeChoiceChipText: {
+    color: '#000000',
   },
   sliderBar: {
     flexDirection: 'row',
@@ -796,10 +808,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    shadowColor: '#ffffff',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
+    ...Platform.select({
+      web: {
+        boxShadow: '0px 4px 8px rgba(255, 255, 255, 0.2)',
+      },
+      default: {
+        shadowColor: '#ffffff',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+      },
+    }),
     elevation: 4,
   },
   addHomeBtnText: {

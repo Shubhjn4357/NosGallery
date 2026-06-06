@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform } from 'react-native';
 import { useWidgetStore, ActiveWidget } from '../store/widgetStore';
 import { useFeedback } from '../hooks/useFeedback';
 import * as LucideIcons from 'lucide-react-native';
@@ -415,10 +415,17 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     alignItems: 'center',
     position: 'relative',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
+    ...Platform.select({
+      web: {
+        boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.2)',
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
+      },
+    }),
     elevation: 3,
   },
   cardGlow: {
@@ -464,10 +471,17 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 5,
     paddingHorizontal: 12,
-    shadowColor: '#ffffff',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    ...Platform.select({
+      web: {
+        boxShadow: '0px 2px 4px rgba(255, 255, 255, 0.2)',
+      },
+      default: {
+        shadowColor: '#ffffff',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+      },
+    }),
   },
   downloadBtnText: {
     color: '#000000',

@@ -4,7 +4,7 @@ import Svg, { Defs, Pattern, Rect, Circle } from 'react-native-svg';
 
 export const DotGridBackground: React.FC = () => {
   return (
-    <View style={styles.container} pointerEvents="none">
+    <View style={styles.container}>
       <Svg width="100%" height="100%">
         <Defs>
           <Pattern
@@ -26,5 +26,6 @@ const styles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFill,
     zIndex: 0,
+    pointerEvents: 'none',
   },
 });
