@@ -1,7 +1,12 @@
+import { GitBranch } from 'lucide-react-native';
+
+const LucideIcons = {
+  GitBranch,
+};
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
-import * as LucideIcons from 'lucide-react-native';
+
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { fetchGithubStats, LiveGithubData } from '../../services/apiService';
 import { ThemeId } from '../../themes/themes';

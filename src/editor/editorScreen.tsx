@@ -1,3 +1,13 @@
+import { Download, Edit3, LogIn, PlusCircle, Sliders, Sparkles } from 'lucide-react-native';
+
+const LucideIcons = {
+  Download,
+  Edit3,
+  LogIn,
+  PlusCircle,
+  Sliders,
+  Sparkles,
+};
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform } from 'react-native';
 import { useWidgetStore, ActiveWidget, WidgetCustomizations } from '../store/widgetStore';
@@ -7,7 +17,6 @@ import { themes } from '../themes/themes';
 import { fonts } from '../fonts/fonts';
 import { useFeedback } from '../hooks/useFeedback';
 import { DotGridBackground } from '../components/DotGridBackground';
-import * as LucideIcons from 'lucide-react-native';
 
 const CATEGORIES: { id: WidgetCategory; name: string }[] = [
   { id: 'clock', name: 'Clocks' },

@@ -1,7 +1,12 @@
+import { Calendar } from 'lucide-react-native';
+
+const LucideIcons = {
+  Calendar,
+};
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import * as LucideIcons from 'lucide-react-native';
+
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';
 

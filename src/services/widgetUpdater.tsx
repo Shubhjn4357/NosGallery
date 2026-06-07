@@ -8,33 +8,49 @@ import { NOSWidgetComponent } from '../components/NOSWidgetComponent';
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 const isAndroid = Platform.OS === 'android';
 
-export const syncOSWidget = async () => {
+export const syncOSWidget = async (passedWidgets?: any[], passedTheme?: string) => {
   if (!isAndroid || isExpoGo) {
     return;
   }
 
   try {
+    const widgetNames = [
+      'NOSClockWidget',
+      'NOSCalendarWidget',
+      'NOSWeatherWidget',
+      'NOSProductivityWidget',
+      'NOSHealthWidget',
+      'NOSFinanceWidget',
+      'NOSDeveloperWidget',
+      'NOSSocialWidget',
+      'NOSSmartHomeWidget',
+      'NOSAiWidget'
+    ];
 
-    await requestWidgetUpdate({
-      widgetName: 'NOSGalleryWidget',
-      renderWidget: async () => {
-        let widgets = [];
-        let activeTheme = 'nos';
-        try {
-          const storageData = await AsyncStorage.getItem('nos-gallery-widget-storage');
-          if (storageData) {
-            const parsed = JSON.parse(storageData);
-            if (parsed.state) {
-              widgets = parsed.state.widgets || [];
-              activeTheme = parsed.state.activeTheme || 'nos';
+    for (const name of widgetNames) {
+      await requestWidgetUpdate({
+        widgetName: name,
+        renderWidget: async () => {
+          let widgets = passedWidgets || [];
+          let activeTheme = passedTheme || 'nos';
+          if (!passedWidgets) {
+            try {
+              const storageData = await AsyncStorage.getItem('nos-gallery-widget-storage');
+              if (storageData) {
+                const parsed = JSON.parse(storageData);
+                if (parsed.state) {
+                  widgets = parsed.state.widgets || [];
+                  activeTheme = parsed.state.activeTheme || 'nos';
+                }
+              }
+            } catch (err) {
+              console.log('[Widget Updater] Storage read error:', err);
             }
           }
-        } catch (err) {
-          console.log('[Widget Updater] Storage read error:', err);
+          return <NOSWidgetComponent widgets={widgets} activeTheme={activeTheme} widgetName={name} />;
         }
-        return <NOSWidgetComponent widgets={widgets} activeTheme={activeTheme} />;
-      }
-    });
+      });
+    }
   } catch (err) {
     console.log('[Widget Updater] Sync failed:', err);
   }

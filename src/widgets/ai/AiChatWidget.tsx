@@ -1,6 +1,12 @@
+import { Send, User } from 'lucide-react-native';
+
+const LucideIcons = {
+  Send,
+  User,
+};
 import React from 'react';
 import { View, Text, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
-import * as LucideIcons from 'lucide-react-native';
+
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';
 import { useWidgetStore, WidgetCustomizations } from '../../store/widgetStore';

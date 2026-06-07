@@ -1,7 +1,13 @@
+import { Home, Lightbulb } from 'lucide-react-native';
+
+const LucideIcons = {
+  Home,
+  Lightbulb,
+};
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
-import * as LucideIcons from 'lucide-react-native';
+
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';
 
@@ -33,18 +39,24 @@ export const SmartHomeControls: React.FC<SmartHomeControlsProps> = ({
       useNativeDriver: true,
     }).start();
 
-    if (lightOn) {
-      Animated.loop(
+    let loopAnim: Animated.CompositeAnimation | null = null;
+    if (lightOn && interactive) {
+      loopAnim = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, { toValue: 1.08, duration: 1200, useNativeDriver: true }),
           Animated.timing(pulseAnim, { toValue: 1.0, duration: 1200, useNativeDriver: true }),
         ])
-      ).start();
+      );
+      loopAnim.start();
     } else {
       pulseAnim.stopAnimation();
       pulseAnim.setValue(1.0);
     }
-  }, [lightOn, glowAnim, pulseAnim]);
+
+    return () => {
+      if (loopAnim) loopAnim.stop();
+    };
+  }, [lightOn, glowAnim, pulseAnim, interactive]);
 
   const isLight = customizations.backgroundColor === '#ffffff';
   const textColor = isLight ? '#000' : '#fff';

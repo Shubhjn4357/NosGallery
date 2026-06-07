@@ -1,8 +1,17 @@
+import { Layers, LayoutGrid, Plus, Search, Trash2 } from 'lucide-react-native';
+
+const LucideIcons = {
+  Layers,
+  LayoutGrid,
+  Plus,
+  Search,
+  Trash2,
+};
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform } from 'react-native';
 import { useWidgetStore, ActiveWidget } from '../store/widgetStore';
 import { useFeedback } from '../hooks/useFeedback';
-import * as LucideIcons from 'lucide-react-native';
+
 import { WidgetRenderer } from '../widgets/widgetRenderer';
 import { DotGridBackground } from '../components/DotGridBackground';
 

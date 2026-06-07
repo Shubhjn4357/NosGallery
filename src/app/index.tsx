@@ -1,3 +1,24 @@
+import { Calendar, CheckSquare, ChevronDown, Clock, CloudSun, Compass, Heart, Home, Layers, LayoutGrid, MessageSquare, Palette, Sliders, SlidersHorizontal, Sparkles, Terminal, TrendingUp } from 'lucide-react-native';
+
+const LucideIcons = {
+  Calendar,
+  CheckSquare,
+  ChevronDown,
+  Clock,
+  CloudSun,
+  Compass,
+  Heart,
+  Home,
+  Layers,
+  LayoutGrid,
+  MessageSquare,
+  Palette,
+  Sliders,
+  SlidersHorizontal,
+  Sparkles,
+  Terminal,
+  TrendingUp,
+};
 import React, { useState } from 'react';
 import {
   View,
@@ -23,7 +44,6 @@ import { themes, ThemeId } from '../themes/themes';
 import { fonts } from '../fonts/fonts';
 import { AnimatedSlidingButton } from '../components/AnimatedSlidingButton';
 import NosWidgetPinning from '../../modules/nos-widget-pinning/src/NosWidgetPinningModule';
-import * as LucideIcons from 'lucide-react-native';
 
 const { width: SW } = Dimensions.get('window');
 
@@ -213,6 +233,20 @@ export default function Index() {
     triggerHaptic('light');
   };
 
+  const getWidgetProviderName = (templateId: string) => {
+    if (templateId.startsWith('clock_')) return 'NOSClockWidget';
+    if (templateId.startsWith('calendar_')) return 'NOSCalendarWidget';
+    if (templateId.startsWith('weather_')) return 'NOSWeatherWidget';
+    if (templateId.startsWith('productivity_')) return 'NOSProductivityWidget';
+    if (templateId.startsWith('health_')) return 'NOSHealthWidget';
+    if (templateId.startsWith('finance_')) return 'NOSFinanceWidget';
+    if (templateId.startsWith('developer_')) return 'NOSDeveloperWidget';
+    if (templateId.startsWith('social_')) return 'NOSSocialWidget';
+    if (templateId.startsWith('smart_home_')) return 'NOSSmartHomeWidget';
+    if (templateId.startsWith('ai_')) return 'NOSAiWidget';
+    return 'NOSClockWidget';
+  };
+
   const handleAddToHomeScreen = async () => {
     if (!pendingWidget) return;
     
@@ -224,8 +258,8 @@ export default function Index() {
       triggerHaptic('success');
       triggerSound('success');
       
-      // NOSGalleryWidget is the registered provider class identifier
-      const success = await NosWidgetPinning.requestPinWidget('NOSGalleryWidget');
+      const providerName = getWidgetProviderName(pendingWidget.templateId);
+      const success = await NosWidgetPinning.requestPinWidget(providerName);
       if (success) {
         showToast('Widget pinning request sent to your launcher!', 'success');
       } else {

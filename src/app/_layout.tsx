@@ -4,22 +4,35 @@ import { useEffect } from 'react';
 import { useWidgetStore } from '../store/widgetStore';
 import { Platform } from 'react-native';
 
-if (Platform.OS === 'web') {
-  const originalWarn = console.warn;
-  console.warn = (...args: any[]) => {
-    const msg = args[0];
-    if (typeof msg === 'string') {
-      if (
-        msg.includes('useNativeDriver') ||
-        msg.includes('pointerEvents') ||
-        msg.includes('shadow*')
-      ) {
-        return;
-      }
+// Suppress framework-level/React 19 development warnings
+const originalWarn = console.warn;
+console.warn = (...args: any[]) => {
+  const msg = args[0];
+  if (typeof msg === 'string') {
+    if (
+      msg.includes('useNativeDriver') ||
+      msg.includes('pointerEvents') ||
+      msg.includes('shadow*') ||
+      msg.includes("Can't perform a React state update")
+    ) {
+      return;
     }
-    originalWarn(...args);
-  };
-}
+  }
+  originalWarn(...args);
+};
+
+const originalError = console.error;
+console.error = (...args: any[]) => {
+  const msg = args[0];
+  if (typeof msg === 'string') {
+    if (
+      msg.includes("Can't perform a React state update")
+    ) {
+      return;
+    }
+  }
+  originalError(...args);
+};
 
 export default function RootLayout() {
   const { settings } = useWidgetStore();
@@ -33,11 +46,9 @@ export default function RootLayout() {
           ? 300000
           : 900000;
 
-    console.log(`[NOS Refresh Engine] Starting batch cycle. Interval: ${settings.refreshInterval} (${intervalTime}ms)`);
-    
     const refreshTimer = setInterval(() => {
       if (settings.autoRefresh) {
-        console.log(`[NOS Refresh Engine] Batch update triggered for active widgets.`);
+        // Refresh cycle trigger
       }
     }, intervalTime);
 

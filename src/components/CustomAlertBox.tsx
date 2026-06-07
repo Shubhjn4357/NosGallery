@@ -1,6 +1,11 @@
+import { AlertTriangle, HelpCircle } from 'lucide-react-native';
+
+const LucideIcons = {
+  AlertTriangle,
+  HelpCircle,
+};
 import React from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Dimensions, Platform } from 'react-native';
-import * as LucideIcons from 'lucide-react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 

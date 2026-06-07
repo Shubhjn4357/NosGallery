@@ -1,3 +1,10 @@
+import { ChevronDown, Maximize2, Trash2 } from 'lucide-react-native';
+
+const LucideIcons = {
+  ChevronDown,
+  Maximize2,
+  Trash2,
+};
 import React, { useRef, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ImageBackground, TouchableOpacity, ScrollView, Dimensions, PanResponder, PanResponderInstance, Animated, Modal, TextInput, Platform } from 'react-native';
 import { useWidgetStore, ActiveWidget, WidgetCustomizations } from '../store/widgetStore';
@@ -9,7 +16,6 @@ import { themes } from '../themes/themes';
 import { fonts } from '../fonts/fonts';
 import { AnimatedSlidingButton } from '../components/AnimatedSlidingButton';
 import { CustomAlertBox } from '../components/CustomAlertBox';
-import * as LucideIcons from 'lucide-react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GRID_COLS = 4;

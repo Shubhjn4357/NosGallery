@@ -21,6 +21,10 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps) {
   }
 
   props.renderWidget(
-    <NOSWidgetComponent widgets={widgets} activeTheme={activeTheme} />
+    <NOSWidgetComponent
+      widgets={widgets}
+      activeTheme={activeTheme}
+      widgetName={props.widgetInfo.widgetName}
+    />
   );
 }

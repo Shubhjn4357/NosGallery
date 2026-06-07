@@ -339,7 +339,7 @@ export const useWidgetStore = create<WidgetState>()(
     };
 
     return {
-      widgets: [...state.widgets, newWidget],
+      widgets: [newWidget, ...state.widgets],
       selectedWidgetId: newWidget.id,
     };
   }),
@@ -384,7 +384,7 @@ export const useWidgetStore = create<WidgetState>()(
     };
 
     return {
-      widgets: [...state.widgets, copy],
+      widgets: [copy, ...state.widgets],
       selectedWidgetId: copy.id,
     };
   }),
@@ -452,7 +452,7 @@ export const useWidgetStore = create<WidgetState>()(
       id: `widget_${Date.now()}`,
     };
     return {
-      widgets: [...state.widgets, newWidget],
+      widgets: [newWidget, ...state.widgets],
       selectedWidgetId: newWidget.id,
       pendingWidget: null,
     };
@@ -482,7 +482,7 @@ export const useWidgetStore = create<WidgetState>()(
       y: state.widgets.length > 0 ? Math.max(...state.widgets.map(w => w.y + w.h)) : 0,
     };
     return {
-      widgets: [...state.widgets, newWidget],
+      widgets: [newWidget, ...state.widgets],
       selectedWidgetId: newWidget.id,
     };
   }),
@@ -525,7 +525,7 @@ useWidgetStore.subscribe((state, prevState) => {
     const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
     if (!isExpoGo) {
       if (state.widgets !== prevState.widgets || state.activeTheme !== prevState.activeTheme) {
-        syncOSWidget();
+        syncOSWidget(state.widgets, state.activeTheme);
       }
     }
   }

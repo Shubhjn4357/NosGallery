@@ -1,7 +1,11 @@
+import { Check } from 'lucide-react-native';
+
+const LucideIcons = {
+  Check,
+};
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import * as LucideIcons from 'lucide-react-native';
 
 interface FlipClockProps {
   currentTime: Date;

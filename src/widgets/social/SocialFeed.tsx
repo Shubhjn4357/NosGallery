@@ -1,7 +1,12 @@
+import { MessageSquare } from 'lucide-react-native';
+
+const LucideIcons = {
+  MessageSquare,
+};
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
-import * as LucideIcons from 'lucide-react-native';
+
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';
 
@@ -30,6 +35,7 @@ export const SocialFeed: React.FC<SocialFeedProps> = ({
 
   // Auto-cycle through feed items
   useEffect(() => {
+    if (!interactive) return;
     const interval = setInterval(() => {
       Animated.timing(slideAnim, {
         toValue: -20,
@@ -46,7 +52,7 @@ export const SocialFeed: React.FC<SocialFeedProps> = ({
       });
     }, 3500);
     return () => clearInterval(interval);
-  }, [slideAnim]);
+  }, [slideAnim, interactive]);
 
   const item = FEED_ITEMS[activeIdx];
 

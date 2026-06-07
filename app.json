@@ -35,8 +35,107 @@
         {
           "widgets": [
             {
-              "name": "NOSGalleryWidget",
-              "label": "NOS Gallery Widget",
+              "name": "NOSClockWidget",
+              "label": "NOS Clock Widget",
+              "minWidth": "160dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "updatePeriodMillis": 900000,
+              "resizeMode": "horizontal|vertical",
+              "previewImage": "./assets/images/logo_vibrant.png"
+            },
+            {
+              "name": "NOSCalendarWidget",
+              "label": "NOS Calendar Widget",
+              "minWidth": "160dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "updatePeriodMillis": 900000,
+              "resizeMode": "horizontal|vertical",
+              "previewImage": "./assets/images/logo_vibrant.png"
+            },
+            {
+              "name": "NOSWeatherWidget",
+              "label": "NOS Weather Widget",
+              "minWidth": "160dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "updatePeriodMillis": 900000,
+              "resizeMode": "horizontal|vertical",
+              "previewImage": "./assets/images/logo_vibrant.png"
+            },
+            {
+              "name": "NOSProductivityWidget",
+              "label": "NOS Tasks Widget",
+              "minWidth": "160dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "updatePeriodMillis": 900000,
+              "resizeMode": "horizontal|vertical",
+              "previewImage": "./assets/images/logo_vibrant.png"
+            },
+            {
+              "name": "NOSHealthWidget",
+              "label": "NOS Health Widget",
+              "minWidth": "160dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "updatePeriodMillis": 900000,
+              "resizeMode": "horizontal|vertical",
+              "previewImage": "./assets/images/logo_vibrant.png"
+            },
+            {
+              "name": "NOSFinanceWidget",
+              "label": "NOS Finance Widget",
+              "minWidth": "160dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "updatePeriodMillis": 900000,
+              "resizeMode": "horizontal|vertical",
+              "previewImage": "./assets/images/logo_vibrant.png"
+            },
+            {
+              "name": "NOSDeveloperWidget",
+              "label": "NOS Developer Widget",
+              "minWidth": "160dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "updatePeriodMillis": 900000,
+              "resizeMode": "horizontal|vertical",
+              "previewImage": "./assets/images/logo_vibrant.png"
+            },
+            {
+              "name": "NOSSocialWidget",
+              "label": "NOS Social Widget",
+              "minWidth": "160dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "updatePeriodMillis": 900000,
+              "resizeMode": "horizontal|vertical",
+              "previewImage": "./assets/images/logo_vibrant.png"
+            },
+            {
+              "name": "NOSSmartHomeWidget",
+              "label": "NOS Smart Home Widget",
+              "minWidth": "160dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "updatePeriodMillis": 900000,
+              "resizeMode": "horizontal|vertical",
+              "previewImage": "./assets/images/logo_vibrant.png"
+            },
+            {
+              "name": "NOSAiWidget",
+              "label": "NOS AI Widget",
               "minWidth": "160dp",
               "minHeight": "110dp",
               "targetCellWidth": 2,

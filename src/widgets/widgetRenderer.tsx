@@ -1,6 +1,22 @@
+import { Calendar, CheckSquare, Clock, CloudSun, Coins, Heart, Home, Layout, MessageSquare, Sparkles, Terminal, Timer } from 'lucide-react-native';
+
+const LucideIcons = {
+  Calendar,
+  CheckSquare,
+  Clock,
+  CloudSun,
+  Coins,
+  Heart,
+  Home,
+  Layout,
+  MessageSquare,
+  Sparkles,
+  Terminal,
+  Timer,
+};
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import * as LucideIcons from 'lucide-react-native';
+
 import { useWidgetStore, ActiveWidget } from '../store/widgetStore';
 import { ThemeId } from '../themes/themes';
 import { useWidgetStyle } from '../hooks/useWidgetStyle';
@@ -77,6 +93,8 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
 
   // Timers and Ticking Loops
   useEffect(() => {
+    if (!interactive) return;
+
     // Clock Ticker
     const clockTimer = setInterval(() => {
       setCurrentTime(new Date());
@@ -86,7 +104,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
       clearInterval(clockTimer);
       if (swInterval.current) clearInterval(swInterval.current);
     };
-  }, []);
+  }, [interactive]);
 
   // Stopwatch controls
   const handleStopwatch = () => {

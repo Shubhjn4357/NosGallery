@@ -1,9 +1,13 @@
+import { Droplets } from 'lucide-react-native';
+
+const LucideIcons = {
+  Droplets,
+};
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';
-import * as LucideIcons from 'lucide-react-native';
 
 interface WaterWidgetProps {
   customizations: WidgetCustomizations;
@@ -26,13 +30,19 @@ export const WaterWidget: React.FC<WaterWidgetProps> = ({
   const title = customizations.titleText || 'HYDRATION';
 
   useEffect(() => {
-    Animated.loop(
+    if (!interactive) {
+      waveAnim.setValue(0);
+      return;
+    }
+    const anim = Animated.loop(
       Animated.sequence([
         Animated.timing(waveAnim, { toValue: 1, duration: 2200, useNativeDriver: true }),
         Animated.timing(waveAnim, { toValue: 0, duration: 2200, useNativeDriver: true }),
       ])
-    ).start();
-  }, [waveAnim]);
+    );
+    anim.start();
+    return () => anim.stop();
+  }, [waveAnim, interactive]);
 
   const waveTranslate = waveAnim.interpolate({
     inputRange: [0, 1],

@@ -1,7 +1,12 @@
+import { Wind } from 'lucide-react-native';
+
+const LucideIcons = {
+  Wind,
+};
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
-import * as LucideIcons from 'lucide-react-native';
+
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { fetchLiveWeather, LiveWeatherData } from '../../services/apiService';
 import { ThemeId } from '../../themes/themes';
@@ -22,7 +27,7 @@ const AqiGauge: React.FC<{ aqi: number; color: string }> = ({ aqi, color }) => {
   const fillPct = Math.min(aqi / 200, 1); // normalise to 0-200 scale
   const strokeDashoffset = circumference - fillPct * circumference;
   return (
-    <Svg width={ARC_SIZE} height={ARC_SIZE}>
+    <Svg width={ARC_SIZE} height={ARC_SIZE} style={{ transform: [{ rotate: '-90deg' }] }}>
       <Circle cx={ARC_SIZE / 2} cy={ARC_SIZE / 2} r={radius} stroke="rgba(120,120,120,0.12)" strokeWidth={STROKE} fill="transparent" />
       <Circle
         cx={ARC_SIZE / 2} cy={ARC_SIZE / 2} r={radius}
@@ -31,9 +36,6 @@ const AqiGauge: React.FC<{ aqi: number; color: string }> = ({ aqi, color }) => {
         strokeDashoffset={strokeDashoffset}
         strokeLinecap="round"
         fill="transparent"
-        rotation="-90"
-        originX={ARC_SIZE / 2}
-        originY={ARC_SIZE / 2}
       />
     </Svg>
   );

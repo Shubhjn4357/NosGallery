@@ -1,7 +1,16 @@
+import { Pause, Play, RefreshCw, RotateCcw, Target } from 'lucide-react-native';
+
+const LucideIcons = {
+  Pause,
+  Play,
+  RefreshCw,
+  RotateCcw,
+  Target,
+};
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
-import * as LucideIcons from 'lucide-react-native';
+
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';
 

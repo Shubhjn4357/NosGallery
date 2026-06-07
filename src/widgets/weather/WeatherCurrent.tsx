@@ -1,7 +1,14 @@
+import { Droplets, Thermometer, Wind } from 'lucide-react-native';
+
+const LucideIcons = {
+  Droplets,
+  Thermometer,
+  Wind,
+};
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
-import * as LucideIcons from 'lucide-react-native';
+
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { fetchLiveWeather, LiveWeatherData } from '../../services/apiService';
 import { ThemeId } from '../../themes/themes';

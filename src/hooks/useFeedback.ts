@@ -1,11 +1,10 @@
 import { useCallback } from 'react';
 import * as Haptics from 'expo-haptics';
-import { useAudioPlayer } from 'expo-audio';
+import { createAudioPlayer } from 'expo-audio';
 import { useWidgetStore } from '../store/widgetStore';
 
 export const useFeedback = () => {
   const { settings } = useWidgetStore();
-  const player = useAudioPlayer(null);
 
   const triggerHaptic = useCallback(
     async (type: 'selection' | 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error') => {
@@ -67,14 +66,21 @@ export const useFeedback = () => {
         }
 
         if (soundUrl) {
-          player.replace(soundUrl);
+          const player = createAudioPlayer(soundUrl);
           player.play();
+          setTimeout(() => {
+            try {
+              player.release();
+            } catch (err) {
+              console.log('[Audio release failed]:', err);
+            }
+          }, 3000);
         }
-      } catch {
-        console.log(`[Sound Fallback] ${soundType} playback failed`);
+      } catch (err) {
+        console.log(`[Sound Fallback] ${soundType} playback failed:`, err);
       }
     },
-    [settings.soundEnabled, player]
+    [settings.soundEnabled]
   );
 
   return { triggerHaptic, triggerSound };

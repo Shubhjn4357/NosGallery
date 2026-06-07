@@ -65,6 +65,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
+      - name: Clean existing android folder
+        run: rm -rf android
+
       # expo-dev-client IS included via app.json plugins — prebuild picks it up automatically
       - name: Expo Prebuild (dev, with expo-dev-client)
         run: pnpm exec expo prebuild --platform android --no-install
@@ -143,6 +146,9 @@ jobs:
         run: node scripts/eas-pre-install.js
         env:
           EAS_BUILD_PROFILE: production
+
+      - name: Clean existing android folder
+        run: rm -rf android
 
       # Release builds also set NODE_ENV=production to tree-shake dev code
       - name: Expo Prebuild (production, without expo-dev-client)

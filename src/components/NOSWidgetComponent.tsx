@@ -5,7 +5,64 @@ import { ThemeId, themes } from '../themes/themes';
 interface NOSWidgetProps {
   widgets: any[];
   activeTheme: string;
+  widgetName?: string;
 }
+
+const INITIAL_WIDGETS_FALLBACKS: Record<string, any> = {
+  NOSClockWidget: {
+    id: 'fallback_clock',
+    templateId: 'clock_dot',
+    customizations: {
+      fontId: 'nos_dot',
+      fontSize: 32,
+      backgroundType: 'solid',
+      backgroundColor: '#000000',
+      borderRadius: 16,
+      transparency: 15,
+      blur: 10,
+      shadowType: 'glow',
+      titleText: 'NOTHING CLOCK',
+      valueText: '10:42 PM',
+      accentColor: '#ff0000',
+      themeOverride: 'nos',
+    },
+  },
+  NOSWeatherWidget: {
+    id: 'fallback_weather',
+    templateId: 'weather_aqi',
+    customizations: {
+      fontId: 'inter',
+      fontSize: 14,
+      backgroundType: 'glass',
+      borderRadius: 20,
+      transparency: 20,
+      blur: 20,
+      shadowType: 'soft',
+      titleText: 'LONDON',
+      valueText: '12 AQI',
+      accentColor: '#39ff14',
+      themeOverride: 'glassmorphism',
+    },
+  },
+  NOSHealthWidget: {
+    id: 'fallback_steps',
+    templateId: 'health_steps',
+    customizations: {
+      fontId: 'outfit',
+      fontSize: 14,
+      backgroundType: 'gradient',
+      gradientColors: ['#1c1a17', '#0a0a0a'],
+      borderRadius: 24,
+      transparency: 0,
+      blur: 0,
+      shadowType: 'medium',
+      titleText: 'STEPS TODAY',
+      valueText: '8,432',
+      accentColor: '#dfba6b',
+      themeOverride: 'luxury',
+    },
+  }
+};
 
 function renderNativeWidgetContent(w: any, accentColor: ColorProp, textColor: ColorProp, subtextColor: ColorProp) {
   const template = w.templateId || '';
@@ -338,7 +395,7 @@ function renderNativeWidgetContent(w: any, accentColor: ColorProp, textColor: Co
   );
 }
 
-export function NOSWidgetComponent({ widgets, activeTheme }: NOSWidgetProps) {
+export function NOSWidgetComponent({ widgets, activeTheme, widgetName }: NOSWidgetProps) {
   // Get active theme config
   const theme = themes[activeTheme as ThemeId] || themes.nos;
   const accentColor = theme.accentColor as ColorProp;
@@ -348,45 +405,73 @@ export function NOSWidgetComponent({ widgets, activeTheme }: NOSWidgetProps) {
   const borderRadius = theme.borderRadius;
   const borderWidth = theme.borderWidth;
 
-  // Handle empty state
-  if (widgets.length === 0) {
-    return (
-      <FlexWidget
-        style={{
-          width: 'match_parent',
-          height: 'match_parent',
-          backgroundColor,
-          padding: 16,
-          justifyContent: 'center',
-          alignItems: 'center',
-          borderRadius,
-          borderWidth,
-          borderColor,
-        }}
-      >
-        <TextWidget
-          text="N O S  G A L L E R Y"
-          style={{
-            fontSize: 14,
-            fontWeight: 'bold',
-            color: accentColor,
-            marginBottom: 6,
-          }}
-        />
-        <TextWidget
-          text="Open the app to add interactive widgets."
-          style={{
-            fontSize: 10,
-            color: textColor,
-            textAlign: 'center',
-          }}
-        />
-      </FlexWidget>
-    );
+  // Filter widgets by category/provider name
+  let displayWidgets: any[] = widgets || [];
+
+  if (widgetName) {
+    const categoryMap: Record<string, string> = {
+      NOSClockWidget: 'clock_',
+      NOSCalendarWidget: 'calendar_',
+      NOSWeatherWidget: 'weather_',
+      NOSProductivityWidget: 'productivity_',
+      NOSHealthWidget: 'health_',
+      NOSFinanceWidget: 'finance_',
+      NOSDeveloperWidget: 'developer_',
+      NOSSocialWidget: 'social_',
+      NOSSmartHomeWidget: 'smart_home_',
+      NOSAiWidget: 'ai_'
+    };
+
+    const prefix = categoryMap[widgetName];
+    if (prefix) {
+      const matching = widgets.filter(w => w.templateId && w.templateId.startsWith(prefix));
+      displayWidgets = matching.slice(0, 1);
+    }
+  } else {
+    displayWidgets = widgets.slice(0, 2);
   }
 
-  // Render the first 1 or 2 widgets configured by the user
-  const displayWidgets = widgets.slice(0, 2);
+  // Handle empty state
+  if (displayWidgets.length === 0) {
+    const fallback = INITIAL_WIDGETS_FALLBACKS[widgetName || ''];
+    if (fallback) {
+      displayWidgets = [fallback];
+    } else {
+      return (
+        <FlexWidget
+          style={{
+            width: 'match_parent',
+            height: 'match_parent',
+            backgroundColor,
+            padding: 16,
+            justifyContent: 'center',
+            alignItems: 'center',
+            borderRadius,
+            borderWidth,
+            borderColor,
+          }}
+        >
+          <TextWidget
+            text={widgetName ? widgetName.replace('NOS', 'NOS ').replace('Widget', '').toUpperCase() : "NOS GALLERY"}
+            style={{
+              fontSize: 12,
+              fontWeight: 'bold',
+              color: accentColor,
+              marginBottom: 6,
+            }}
+          />
+          <TextWidget
+            text="Pin a widget of this category in the app."
+            style={{
+              fontSize: 9,
+              color: textColor,
+              textAlign: 'center',
+            }}
+          />
+        </FlexWidget>
+      );
+    }
+  }
 
   return (
     <FlexWidget
