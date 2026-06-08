@@ -1,13 +1,13 @@
 import { CheckCircle, Layers } from 'lucide-react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { useWidgetStore, WallpaperConfig } from '../store/widgetStore';
+import { useFeedback } from '../hooks/useFeedback';
 
 const LucideIcons = {
   CheckCircle,
   Layers,
 };
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
-import { useWidgetStore, WallpaperConfig } from '../store/widgetStore';
-import { useFeedback } from '../hooks/useFeedback';
 
 const CATEGORIES: ('ALL' | 'AMOLED' | 'Nothing' | 'Gradient' | 'Abstract' | 'Minimal')[] = [
   'ALL', 'AMOLED', 'Nothing', 'Gradient', 'Abstract', 'Minimal'

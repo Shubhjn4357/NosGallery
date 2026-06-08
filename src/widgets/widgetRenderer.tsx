@@ -1,19 +1,4 @@
 import { Calendar, CheckSquare, Clock, CloudSun, Coins, Heart, Home, Layout, MessageSquare, Sparkles, Terminal, Timer } from 'lucide-react-native';
-
-const LucideIcons = {
-  Calendar,
-  CheckSquare,
-  Clock,
-  CloudSun,
-  Coins,
-  Heart,
-  Home,
-  Layout,
-  MessageSquare,
-  Sparkles,
-  Terminal,
-  Timer,
-};
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
@@ -54,6 +39,21 @@ import { SmartHomeControls } from './smart_home/SmartHomeControls';
 
 import { AiChatWidget } from './ai/AiChatWidget';
 import { AiSummaryWidget } from './ai/AiSummaryWidget';
+
+const LucideIcons = {
+  Calendar,
+  CheckSquare,
+  Clock,
+  CloudSun,
+  Coins,
+  Heart,
+  Home,
+  Layout,
+  MessageSquare,
+  Sparkles,
+  Terminal,
+  Timer,
+};
 
 interface WidgetRendererProps {
   widget: ActiveWidget;

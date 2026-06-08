@@ -1,8 +1,4 @@
 import { TrendingUp } from 'lucide-react-native';
-
-const LucideIcons = {
-  TrendingUp,
-};
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
@@ -10,6 +6,10 @@ import { View, Text, StyleSheet, Animated } from 'react-native';
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { fetchBitcoinPrice, LiveFinanceData } from '../../services/apiService';
 import { ThemeId } from '../../themes/themes';
+
+const LucideIcons = {
+  TrendingUp,
+};
 
 interface FinanceStockCryptoProps {
   customizations: WidgetCustomizations;

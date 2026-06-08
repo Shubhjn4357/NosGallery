@@ -1,4 +1,10 @@
 import { Pause, Play, RefreshCw, RotateCcw, Target } from 'lucide-react-native';
+import { WidgetCustomizations } from '../../store/widgetStore';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
+
+import { useWidgetStyle } from '../../hooks/useWidgetStyle';
+import { ThemeId } from '../../themes/themes';
 
 const LucideIcons = {
   Pause,
@@ -7,12 +13,6 @@ const LucideIcons = {
   RotateCcw,
   Target,
 };
-import { WidgetCustomizations } from '../../store/widgetStore';
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
-
-import { useWidgetStyle } from '../../hooks/useWidgetStyle';
-import { ThemeId } from '../../themes/themes';
 
 interface FocusWidgetProps {
   customizations: WidgetCustomizations;

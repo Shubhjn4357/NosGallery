@@ -1,4 +1,10 @@
 import { Sliders, Trash2, Volume2, Zap } from 'lucide-react-native';
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity } from 'react-native';
+import { useWidgetStore, SystemSettings } from '../store/widgetStore';
+import { useFeedback } from '../hooks/useFeedback';
+import { themes } from '../themes/themes';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const LucideIcons = {
   Sliders,
@@ -6,12 +12,6 @@ const LucideIcons = {
   Volume2,
   Zap,
 };
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity } from 'react-native';
-import { useWidgetStore, SystemSettings } from '../store/widgetStore';
-import { useFeedback } from '../hooks/useFeedback';
-import { themes } from '../themes/themes';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export const SettingsScreen: React.FC = () => {
   const {

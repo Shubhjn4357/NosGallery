@@ -1,24 +1,4 @@
 import { Calendar, CheckSquare, ChevronDown, Clock, CloudSun, Compass, Heart, Home, Layers, LayoutGrid, MessageSquare, Palette, Sliders, SlidersHorizontal, Sparkles, Terminal, TrendingUp } from 'lucide-react-native';
-
-const LucideIcons = {
-  Calendar,
-  CheckSquare,
-  ChevronDown,
-  Clock,
-  CloudSun,
-  Compass,
-  Heart,
-  Home,
-  Layers,
-  LayoutGrid,
-  MessageSquare,
-  Palette,
-  Sliders,
-  SlidersHorizontal,
-  Sparkles,
-  Terminal,
-  TrendingUp,
-};
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -39,9 +19,29 @@ import { DotGridBackground } from '../components/DotGridBackground';
 import { widgetRegistry, WidgetTemplate, WidgetCategory } from '../widgets/registry';
 import { themes, ThemeId } from '../themes/themes';
 import { WidgetCard } from '../components/WidgetCard';
-import { CustomizerDrawer } from '../editor/CustomizerDrawer';
+import { CustomizerDrawer } from '@/editor/CustomizerDrawer';
 import NosWidgetPinning from '../../modules/nos-widget-pinning/src/NosWidgetPinningModule';
 import { startNativeWidgetSync } from '../services/nativeWidgetSync';
+
+const LucideIcons = {
+  Calendar,
+  CheckSquare,
+  ChevronDown,
+  Clock,
+  CloudSun,
+  Compass,
+  Heart,
+  Home,
+  Layers,
+  LayoutGrid,
+  MessageSquare,
+  Palette,
+  Sliders,
+  SlidersHorizontal,
+  Sparkles,
+  Terminal,
+  TrendingUp,
+};
 
 const { width: SW } = Dimensions.get('window');
 

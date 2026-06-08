@@ -2,7 +2,6 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { useWidgetStore } from '../store/widgetStore';
-import { Platform } from 'react-native';
 
 // Suppress framework-level/React 19 development warnings
 const originalWarn = console.warn;

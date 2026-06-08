@@ -3,8 +3,6 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeId } from '../themes/themes';
 import { FontId } from '../fonts/fonts';
-import { Platform } from 'react-native';
-import Constants, { ExecutionEnvironment } from 'expo-constants';
 
 export interface WidgetCustomizations {
   fontId: FontId;

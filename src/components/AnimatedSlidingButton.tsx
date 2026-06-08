@@ -1,11 +1,11 @@
 import { ArrowRight, Check } from 'lucide-react-native';
+import React, { useRef, useState, useEffect } from 'react';
+import { View, StyleSheet, Animated, PanResponder, PanResponderInstance, Platform } from 'react-native';
 
 const LucideIcons = {
   ArrowRight,
   Check,
 };
-import React, { useRef, useState, useEffect } from 'react';
-import { View, StyleSheet, Animated, PanResponder, PanResponderInstance, Platform } from 'react-native';
 
 const THUMB_SIZE = 44;
 const PADDING = 3;

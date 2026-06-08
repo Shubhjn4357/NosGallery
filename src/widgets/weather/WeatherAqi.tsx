@@ -1,8 +1,4 @@
 import { Wind } from 'lucide-react-native';
-
-const LucideIcons = {
-  Wind,
-};
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
@@ -11,6 +7,10 @@ import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { fetchLiveWeather, LiveWeatherData } from '../../services/apiService';
 import { ThemeId } from '../../themes/themes';
 import Svg, { Circle } from 'react-native-svg';
+
+const LucideIcons = {
+  Wind,
+};
 
 interface WeatherAqiProps {
   customizations: WidgetCustomizations;

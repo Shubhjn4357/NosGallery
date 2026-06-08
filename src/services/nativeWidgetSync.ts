@@ -22,7 +22,7 @@ export function startNativeWidgetSync() {
   if (!isAndroid || isExpoGo) return;
 
   // Lazy import so we don't pull the store into any non-Android/web bundle.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { useWidgetStore } = require('../store/widgetStore');
 
   const syncToNative = async (state: { widgets: any[]; activeTheme: string }) => {

@@ -6,8 +6,6 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  Dimensions,
-  Platform,
 } from 'react-native';
 import { ChevronDown, Layers, Palette, Sliders } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,7 +16,7 @@ import { DotGridBackground } from '../components/DotGridBackground';
 import { AnimatedSlidingButton } from '../components/AnimatedSlidingButton';
 import { DesignStylesEditor } from './components/DesignStylesEditor';
 import { TextContentEditor } from './components/TextContentEditor';
-import { themes, ThemeId } from '../themes/themes';
+import { ThemeId } from '../themes/themes';
 
 interface CustomizerDrawerProps {
   visible: boolean;

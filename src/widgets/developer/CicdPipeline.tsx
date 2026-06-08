@@ -1,14 +1,14 @@
 import { Plane } from 'lucide-react-native';
-
-const LucideIcons = {
-  Plane,
-};
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';
+
+const LucideIcons = {
+  Plane,
+};
 
 interface CicdPipelineProps {
   buildStatus: 'idle' | 'building' | 'testing' | 'success' | 'failed';

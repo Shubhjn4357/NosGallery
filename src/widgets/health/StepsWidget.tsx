@@ -1,4 +1,11 @@
 import { Beef, Droplet, Flame, Footprints, Wheat } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { WidgetCustomizations } from '../../store/widgetStore';
+import { useWidgetStyle } from '../../hooks/useWidgetStyle';
+import { ThemeId } from '../../themes/themes';
+
+import Svg, { Circle } from 'react-native-svg';
 
 const LucideIcons = {
   Beef,
@@ -7,13 +14,6 @@ const LucideIcons = {
   Footprints,
   Wheat,
 };
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { WidgetCustomizations } from '../../store/widgetStore';
-import { useWidgetStyle } from '../../hooks/useWidgetStyle';
-import { ThemeId } from '../../themes/themes';
-
-import Svg, { Circle } from 'react-native-svg';
 
 interface StepsWidgetProps {
   customizations: WidgetCustomizations;

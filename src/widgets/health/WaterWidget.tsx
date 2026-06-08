@@ -1,13 +1,13 @@
 import { Droplets } from 'lucide-react-native';
-
-const LucideIcons = {
-  Droplets,
-};
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';
+
+const LucideIcons = {
+  Droplets,
+};
 
 interface WaterWidgetProps {
   customizations: WidgetCustomizations;

@@ -1,15 +1,15 @@
 import { Home, Lightbulb } from 'lucide-react-native';
-
-const LucideIcons = {
-  Home,
-  Lightbulb,
-};
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';
+
+const LucideIcons = {
+  Home,
+  Lightbulb,
+};
 
 interface SmartHomeControlsProps {
   lightOn: boolean;

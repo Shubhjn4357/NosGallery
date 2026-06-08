@@ -1,12 +1,12 @@
 import { Layout } from 'lucide-react-native';
-
-const LucideIcons = {
-  Layout,
-};
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions } from 'react-native';
 import { useWidgetStore } from '../store/widgetStore';
 import { useFeedback } from '../hooks/useFeedback';
+
+const LucideIcons = {
+  Layout,
+};
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CONTAINER_WIDTH = SCREEN_WIDTH - 32;

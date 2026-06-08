@@ -1,4 +1,8 @@
 import { Battery, Layers, LayoutGrid, Trash2 } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, Animated, Dimensions, TouchableOpacity, ScrollView, Switch } from 'react-native';
+import { useWidgetStore } from '../store/widgetStore';
+import { useFeedback } from '../hooks/useFeedback';
 
 const LucideIcons = {
   Battery,
@@ -6,10 +10,6 @@ const LucideIcons = {
   LayoutGrid,
   Trash2,
 };
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Animated, Dimensions, TouchableOpacity, ScrollView, Switch } from 'react-native';
-import { useWidgetStore } from '../store/widgetStore';
-import { useFeedback } from '../hooks/useFeedback';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SIDEBAR_WIDTH = SCREEN_WIDTH * 0.76;

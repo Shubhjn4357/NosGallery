@@ -1,8 +1,4 @@
 import { GitBranch } from 'lucide-react-native';
-
-const LucideIcons = {
-  GitBranch,
-};
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
@@ -10,6 +6,10 @@ import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { fetchGithubStats, LiveGithubData } from '../../services/apiService';
 import { ThemeId } from '../../themes/themes';
+
+const LucideIcons = {
+  GitBranch,
+};
 
 interface GithubGridProps {
   customizations: WidgetCustomizations;

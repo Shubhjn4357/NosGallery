@@ -1,14 +1,14 @@
 import { MessageSquare } from 'lucide-react-native';
-
-const LucideIcons = {
-  MessageSquare,
-};
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';
+
+const LucideIcons = {
+  MessageSquare,
+};
 
 interface SocialFeedProps {
   customizations: WidgetCustomizations;

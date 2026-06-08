@@ -1,13 +1,13 @@
 import { Wind } from 'lucide-react-native';
-
-const LucideIcons = {
-  Wind,
-};
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';
+
+const LucideIcons = {
+  Wind,
+};
 
 interface BreathingWidgetProps {
   customizations: WidgetCustomizations;
@@ -39,10 +39,12 @@ export const BreathingWidget: React.FC<BreathingWidgetProps> = ({
 
   useEffect(() => {
     if (!interactive) {
-      setPhaseLabel('INHALE');
+      const timeoutId = setTimeout(() => {
+        setPhaseLabel((prev) => (prev !== 'INHALE' ? 'INHALE' : prev));
+      }, 0);
       scaleAnim.setValue(1.0);
       opacityAnim.setValue(0.4);
-      return;
+      return () => clearTimeout(timeoutId);
     }
     const runPhase = (idx: number) => {
       const phase = PHASES[idx];

@@ -1,15 +1,15 @@
 import { Check, CheckSquare } from 'lucide-react-native';
-
-const LucideIcons = {
-  Check,
-  CheckSquare,
-};
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';
+
+const LucideIcons = {
+  Check,
+  CheckSquare,
+};
 
 interface TodoWidgetProps {
   customizations: WidgetCustomizations;
