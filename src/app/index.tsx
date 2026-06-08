@@ -19,7 +19,7 @@ const LucideIcons = {
   Terminal,
   TrendingUp,
 };
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -30,8 +30,6 @@ import {
   Platform,
   StatusBar,
   Dimensions,
-  Modal,
-  TextInput,
 } from 'react-native';
 import { SettingsScreen } from '../settings/settingsScreen';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -39,11 +37,11 @@ import { useWidgetStore, ActiveWidget, WidgetCustomizations } from '../store/wid
 import { useFeedback } from '../hooks/useFeedback';
 import { DotGridBackground } from '../components/DotGridBackground';
 import { widgetRegistry, WidgetTemplate, WidgetCategory } from '../widgets/registry';
-import { WidgetRenderer } from '../widgets/widgetRenderer';
 import { themes, ThemeId } from '../themes/themes';
-import { fonts } from '../fonts/fonts';
-import { AnimatedSlidingButton } from '../components/AnimatedSlidingButton';
+import { WidgetCard } from '../components/WidgetCard';
+import { CustomizerDrawer } from '../editor/CustomizerDrawer';
 import NosWidgetPinning from '../../modules/nos-widget-pinning/src/NosWidgetPinningModule';
+import { startNativeWidgetSync } from '../services/nativeWidgetSync';
 
 const { width: SW } = Dimensions.get('window');
 
@@ -71,72 +69,6 @@ const CATEGORIES: { id: WidgetCategory | 'all'; label: string; icon: string }[] 
   { id: 'ai', label: 'AI', icon: 'Sparkles' },
 ];
 
-const PRESET_COLORS = [
-  '#000000', '#ffffff', '#7C9EFF', '#007aff', '#39ff14', 
-  '#ff2d55', '#dfba6b', '#1a0826', '#e0e0e0', '#f7ebec'
-];
-
-const BORDER_RADII = [0, 8, 12, 16, 20, 24, 32];
-const SHADOW_TYPES: WidgetCustomizations['shadowType'][] = ['none', 'soft', 'medium', 'hard', 'glow'];
-const TRANSPARENCIES = [0, 20, 40, 60, 80];
-const FONT_SIZES = [10, 12, 14, 16, 20, 24, 28, 32];
-
-// ───────────────────────────────────────────
-// Widget preview card (Showcase Grid)
-// ───────────────────────────────────────────
-const WidgetCard: React.FC<{ template: WidgetTemplate; activeTheme: string; onPress: () => void }> = ({
-  template,
-  activeTheme,
-  onPress,
-}) => {
-  const PREVIEW_W = (SW - 48) / 2;
-  const widgetW = template.defaultWidth * 80;
-  const widgetH = template.defaultHeight * 80;
-  const scale = Math.min((PREVIEW_W - 16) / widgetW, 104 / widgetH);
-
-  const mockWidget: ActiveWidget = {
-    id: `showcase_${template.id}`,
-    templateId: template.id,
-    x: 0, y: 0,
-    w: template.defaultWidth,
-    h: template.defaultHeight,
-    customizations: {
-      fontId: 'inter',
-      fontSize: 10,
-      backgroundType: 'solid',
-      backgroundColor: '#0a0a0c',
-      borderRadius: 14,
-      transparency: 0,
-      blur: 0,
-      shadowType: 'none',
-      titleText: template.defaultTitle,
-      valueText: template.defaultValue,
-      themeOverride: 'none',
-    },
-  };
-
-  return (
-    <TouchableOpacity style={[styles.widgetCard, { width: PREVIEW_W }]} onPress={onPress} activeOpacity={0.8}>
-      <View style={styles.widgetPreviewBox}>
-        <View style={{
-          width: widgetW,
-          height: widgetH,
-          transform: [{ scale }],
-        }}>
-          <WidgetRenderer widget={mockWidget} globalTheme={activeTheme as any} interactive={false} />
-        </View>
-      </View>
-      <View style={styles.widgetCardFooter}>
-        <Text style={styles.widgetCardName} numberOfLines={1}>{template.name}</Text>
-        <Text style={styles.widgetCardSize}>{template.defaultWidth}×{template.defaultHeight}</Text>
-      </View>
-    </TouchableOpacity>
-  );
-};
-
-// ───────────────────────────────────────────
-// Main App Page
-// ───────────────────────────────────────────
 const TAB_W = (SW - 48) / 2;
 
 export default function Index() {
@@ -156,6 +88,11 @@ export default function Index() {
   const currentAccent = currentTheme.accentColor;
   
   const { triggerHaptic, triggerSound } = useFeedback();
+
+  // Start native SharedPreferences sync on mount (no-op on non-Android/Expo Go)
+  useEffect(() => {
+    startNativeWidgetSync();
+  }, []);
 
   // Navigation Sliding Indicator
   const TAB_IDS: TabId[] = ['editor', 'settings'];
@@ -247,27 +184,51 @@ export default function Index() {
     return 'NOSClockWidget';
   };
 
+  const getWidgetCategory = (templateId: string): string => {
+    if (templateId.startsWith('clock_')) return 'clock';
+    if (templateId.startsWith('calendar_')) return 'calendar';
+    if (templateId.startsWith('weather_')) return 'weather';
+    if (templateId.startsWith('productivity_')) return 'productivity';
+    if (templateId.startsWith('health_')) return 'health';
+    if (templateId.startsWith('finance_')) return 'finance';
+    if (templateId.startsWith('developer_')) return 'developer';
+    if (templateId.startsWith('social_')) return 'social';
+    if (templateId.startsWith('smart_home_')) return 'smart_home';
+    if (templateId.startsWith('ai_')) return 'ai';
+    return 'clock';
+  };
+
   const handleAddToHomeScreen = async () => {
     if (!pendingWidget) return;
     
-    // Save widget to grid state
-    applyPendingToGrid();
+    // Pre-generate a unique ID for the widget to associate it with the home screen widget instance
+    const newWidgetId = `widget_${Date.now()}`;
+    const widgetToPin = { ...pendingWidget, id: newWidgetId };
     
-    // Request Android launcher to pin the widget for real (no simulation)
+    // Save widget to grid state
+    applyPendingToGrid(newWidgetId);
+    
     try {
       triggerHaptic('success');
       triggerSound('success');
       
       const providerName = getWidgetProviderName(pendingWidget.templateId);
-      const success = await NosWidgetPinning.requestPinWidget(providerName);
+      const category = getWidgetCategory(pendingWidget.templateId);
+      
+      const success = await NosWidgetPinning.requestPinWidget(
+        providerName,
+        newWidgetId,
+        category,
+        JSON.stringify(widgetToPin)
+      );
       if (success) {
         showToast('Widget pinning request sent to your launcher!', 'success');
       } else {
-        showToast('Successfully updated widget! Drag it from the launcher drawer if not added.', 'success');
+        showToast('Widget saved! Add it from your launcher\'s widget drawer.', 'success');
       }
     } catch (err: any) {
       console.log('Pin widget failed:', err);
-      showToast('Successfully saved! Pin this widget from your Android home settings.', 'success');
+      showToast('Widget saved! Pin from Android home screen widget settings.', 'success');
     }
     
     setPreviewOpen(false);
@@ -388,295 +349,19 @@ export default function Index() {
       </View>
 
       {/* ── CONTEXTUAL WIDGET PREVIEW & CUSTOMIZATION DRAWER ── */}
-      {pendingWidget && (
-        <Modal
-          visible={previewOpen}
-          animationType="slide"
-          transparent
-          onRequestClose={() => setPreviewOpen(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.drawerSheet}>
-              {/* Header */}
-              <View style={styles.drawerHeader}>
-                <TouchableOpacity
-                  onPress={() => setPreviewOpen(false)}
-                  style={styles.closeBtn}
-                >
-                  <LucideIcons.ChevronDown size={20} color="#ffffff" />
-                </TouchableOpacity>
-                <Text style={styles.drawerTitle}>
-                  {customizeMode ? 'CUSTOMIZE DESIGN' : 'WIDGET PREVIEW'}
-                </Text>
-                <View style={{ width: 20 }} />
-              </View>
-
-              {/* Body */}
-              <ScrollView style={styles.drawerBody} showsVerticalScrollIndicator={false}>
-                {/* Live Preview Box */}
-                <View style={styles.previewBox}>
-                  <DotGridBackground />
-                  <View style={{ transform: [{ scale: 1.05 }], zIndex: 10 }}>
-                    <WidgetRenderer
-                      widget={pendingWidget}
-                      globalTheme={activeTheme}
-                      interactive={false}
-                    />
-                  </View>
-                </View>
-
-                {!customizeMode ? (
-                  /* Simple Preview Flow Details */
-                  <View style={styles.detailsContainer}>
-                    <Text style={styles.widgetTitleText}>
-                      {widgetRegistry[pendingWidget.templateId]?.name || 'Custom Widget'}
-                    </Text>
-                    <Text style={styles.widgetDescText}>
-                      {widgetRegistry[pendingWidget.templateId]?.description || 'A customizable Nothing OS widget.'}
-                    </Text>
-                    
-                    <View style={styles.metaRow}>
-                      <View style={styles.metaChip}>
-                        <LucideIcons.Layers size={10} color="#666" />
-                        <Text style={styles.metaChipText}>Size {pendingWidget.w}x{pendingWidget.h}</Text>
-                      </View>
-                      <View style={styles.metaChip}>
-                        <LucideIcons.Palette size={10} color="#666" />
-                        <Text style={styles.metaChipText}>Theme OS compatible</Text>
-                      </View>
-                    </View>
-
-                    <TouchableOpacity
-                      style={styles.customizeTriggerBtn}
-                      onPress={() => {
-                        triggerHaptic('selection');
-                        setCustomizeMode(true);
-                      }}
-                    >
-                      <LucideIcons.Sliders size={14} color="#000000" style={{ marginRight: 6 }} />
-                      <Text style={styles.customizeTriggerBtnText}>Customize Layout & Content</Text>
-                    </TouchableOpacity>
-                  </View>
-                ) : (
-                  /* Customization Design Mode */
-                  <View style={styles.propertiesContainer}>
-                    {/* Customizer Sub-Tabs */}
-                    <View style={styles.customizerTabsHeader}>
-                      <TouchableOpacity
-                        style={[styles.customizerTabBtn, editorTab === 'style' && styles.activeCustomizerTabBtn]}
-                        onPress={() => setEditorTab('style')}
-                      >
-                        <Text style={[styles.customizerTabText, editorTab === 'style' && styles.activeCustomizerTabText]}>Design Styles</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.customizerTabBtn, editorTab === 'text' && styles.activeCustomizerTabBtn]}
-                        onPress={() => setEditorTab('text')}
-                      >
-                        <Text style={[styles.customizerTabText, editorTab === 'text' && styles.activeCustomizerTabText]}>Content Texts</Text>
-                      </TouchableOpacity>
-                    </View>
-
-                    {editorTab === 'style' ? (
-                      /* Design style options */
-                      <View style={{ gap: 12 }}>
-                        {/* Theme overrides */}
-                        <Text style={styles.inputLabel}>Skin Style Override</Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
-                          <TouchableOpacity
-                            style={[
-                              styles.choiceChip,
-                              (!pendingWidget.customizations.themeOverride || pendingWidget.customizations.themeOverride === 'none') && styles.activeChoiceChip,
-                            ]}
-                            onPress={() => handleUpdate({ themeOverride: 'none' })}
-                          >
-                            <Text style={[styles.choiceChipText, (!pendingWidget.customizations.themeOverride || pendingWidget.customizations.themeOverride === 'none') && styles.activeChoiceChipText]}>Global Default</Text>
-                          </TouchableOpacity>
-                          {Object.values(themes).map((t) => (
-                            <TouchableOpacity
-                              key={t.id}
-                              style={[
-                                styles.choiceChip,
-                                pendingWidget.customizations.themeOverride === t.id && styles.activeChoiceChip,
-                              ]}
-                              onPress={() => handleUpdate({ themeOverride: t.id })}
-                            >
-                              <Text style={[styles.choiceChipText, pendingWidget.customizations.themeOverride === t.id && styles.activeChoiceChipText]}>{t.name}</Text>
-                            </TouchableOpacity>
-                          ))}
-                        </ScrollView>
-
-                        {/* Background style */}
-                        <Text style={styles.inputLabel}>Background Fill Style</Text>
-                        <View style={styles.segmentedControl}>
-                           {(['solid', 'gradient', 'glass', 'none'] as const).map((type) => (
-                            <TouchableOpacity
-                              key={type}
-                              style={[
-                                styles.segmentBtn,
-                                pendingWidget.customizations.backgroundType === type && styles.activeSegmentBtn,
-                              ]}
-                              onPress={() => handleUpdate({ backgroundType: type })}
-                            >
-                              <Text style={[styles.segmentBtnText, pendingWidget.customizations.backgroundType === type && styles.activeSegmentBtnText]}>
-                                {type.toUpperCase()}
-                              </Text>
-                            </TouchableOpacity>
-                          ))}
-                        </View>
-
-                        {/* Colors Palette (only if solid background) */}
-                        {pendingWidget.customizations.backgroundType === 'solid' && (
-                          <>
-                            <Text style={styles.inputLabel}>Solid Background Color</Text>
-                            <View style={styles.colorPalette}>
-                              {PRESET_COLORS.map((c) => (
-                                <TouchableOpacity
-                                  key={c}
-                                  style={[
-                                    styles.colorCircle,
-                                    { backgroundColor: c },
-                                    pendingWidget.customizations.backgroundColor === c && { borderWidth: 2, borderColor: '#ffffff' },
-                                  ]}
-                                  onPress={() => handleUpdate({ backgroundColor: c })}
-                                />
-                              ))}
-                            </View>
-                          </>
-                        )}
-
-                        {/* Fonts */}
-                        <Text style={styles.inputLabel}>Typography Font Family</Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
-                          {Object.values(fonts).map((f) => (
-                            <TouchableOpacity
-                              key={f.id}
-                              style={[
-                                styles.choiceChip,
-                                pendingWidget.customizations.fontId === f.id && styles.activeChoiceChip,
-                              ]}
-                              onPress={() => handleUpdate({ fontId: f.id })}
-                            >
-                              <Text style={[styles.choiceChipText, pendingWidget.customizations.fontId === f.id && styles.activeChoiceChipText]}>{f.name}</Text>
-                            </TouchableOpacity>
-                          ))}
-                        </ScrollView>
-
-                        {/* Corner Radius */}
-                        <Text style={styles.inputLabel}>Corner Border Radius</Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
-                          {BORDER_RADII.map((r) => (
-                            <TouchableOpacity
-                              key={r}
-                              style={[
-                                styles.choiceChip,
-                                pendingWidget.customizations.borderRadius === r && styles.activeChoiceChip,
-                              ]}
-                              onPress={() => handleUpdate({ borderRadius: r })}
-                            >
-                              <Text style={[styles.choiceChipText, pendingWidget.customizations.borderRadius === r && styles.activeChoiceChipText]}>{r}px</Text>
-                            </TouchableOpacity>
-                          ))}
-                        </ScrollView>
-
-                        {/* Shadows */}
-                        <Text style={styles.inputLabel}>Shadow Effect Glow</Text>
-                        <View style={styles.segmentedControl}>
-                          {SHADOW_TYPES.map((s) => (
-                            <TouchableOpacity
-                              key={s}
-                              style={[
-                                styles.segmentBtn,
-                                pendingWidget.customizations.shadowType === s && styles.activeSegmentBtn,
-                              ]}
-                              onPress={() => handleUpdate({ shadowType: s })}
-                            >
-                              <Text style={[styles.segmentBtnText, pendingWidget.customizations.shadowType === s && styles.activeSegmentBtnText]}>
-                                {s.toUpperCase()}
-                              </Text>
-                            </TouchableOpacity>
-                          ))}
-                        </View>
-
-                        {/* Transparency */}
-                        <Text style={styles.inputLabel}>Translucent Blend: {pendingWidget.customizations.transparency}%</Text>
-                        <View style={styles.sliderBar}>
-                          {TRANSPARENCIES.map((val) => (
-                            <TouchableOpacity
-                              key={val}
-                              style={[styles.sliderSegment, pendingWidget.customizations.transparency === val && { backgroundColor: '#ffffff' }]}
-                              onPress={() => handleUpdate({ transparency: val })}
-                            >
-                              <Text style={[styles.sliderLabelText, pendingWidget.customizations.transparency === val && { color: '#000000' }]}>
-                                {val}
-                              </Text>
-                            </TouchableOpacity>
-                          ))}
-                        </View>
-                      </View>
-                    ) : (
-                      /* Text Content Options */
-                      <View style={{ gap: 12 }}>
-                        <View style={styles.inputGroup}>
-                          <Text style={styles.inputLabel}>Widget Header / Title</Text>
-                          <TextInput
-                            style={styles.textInput}
-                            value={pendingWidget.customizations.titleText || ''}
-                            onChangeText={(txt) => handleUpdate({ titleText: txt })}
-                            placeholder="Title Text"
-                            placeholderTextColor="#555"
-                          />
-                        </View>
-                        <View style={styles.inputGroup}>
-                          <Text style={styles.inputLabel}>Widget Value / Description</Text>
-                          <TextInput
-                            style={[styles.textInput, { height: 80 }]}
-                            multiline
-                            numberOfLines={4}
-                            value={pendingWidget.customizations.valueText || ''}
-                            onChangeText={(txt) => handleUpdate({ valueText: txt })}
-                            placeholder="Value description"
-                            placeholderTextColor="#555"
-                          />
-                        </View>
-
-                        <Text style={styles.inputLabel}>Font Size: {pendingWidget.customizations.fontSize || 14}px</Text>
-                        <View style={styles.sliderBar}>
-                          {FONT_SIZES.map((sz) => (
-                            <TouchableOpacity
-                              key={sz}
-                              style={[styles.sliderSegment, pendingWidget.customizations.fontSize === sz && { backgroundColor: '#ffffff' }]}
-                              onPress={() => handleUpdate({ fontSize: sz })}
-                            >
-                              <Text style={[styles.sliderLabelText, pendingWidget.customizations.fontSize === sz && { color: '#000000' }]}>{sz}</Text>
-                            </TouchableOpacity>
-                          ))}
-                        </View>
-                      </View>
-                    )}
-
-                    <TouchableOpacity
-                      style={styles.backToPreviewBtn}
-                      onPress={() => setCustomizeMode(false)}
-                    >
-                      <Text style={styles.backToPreviewBtnText}>Back to Preview</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </ScrollView>
-
-              {/* Bottom Fixed Swipe CTA */}
-              <View style={[styles.drawerFooter, { paddingBottom: Math.max(insets.bottom, 20) }]}>
-                <AnimatedSlidingButton
-                  onSwipeSuccess={handleAddToHomeScreen}
-                  accentColor={pendingWidget.customizations.accentColor}
-                  title="Slide to Pin Widget"
-                  successTitle="Adding Widget..."
-                />
-              </View>
-            </View>
-          </View>
-        </Modal>
-      )}
+      <CustomizerDrawer
+        visible={previewOpen}
+        pendingWidget={pendingWidget}
+        activeTheme={activeTheme}
+        customizeMode={customizeMode}
+        setCustomizeMode={setCustomizeMode}
+        editorTab={editorTab}
+        setEditorTab={setEditorTab}
+        onClose={() => setPreviewOpen(false)}
+        handleUpdate={handleUpdate}
+        handleAddToHomeScreen={handleAddToHomeScreen}
+        triggerHaptic={triggerHaptic}
+      />
     </View>
   );
 }
@@ -780,41 +465,6 @@ const styles = StyleSheet.create({
     gap: 12,
     justifyContent: 'space-between',
   },
-  widgetCard: {
-    backgroundColor: '#0d0d10',
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: '#1c1c20',
-    overflow: 'hidden',
-    marginBottom: 4,
-  },
-  widgetPreviewBox: {
-    height: 120,
-    backgroundColor: '#060609',
-    borderRadius: 18,
-    margin: 8,
-    marginBottom: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  widgetCardFooter: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 2,
-    borderTopWidth: 1,
-    borderTopColor: '#151518',
-  },
-  widgetCardName: {
-    color: '#e5e5ea',
-    fontSize: 11.5,
-    fontWeight: '700',
-  },
-  widgetCardSize: {
-    color: '#444',
-    fontSize: 9.5,
-    fontWeight: '600',
-  },
   tabBarOuter: {
     position: 'absolute',
     bottom: Platform.OS === 'android' ? 20 : 32,
@@ -879,255 +529,5 @@ const styles = StyleSheet.create({
   },
   activeTabLabel: {
     color: '#0a0a0c',
-  },
-
-  // Modal Sheet Drawer Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
-    justifyContent: 'flex-end',
-  },
-  drawerSheet: {
-    backgroundColor: '#0a0a0b',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    height: '85%',
-    width: '100%',
-    borderWidth: 1,
-    borderColor: '#1a1a1c',
-    paddingBottom: 24,
-  },
-  drawerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1a1a1c',
-  },
-  closeBtn: {
-    padding: 4,
-  },
-  drawerTitle: {
-    color: '#ffffff',
-    fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 2,
-  },
-  drawerBody: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  previewBox: {
-    height: 160,
-    backgroundColor: '#000000',
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: '#161618',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    overflow: 'hidden',
-    marginTop: 14,
-    marginBottom: 16,
-  },
-  detailsContainer: {
-    alignItems: 'center',
-    paddingTop: 8,
-    gap: 12,
-  },
-  widgetTitleText: {
-    fontSize: 16,
-    color: '#ffffff',
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  widgetDescText: {
-    fontSize: 11.5,
-    color: '#8e8e93',
-    textAlign: 'center',
-    paddingHorizontal: 12,
-    lineHeight: 16,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 6,
-  },
-  metaChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#161618',
-    borderWidth: 1,
-    borderColor: '#242426',
-    borderRadius: 14,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    gap: 5,
-  },
-  metaChipText: {
-    fontSize: 9,
-    color: '#8e8e93',
-    fontWeight: 'bold',
-  },
-  customizeTriggerBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    marginTop: 20,
-    width: '100%',
-  },
-  customizeTriggerBtnText: {
-    color: '#000000',
-    fontSize: 11.5,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
-  propertiesContainer: {
-    gap: 12,
-  },
-  customizerTabsHeader: {
-    flexDirection: 'row',
-    backgroundColor: '#161618',
-    borderRadius: 12,
-    padding: 3,
-    marginBottom: 10,
-  },
-  customizerTabBtn: {
-    flex: 1,
-    paddingVertical: 8,
-    alignItems: 'center',
-    borderRadius: 10,
-  },
-  activeCustomizerTabBtn: {
-    backgroundColor: '#ffffff',
-  },
-  customizerTabText: {
-    color: '#8e8e93',
-    fontSize: 10.5,
-    fontWeight: 'bold',
-  },
-  activeCustomizerTabText: {
-    color: '#000000',
-  },
-  inputLabel: {
-    color: '#8e8e93',
-    fontSize: 9,
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginTop: 8,
-  },
-  segmentedControl: {
-    flexDirection: 'row',
-    backgroundColor: '#161618',
-    borderRadius: 10,
-    padding: 3,
-  },
-  segmentBtn: {
-    flex: 1,
-    paddingVertical: 8,
-    alignItems: 'center',
-    borderRadius: 8,
-  },
-  activeSegmentBtn: {
-    backgroundColor: '#ffffff',
-  },
-  segmentBtnText: {
-    color: '#8e8e93',
-    fontSize: 9,
-    fontWeight: 'bold',
-  },
-  activeSegmentBtnText: {
-    color: '#000000',
-  },
-  colorPalette: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  colorCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#242426',
-  },
-  chipsRow: {
-    paddingVertical: 2,
-  },
-  choiceChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-    backgroundColor: '#161618',
-    marginRight: 8,
-  },
-  activeChoiceChip: {
-    backgroundColor: '#ffffff',
-  },
-  choiceChipText: {
-    color: '#ffffff',
-    fontSize: 10.5,
-    fontWeight: 'bold',
-  },
-  activeChoiceChipText: {
-    color: '#000000',
-  },
-  sliderBar: {
-    flexDirection: 'row',
-    backgroundColor: '#161618',
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
-  sliderSegment: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderRightWidth: 1,
-    borderRightColor: '#242426',
-  },
-  sliderLabelText: {
-    color: '#8e8e93',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  inputGroup: {
-    gap: 6,
-  },
-  textInput: {
-    backgroundColor: '#161618',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#242426',
-    color: '#ffffff',
-    padding: 12,
-    fontSize: 13,
-  },
-  backToPreviewBtn: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#161618',
-    borderWidth: 1,
-    borderColor: '#242426',
-    borderRadius: 20,
-    paddingVertical: 12,
-    marginTop: 14,
-  },
-  backToPreviewBtnText: {
-    color: '#8e8e93',
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
-  drawerFooter: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#1a1a1c',
   },
 });

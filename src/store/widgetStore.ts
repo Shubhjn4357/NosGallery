@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { syncOSWidget } from '../services/widgetUpdater';
 import { ThemeId } from '../themes/themes';
 import { FontId } from '../fonts/fonts';
 import { Platform } from 'react-native';
@@ -82,7 +81,7 @@ interface WidgetState {
 
   // Pending Actions
   setPendingWidget: (widget: ActiveWidget | null) => void;
-  applyPendingToGrid: () => void;
+  applyPendingToGrid: (customId?: string) => void;
 
   // Preset Actions
   saveWidgetPreset: (widget: ActiveWidget) => void;
@@ -445,11 +444,11 @@ export const useWidgetStore = create<WidgetState>()(
     return { pendingWidget: positionedWidget };
   }),
 
-  applyPendingToGrid: () => set((state) => {
+  applyPendingToGrid: (customId?: string) => set((state) => {
     if (!state.pendingWidget) return {};
     const newWidget: ActiveWidget = {
       ...state.pendingWidget,
-      id: `widget_${Date.now()}`,
+      id: customId || `widget_${Date.now()}`,
     };
     return {
       widgets: [newWidget, ...state.widgets],
@@ -519,14 +518,4 @@ export const useWidgetStore = create<WidgetState>()(
   )
 );
 
-// Subscribe to store updates to keep Android system widget in sync
-useWidgetStore.subscribe((state, prevState) => {
-  if (Platform.OS === 'android') {
-    const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
-    if (!isExpoGo) {
-      if (state.widgets !== prevState.widgets || state.activeTheme !== prevState.activeTheme) {
-        syncOSWidget(state.widgets, state.activeTheme);
-      }
-    }
-  }
-});
+
