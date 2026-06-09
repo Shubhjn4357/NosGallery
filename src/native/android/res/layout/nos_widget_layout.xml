@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Root layout for all NOS Gallery native widgets.
+  All content is placed via RemoteViews setText/setTextColor/setVisibility in each provider.
+  Uses a FrameLayout root so we can overlay elements flexibly.
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/nos_widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="14dp"
+    android:gravity="start"
+    android:background="#FF000000">
+
+    <!-- Row 1: Category label + accent dot -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/nos_widget_label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="NOS WIDGET"
+            android:textColor="#FF888888"
+            android:textSize="8sp"
+            android:fontFamily="monospace"
+            android:letterSpacing="0.12"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <View
+            android:id="@+id/nos_widget_dot"
+            android:layout_width="5dp"
+            android:layout_height="5dp"
+            android:background="#FFff0000" />
+
+    </LinearLayout>
+
+    <!-- Spacer -->
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="4dp" />
+
+    <!-- Row 2: Primary value / main content -->
+    <TextView
+        android:id="@+id/nos_widget_value"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="--:--"
+        android:textColor="#FFFFFFFF"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:fontFamily="monospace"
+        android:maxLines="2"
+        android:ellipsize="end" />
+
+    <!-- Row 3: Secondary / sub value (progress bar replacement) -->
+    <TextView
+        android:id="@+id/nos_widget_sub_value"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textColor="#FFAAAAAA"
+        android:textSize="10sp"
+        android:fontFamily="monospace"
+        android:maxLines="1"
+        android:ellipsize="end" />
+
+    <!-- Progress bar (health / finance / developer widgets) -->
+    <ProgressBar
+        android:id="@+id/nos_widget_progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:layout_marginTop="4dp"
+        android:progress="60"
+        android:max="100"
+        android:visibility="gone"
+        android:progressTint="#FFff0000"
+        android:progressBackgroundTint="#FF222222" />
+
+    <!-- Flexible spacer pushes footer to bottom -->
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- Row 4: Footer tag line -->
+    <TextView
+        android:id="@+id/nos_widget_footer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="NOS • STUDIO"
+        android:textColor="#FFff0000"
+        android:textSize="7sp"
+        android:fontFamily="monospace"
+        android:letterSpacing="0.15"
+        android:maxLines="1" />
+
+</LinearLayout>
