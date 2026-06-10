@@ -8,8 +8,6 @@ import android.content.Context
 import android.os.Build
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
-import com.nothing.nosgallery.widget.NosWidgetPreferences
-import org.json.JSONObject
 
 class NosWidgetPinningModule : Module() {
   override fun definition() = ModuleDefinition {
@@ -28,7 +26,8 @@ class NosWidgetPinningModule : Module() {
 
         val myProvider = ComponentName(context, providerClassName)
         if (appWidgetManager.isRequestPinAppWidgetSupported) {
-          val callbackIntent = Intent(context, com.nothing.nosgallery.widget.NosWidgetPinReceiver::class.java).apply {
+          val callbackIntent = Intent().apply {
+            setClassName(context.packageName, getPinReceiverClassName(context))
             putExtra("widgetId", widgetId)
             putExtra("category", category)
             putExtra("widgetJson", widgetJson)
@@ -71,7 +70,7 @@ class NosWidgetPinningModule : Module() {
     AsyncFunction("saveWidgetConfig") { category: String, widgetJson: String ->
       val context = appContext.reactContext ?: throw IllegalStateException("React context is not available")
       // Store as the "latest" config for this category (widgetId = -1 is the pending slot)
-      NosWidgetPreferences.saveWidgetConfig(context, -1, category, widgetJson)
+      saveWidgetConfig(context, -1, category, widgetJson)
       // Also broadcast an update to any already-pinned widget of this category
       notifyCategoryWidgets(context, category)
     }
@@ -82,7 +81,7 @@ class NosWidgetPinningModule : Module() {
      */
     AsyncFunction("saveWidgetsStore") { widgetsJson: String, activeTheme: String ->
       val context = appContext.reactContext ?: throw IllegalStateException("React context is not available")
-      NosWidgetPreferences.getPrefs(context).edit()
+      getPrefs(context).edit()
         .putString("widgets", widgetsJson)
         .putString("activeTheme", activeTheme)
         .apply()
@@ -103,22 +102,41 @@ class NosWidgetPinningModule : Module() {
     return null
   }
 
+  private fun getPinReceiverClassName(context: Context): String =
+    "${context.packageName}.widget.NosWidgetPinReceiver"
+
+  private fun getPrefs(context: Context) =
+    context.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE)
+
+  private fun saveWidgetConfig(
+    context: Context,
+    appWidgetId: Int,
+    category: String,
+    widgetJson: String
+  ) {
+    getPrefs(context).edit()
+      .putString("pinned_$appWidgetId", widgetJson)
+      .putString("category_$appWidgetId", category)
+      .apply()
+  }
+
   private fun notifyCategoryWidgets(context: Context, category: String) {
     val widgetClassMap = mapOf(
-      "clock"        to "com.nothing.nosgallery.widget.NOSClockWidget",
-      "calendar"     to "com.nothing.nosgallery.widget.NOSCalendarWidget",
-      "weather"      to "com.nothing.nosgallery.widget.NOSWeatherWidget",
-      "productivity" to "com.nothing.nosgallery.widget.NOSProductivityWidget",
-      "health"       to "com.nothing.nosgallery.widget.NOSHealthWidget",
-      "finance"      to "com.nothing.nosgallery.widget.NOSFinanceWidget",
-      "developer"    to "com.nothing.nosgallery.widget.NOSDeveloperWidget",
-      "social"       to "com.nothing.nosgallery.widget.NOSSocialWidget",
-      "smart_home"   to "com.nothing.nosgallery.widget.NOSSmartHomeWidget",
-      "ai"           to "com.nothing.nosgallery.widget.NOSAiWidget"
+      "clock"        to "NOSClockWidget",
+      "calendar"     to "NOSCalendarWidget",
+      "weather"      to "NOSWeatherWidget",
+      "productivity" to "NOSProductivityWidget",
+      "health"       to "NOSHealthWidget",
+      "finance"      to "NOSFinanceWidget",
+      "developer"    to "NOSDeveloperWidget",
+      "social"       to "NOSSocialWidget",
+      "smart_home"   to "NOSSmartHomeWidget",
+      "ai"           to "NOSAiWidget"
     )
-    val className = widgetClassMap[category] ?: return
+    val widgetName = widgetClassMap[category] ?: return
+    val className = getWidgetProviderClassName(context, widgetName) ?: return
     try {
-      val componentName = ComponentName(context, Class.forName(className))
+      val componentName = ComponentName(context.packageName, className)
       val appWidgetManager = AppWidgetManager.getInstance(context)
       val widgetIds = appWidgetManager.getAppWidgetIds(componentName)
       if (widgetIds.isNotEmpty()) {
@@ -135,5 +153,9 @@ class NosWidgetPinningModule : Module() {
   private fun notifyAllWidgets(context: Context) {
     val categories = listOf("clock","calendar","weather","productivity","health","finance","developer","social","smart_home","ai")
     categories.forEach { notifyCategoryWidgets(context, it) }
+  }
+
+  companion object {
+    private const val PREFS_FILE = "nos-gallery-native-storage"
   }
 }
