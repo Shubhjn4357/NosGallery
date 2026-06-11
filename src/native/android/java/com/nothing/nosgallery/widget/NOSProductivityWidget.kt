@@ -7,18 +7,19 @@ import com.nothing.nosgallery.R
 import org.json.JSONObject
 import java.util.Locale
 
-class NOSProductivityWidget : NosBaseWidgetProvider() {
+open class NOSProductivityWidget : NosBaseWidgetProvider() {
 
     override val categoryPrefix = "productivity_"
+    open override val defaultTemplateId = "productivity_todo"
 
-    override fun populateViews(
+    open override fun populateViews(
         context: Context,
         views: RemoteViews,
         config: JSONObject?,
         theme: String
     ) {
         val customizations = config?.optJSONObject("customizations")
-        val templateId = config?.optString("templateId", "productivity_todo") ?: "productivity_todo"
+        val templateId = config?.optString("templateId", defaultTemplateId) ?: defaultTemplateId
 
         val accentColor = resolveAccentColor(config, theme)
         val textColor = resolveTextColor(config, theme)

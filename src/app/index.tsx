@@ -171,6 +171,37 @@ export default function Index() {
   };
 
   const getWidgetProviderName = (templateId: string) => {
+    const templateClassMap: Record<string, string> = {
+      clock_digital: 'NOSClockDigitalWidget',
+      clock_dot: 'NOSClockDotWidget',
+      clock_analog: 'NOSClockAnalogWidget',
+      clock_flip: 'NOSClockFlipWidget',
+      clock_stopwatch: 'NOSClockStopwatchWidget',
+      calendar_monthly: 'NOSCalendarMonthlyWidget',
+      calendar_agenda: 'NOSCalendarAgendaWidget',
+      calendar_progress: 'NOSCalendarProgressWidget',
+      weather_current: 'NOSWeatherCurrentWidget',
+      weather_aqi: 'NOSWeatherAqiWidget',
+      productivity_todo: 'NOSProductivityTodoWidget',
+      productivity_focus: 'NOSProductivityFocusWidget',
+      health_steps: 'NOSHealthStepsWidget',
+      health_water: 'NOSHealthWaterWidget',
+      health_breath: 'NOSHealthBreathWidget',
+      finance_crypto: 'NOSFinanceCryptoWidget',
+      developer_git: 'NOSDeveloperGitWidget',
+      developer_build: 'NOSDeveloperBuildWidget',
+      developer_cicd: 'NOSDeveloperBuildWidget',
+      developer_cpu: 'NOSDeveloperCpuWidget',
+      social_feed: 'NOSSocialFeedWidget',
+      smart_home_controls: 'NOSSmartHomeControlsWidget',
+      ai_chat: 'NOSAiChatWidget',
+      ai_summary: 'NOSAiSummaryWidget',
+    };
+
+    if (templateClassMap[templateId]) {
+      return templateClassMap[templateId];
+    }
+
     if (templateId.startsWith('clock_')) return 'NOSClockWidget';
     if (templateId.startsWith('calendar_')) return 'NOSCalendarWidget';
     if (templateId.startsWith('weather_')) return 'NOSWeatherWidget';

@@ -7,18 +7,19 @@ import com.nothing.nosgallery.R
 import org.json.JSONObject
 import java.util.Locale
 
-class NOSHealthWidget : NosBaseWidgetProvider() {
+open class NOSHealthWidget : NosBaseWidgetProvider() {
 
     override val categoryPrefix = "health_"
+    open override val defaultTemplateId = "health_steps"
 
-    override fun populateViews(
+    open override fun populateViews(
         context: Context,
         views: RemoteViews,
         config: JSONObject?,
         theme: String
     ) {
         val customizations = config?.optJSONObject("customizations")
-        val templateId = config?.optString("templateId", "health_steps") ?: "health_steps"
+        val templateId = config?.optString("templateId", defaultTemplateId) ?: defaultTemplateId
 
         val accentColor = resolveAccentColor(config, theme)
         val textColor = resolveTextColor(config, theme)

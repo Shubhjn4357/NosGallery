@@ -34,7 +34,7 @@
             android:maxLines="1"
             android:ellipsize="end" />
 
-        <View
+        <TextView
             android:id="@+id/nos_widget_dot"
             android:layout_width="5dp"
             android:layout_height="5dp"
@@ -42,16 +42,12 @@
 
     </LinearLayout>
 
-    <!-- Spacer -->
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="4dp" />
-
     <!-- Row 2: Primary value / main content -->
     <TextView
         android:id="@+id/nos_widget_value"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
         android:text="--:--"
         android:textColor="#FFFFFFFF"
         android:textSize="28sp"
@@ -86,10 +82,12 @@
         android:progressBackgroundTint="#FF222222" />
 
     <!-- Flexible spacer pushes footer to bottom -->
-    <Space
+    <TextView
+        android:id="@+id/nos_widget_spacer"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_weight="1"
+        android:textSize="0sp" />
 
     <!-- Row 4: Footer tag line -->
     <TextView

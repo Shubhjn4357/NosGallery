@@ -7,18 +7,19 @@ import com.nothing.nosgallery.R
 import org.json.JSONObject
 import java.util.Locale
 
-class NOSSmartHomeWidget : NosBaseWidgetProvider() {
+open class NOSSmartHomeWidget : NosBaseWidgetProvider() {
 
     override val categoryPrefix = "smart_home_"
+    open override val defaultTemplateId = "smart_home_controls"
 
-    override fun populateViews(
+    open override fun populateViews(
         context: Context,
         views: RemoteViews,
         config: JSONObject?,
         theme: String
     ) {
         val customizations = config?.optJSONObject("customizations")
-        val templateId = config?.optString("templateId", "smart_home_lights") ?: "smart_home_lights"
+        val templateId = config?.optString("templateId", defaultTemplateId) ?: defaultTemplateId
 
         val accentColor = resolveAccentColor(config, theme)
         val textColor = resolveTextColor(config, theme)

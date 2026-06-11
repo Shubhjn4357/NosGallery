@@ -28,6 +28,7 @@ abstract class NosBaseWidgetProvider : AppWidgetProvider() {
 
     /** The templateId prefix this provider handles, e.g. "clock_" */
     abstract val categoryPrefix: String
+    open val defaultTemplateId: String? = null
 
     /**
      * Populate [views] (already inflated from R.layout.nos_widget_layout) using [config].
@@ -64,7 +65,7 @@ abstract class NosBaseWidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int
     ) {
-        val config = NosWidgetPreferences.resolveWidgetConfig(context, appWidgetId, categoryPrefix)
+        val config = NosWidgetPreferences.resolveWidgetConfig(context, appWidgetId, defaultTemplateId, categoryPrefix)
         val theme = NosWidgetPreferences.getActiveTheme(context)
 
         val views = RemoteViews(context.packageName, R.layout.nos_widget_layout)

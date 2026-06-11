@@ -7,18 +7,19 @@ import com.nothing.nosgallery.R
 import org.json.JSONObject
 import java.util.Locale
 
-class NOSSocialWidget : NosBaseWidgetProvider() {
+open class NOSSocialWidget : NosBaseWidgetProvider() {
 
     override val categoryPrefix = "social_"
+    open override val defaultTemplateId = "social_feed"
 
-    override fun populateViews(
+    open override fun populateViews(
         context: Context,
         views: RemoteViews,
         config: JSONObject?,
         theme: String
     ) {
         val customizations = config?.optJSONObject("customizations")
-        val templateId = config?.optString("templateId", "social_notifications") ?: "social_notifications"
+        val templateId = config?.optString("templateId", defaultTemplateId) ?: defaultTemplateId
 
         val accentColor = resolveAccentColor(config, theme)
         val textColor = resolveTextColor(config, theme)

@@ -104,10 +104,11 @@ object NosWidgetPreferences {
         return null
     }
 
-    /** Resolve the best widget config for this appWidgetId and category prefix. */
+    /** Resolve the best widget config for this appWidgetId, templateId, and category prefix. */
     fun resolveWidgetConfig(
         context: Context,
         appWidgetId: Int,
+        templateId: String?,
         categoryPrefix: String
     ): JSONObject? {
         // 1. Check if there is a mapping to a React Native widget ID
@@ -124,7 +125,17 @@ object NosWidgetPreferences {
         // 2. Fall back to per-instance saved config (backup)
         val pinned = getWidgetConfig(context, appWidgetId)
         if (pinned != null) return pinned
-        // 3. Fall back to the first stored widget of this category
+        
+        // 3. Fall back to the default config for the specific templateId (if provided)
+        if (templateId != null) {
+            val widgets = getWidgetsJson(context)
+            for (i in 0 until widgets.length()) {
+                val obj = widgets.optJSONObject(i) ?: continue
+                if (obj.optString("templateId") == templateId) return obj
+            }
+        }
+        
+        // 4. Fall back to the first stored widget of this category
         return findFirstByCategory(context, categoryPrefix)
     }
 

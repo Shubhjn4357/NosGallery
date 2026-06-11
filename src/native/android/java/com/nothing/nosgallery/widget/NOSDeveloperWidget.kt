@@ -7,18 +7,19 @@ import com.nothing.nosgallery.R
 import org.json.JSONObject
 import java.util.Locale
 
-class NOSDeveloperWidget : NosBaseWidgetProvider() {
+open class NOSDeveloperWidget : NosBaseWidgetProvider() {
 
     override val categoryPrefix = "developer_"
+    open override val defaultTemplateId = "developer_git"
 
-    override fun populateViews(
+    open override fun populateViews(
         context: Context,
         views: RemoteViews,
         config: JSONObject?,
         theme: String
     ) {
         val customizations = config?.optJSONObject("customizations")
-        val templateId = config?.optString("templateId", "developer_git") ?: "developer_git"
+        val templateId = config?.optString("templateId", defaultTemplateId) ?: defaultTemplateId
 
         val accentColor = resolveAccentColor(config, theme)
         val textColor = resolveTextColor(config, theme)

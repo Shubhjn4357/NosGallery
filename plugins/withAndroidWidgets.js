@@ -15,6 +15,51 @@ function copyFolderSync(from, to) {
   });
 }
 
+const templateWidgets = [
+  // Clocks
+  { id: 'clock_digital', className: 'NOSClockDigitalWidget', parentClass: 'NOSClockWidget', label: 'NOS Digital Clock', w: 2, h: 2, preview: 'nosclockwidget_preview' },
+  { id: 'clock_dot', className: 'NOSClockDotWidget', parentClass: 'NOSClockWidget', label: 'NOS Nothing Clock', w: 4, h: 2, preview: 'nosclockwidget_preview' },
+  { id: 'clock_analog', className: 'NOSClockAnalogWidget', parentClass: 'NOSClockWidget', label: 'NOS Analog Clock', w: 2, h: 2, preview: 'nosclockwidget_preview' },
+  { id: 'clock_flip', className: 'NOSClockFlipWidget', parentClass: 'NOSClockWidget', label: 'NOS Flip Clock', w: 4, h: 2, preview: 'nosclockwidget_preview' },
+  { id: 'clock_stopwatch', className: 'NOSClockStopwatchWidget', parentClass: 'NOSClockWidget', label: 'NOS Stopwatch', w: 2, h: 2, preview: 'nosclockwidget_preview' },
+
+  // Calendars
+  { id: 'calendar_monthly', className: 'NOSCalendarMonthlyWidget', parentClass: 'NOSCalendarWidget', label: 'NOS Monthly Calendar', w: 2, h: 2, preview: 'noscalendarwidget_preview' },
+  { id: 'calendar_agenda', className: 'NOSCalendarAgendaWidget', parentClass: 'NOSCalendarWidget', label: 'NOS Agenda Calendar', w: 4, h: 2, preview: 'noscalendarwidget_preview' },
+  { id: 'calendar_progress', className: 'NOSCalendarProgressWidget', parentClass: 'NOSCalendarWidget', label: 'NOS Year Progress', w: 2, h: 2, preview: 'noscalendarwidget_preview' },
+
+  // Weather
+  { id: 'weather_current', className: 'NOSWeatherCurrentWidget', parentClass: 'NOSWeatherWidget', label: 'NOS Current Weather', w: 2, h: 2, preview: 'nosweatherwidget_preview' },
+  { id: 'weather_aqi', className: 'NOSWeatherAqiWidget', parentClass: 'NOSWeatherWidget', label: 'NOS Weather AQI', w: 2, h: 2, preview: 'nosweatherwidget_preview' },
+
+  // Productivity
+  { id: 'productivity_todo', className: 'NOSProductivityTodoWidget', parentClass: 'NOSProductivityWidget', label: 'NOS Tasks Todo', w: 2, h: 2, preview: 'nosproductivitywidget_preview' },
+  { id: 'productivity_focus', className: 'NOSProductivityFocusWidget', parentClass: 'NOSProductivityWidget', label: 'NOS Focus Timer', w: 2, h: 2, preview: 'nosproductivitywidget_preview' },
+
+  // Health
+  { id: 'health_steps', className: 'NOSHealthStepsWidget', parentClass: 'NOSHealthWidget', label: 'NOS Steps Tracker', w: 2, h: 2, preview: 'noshealthwidget_preview' },
+  { id: 'health_water', className: 'NOSHealthWaterWidget', parentClass: 'NOSHealthWidget', label: 'NOS Water Tracker', w: 2, h: 2, preview: 'noshealthwidget_preview' },
+  { id: 'health_breath', className: 'NOSHealthBreathWidget', parentClass: 'NOSHealthWidget', label: 'NOS Breathing Pacer', w: 2, h: 2, preview: 'noshealthwidget_preview' },
+
+  // Finance
+  { id: 'finance_crypto', className: 'NOSFinanceCryptoWidget', parentClass: 'NOSFinanceWidget', label: 'NOS Crypto Tracker', w: 2, h: 2, preview: 'nosfinancewidget_preview' },
+
+  // Developer
+  { id: 'developer_git', className: 'NOSDeveloperGitWidget', parentClass: 'NOSDeveloperWidget', label: 'NOS GitHub Grid', w: 4, h: 2, preview: 'nosdeveloperwidget_preview' },
+  { id: 'developer_build', className: 'NOSDeveloperBuildWidget', parentClass: 'NOSDeveloperWidget', label: 'NOS CI/CD Pipeline', w: 4, h: 2, preview: 'nosdeveloperwidget_preview' },
+  { id: 'developer_cpu', className: 'NOSDeveloperCpuWidget', parentClass: 'NOSDeveloperWidget', label: 'NOS CPU Monitor', w: 2, h: 2, preview: 'nosdeveloperwidget_preview' },
+
+  // Social
+  { id: 'social_feed', className: 'NOSSocialFeedWidget', parentClass: 'NOSSocialWidget', label: 'NOS Social Feed', w: 4, h: 2, preview: 'nossocialwidget_preview' },
+
+  // Smart Home
+  { id: 'smart_home_controls', className: 'NOSSmartHomeControlsWidget', parentClass: 'NOSSmartHomeWidget', label: 'NOS Smart Room', w: 2, h: 2, preview: 'nossmarthomewidget_preview' },
+
+  // AI
+  { id: 'ai_chat', className: 'NOSAiChatWidget', parentClass: 'NOSAiWidget', label: 'NOS AI Chat', w: 4, h: 4, preview: 'nosaiwidget_preview' },
+  { id: 'ai_summary', className: 'NOSAiSummaryWidget', parentClass: 'NOSAiWidget', label: 'NOS AI Summary', w: 4, h: 2, preview: 'nosaiwidget_preview' }
+];
+
 function withAndroidWidgets(config) {
   // 1. Add receivers to AndroidManifest.xml
   config = withAndroidManifest(config, (config) => {
@@ -39,6 +84,14 @@ function withAndroidWidgets(config) {
       { name: '.widget.NOSSmartHomeWidget', label: 'NOS Smart Home Widget', resource: '@xml/widgetprovider_nossmarthomewidget' },
       { name: '.widget.NOSAiWidget', label: 'NOS AI Widget', resource: '@xml/widgetprovider_nosaiwidget' }
     ];
+
+    templateWidgets.forEach((tw) => {
+      widgetsToInject.push({
+        name: `.widget.${tw.className}`,
+        label: tw.label,
+        resource: `@xml/widgetprovider_${tw.id.toLowerCase()}`
+      });
+    });
     
     widgetsToInject.forEach((w) => {
       // Check if already exists
@@ -91,6 +144,46 @@ function withAndroidWidgets(config) {
     async (config) => {
       const projectRoot = config.modRequest.projectRoot;
       const targetBase = path.join(projectRoot, 'android', 'app', 'src', 'main');
+
+      // Generate template-specific Kotlin classes in src/native/android/java/com/nothing/nosgallery/widget/
+      const srcWidgetJavaDir = path.join(projectRoot, 'src', 'native', 'android', 'java', 'com', 'nothing', 'nosgallery', 'widget');
+      if (!fs.existsSync(srcWidgetJavaDir)) {
+        fs.mkdirSync(srcWidgetJavaDir, { recursive: true });
+      }
+      templateWidgets.forEach((w) => {
+        const ktContent = `package com.nothing.nosgallery.widget
+
+class ${w.className} : ${w.parentClass}() {
+    override val defaultTemplateId = "${w.id}"
+}
+`;
+        fs.writeFileSync(path.join(srcWidgetJavaDir, `${w.className}.kt`), ktContent, 'utf8');
+      });
+
+      // Generate template-specific XML provider configs in src/native/android/res/xml/
+      const srcWidgetXmlDir = path.join(projectRoot, 'src', 'native', 'android', 'res', 'xml');
+      if (!fs.existsSync(srcWidgetXmlDir)) {
+        fs.mkdirSync(srcWidgetXmlDir, { recursive: true });
+      }
+      templateWidgets.forEach((w) => {
+        const minWidth = w.w === 4 ? 330 : 160;
+        const minHeight = w.h === 4 ? 230 : 110;
+        const xmlContent = `<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="${minWidth}dp"
+    android:minHeight="${minHeight}dp"
+    android:targetCellWidth="${w.w}"
+    android:targetCellHeight="${w.h}"
+    android:resizeMode="horizontal|vertical"
+    android:initialLayout="@layout/nos_widget_layout"
+    android:previewLayout="@layout/nos_widget_layout"
+    android:previewImage="@drawable/${w.preview}"
+    android:updatePeriodMillis="1800000"
+    android:widgetCategory="home_screen">
+</appwidget-provider>
+`;
+        fs.writeFileSync(path.join(srcWidgetXmlDir, `widgetprovider_${w.id.toLowerCase()}.xml`), xmlContent, 'utf8');
+      });
       
       // Copy Kotlin widget code
       const srcJava = path.join(projectRoot, 'src', 'native', 'android', 'java');

@@ -9,18 +9,19 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class NOSClockWidget : NosBaseWidgetProvider() {
+open class NOSClockWidget : NosBaseWidgetProvider() {
 
     override val categoryPrefix = "clock_"
+    open override val defaultTemplateId = "clock_dot"
 
-    override fun populateViews(
+    open override fun populateViews(
         context: Context,
         views: RemoteViews,
         config: JSONObject?,
         theme: String
     ) {
         val customizations = config?.optJSONObject("customizations")
-        val templateId = config?.optString("templateId", "clock_dot") ?: "clock_dot"
+        val templateId = config?.optString("templateId", defaultTemplateId) ?: defaultTemplateId
 
         val accentColor = resolveAccentColor(config, theme)
         val textColor = resolveTextColor(config, theme)

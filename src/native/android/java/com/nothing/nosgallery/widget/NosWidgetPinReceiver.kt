@@ -29,26 +29,19 @@ class NosWidgetPinReceiver : BroadcastReceiver() {
 
             // Trigger an immediate update broadcast to the corresponding AppWidgetProvider class
             val appWidgetManager = AppWidgetManager.getInstance(context)
-            val providerClassMap = mapOf(
-                "clock"        to NOSClockWidget::class.java,
-                "calendar"     to NOSCalendarWidget::class.java,
-                "weather"      to NOSWeatherWidget::class.java,
-                "productivity" to NOSProductivityWidget::class.java,
-                "health"       to NOSHealthWidget::class.java,
-                "finance"      to NOSFinanceWidget::class.java,
-                "developer"    to NOSDeveloperWidget::class.java,
-                "social"       to NOSSocialWidget::class.java,
-                "smart_home"   to NOSSmartHomeWidget::class.java,
-                "ai"           to NOSAiWidget::class.java
-            )
-
-            val providerClass = providerClassMap[category]
+            val info = appWidgetManager.getAppWidgetInfo(appWidgetId)
+            val providerClass = info?.provider?.className
             if (providerClass != null) {
-                val updateIntent = Intent(context, providerClass).apply {
-                    action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(appWidgetId))
+                try {
+                    val clazz = Class.forName(providerClass)
+                    val updateIntent = Intent(context, clazz).apply {
+                        action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                        putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(appWidgetId))
+                    }
+                    context.sendBroadcast(updateIntent)
+                } catch (e: Exception) {
+                    Log.e("NosWidgetPinReceiver", "Failed to trigger update for provider $providerClass: ${e.message}")
                 }
-                context.sendBroadcast(updateIntent)
             }
         }
     }

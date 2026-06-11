@@ -9,18 +9,19 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class NOSCalendarWidget : NosBaseWidgetProvider() {
+open class NOSCalendarWidget : NosBaseWidgetProvider() {
 
     override val categoryPrefix = "calendar_"
+    open override val defaultTemplateId = "calendar_monthly"
 
-    override fun populateViews(
+    open override fun populateViews(
         context: Context,
         views: RemoteViews,
         config: JSONObject?,
         theme: String
     ) {
         val customizations = config?.optJSONObject("customizations")
-        val templateId = config?.optString("templateId", "calendar_month") ?: "calendar_month"
+        val templateId = config?.optString("templateId", defaultTemplateId) ?: defaultTemplateId
 
         val accentColor = resolveAccentColor(config, theme)
         val textColor = resolveTextColor(config, theme)
@@ -45,8 +46,13 @@ class NOSCalendarWidget : NosBaseWidgetProvider() {
                 views.setTextColor(R.id.nos_widget_sub_value, subtextColor)
                 views.setViewVisibility(R.id.nos_widget_progress, View.VISIBLE)
                 views.setProgressBar(R.id.nos_widget_progress, 100, pct, false)
-                views.setInt(R.id.nos_widget_progress, "setProgressTintList",
-                    android.content.res.ColorStateList.valueOf(accentColor).defaultColor)
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                    views.setColorStateList(
+                        R.id.nos_widget_progress,
+                        "setProgressTintList",
+                        android.content.res.ColorStateList.valueOf(accentColor)
+                    )
+                }
             }
             templateId.contains("agenda") || templateId.contains("list") -> {
                 val sdf = SimpleDateFormat("EEE, MMM d", Locale.getDefault())
