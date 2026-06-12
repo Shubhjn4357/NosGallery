@@ -48,7 +48,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
         with:
-          accept-android-sdk-licenses: false
+          accept-android-sdk-licenses: true
 
       - name: Accept Android SDK Licenses Manually
         run: |
@@ -124,7 +124,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
         with:
-          accept-android-sdk-licenses: false
+          accept-android-sdk-licenses: true
 
       - name: Accept Android SDK Licenses Manually
         run: |

@@ -198,36 +198,46 @@ class ${w.className} : ${w.parentClass}() {
       let gitDate = new Date().toISOString();
 
       try {
-        const gitPath = path.join(projectRoot, '.git');
-        if (fs.existsSync(gitPath)) {
-          const headContent = fs.readFileSync(path.join(gitPath, 'HEAD'), 'utf8').trim();
-          if (headContent.startsWith('ref:')) {
-            gitBranch = headContent.replace('ref:', '').replace('refs/heads/', '').trim();
-            const branchPath = path.join(gitPath, 'refs', 'heads', gitBranch);
-            if (fs.existsSync(branchPath)) {
-              gitCommit = fs.readFileSync(branchPath, 'utf8').trim().substring(0, 8);
+        const { execSync } = require('child_process');
+        gitBranch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf8', cwd: projectRoot }).trim();
+        gitCommit = execSync('git rev-parse --short HEAD', { encoding: 'utf8', cwd: projectRoot }).trim();
+        gitAuthor = execSync('git log -1 --format=%an', { encoding: 'utf8', cwd: projectRoot }).trim();
+        gitMessage = execSync('git log -1 --format=%s', { encoding: 'utf8', cwd: projectRoot }).trim();
+        gitDate = execSync('git log -1 --format=%ad --date=iso', { encoding: 'utf8', cwd: projectRoot }).trim();
+      } catch (e) {
+        console.log('[withAndroidWidgets] Failed to run git commands, falling back to manual .git parsing:', e.message);
+        try {
+          const gitPath = path.join(projectRoot, '.git');
+          if (fs.existsSync(gitPath)) {
+            const headContent = fs.readFileSync(path.join(gitPath, 'HEAD'), 'utf8').trim();
+            if (headContent.startsWith('ref:')) {
+              gitBranch = headContent.replace('ref:', '').replace('refs/heads/', '').trim();
+              const branchPath = path.join(gitPath, 'refs', 'heads', gitBranch);
+              if (fs.existsSync(branchPath)) {
+                gitCommit = fs.readFileSync(branchPath, 'utf8').trim().substring(0, 8);
+              }
+            } else {
+              gitCommit = headContent.substring(0, 8);
             }
-          } else {
-            gitCommit = headContent.substring(0, 8);
-          }
 
-          const logPath = path.join(gitPath, 'logs', 'HEAD');
-          if (fs.existsSync(logPath)) {
-            const logLines = fs.readFileSync(logPath, 'utf8').trim().split('\n');
-            const lastLine = logLines[logLines.length - 1];
-            if (lastLine) {
-              const parts = lastLine.split('\t');
-              if (parts[1]) gitMessage = parts[1].trim();
-              const authorPart = parts[0].split(' ');
-              const emailIdx = authorPart.findIndex(p => p.startsWith('<'));
-              if (emailIdx > 2) {
-                gitAuthor = authorPart.slice(2, emailIdx).join(' ');
+            const logPath = path.join(gitPath, 'logs', 'HEAD');
+            if (fs.existsSync(logPath)) {
+              const logLines = fs.readFileSync(logPath, 'utf8').trim().split('\n');
+              const lastLine = logLines[logLines.length - 1];
+              if (lastLine) {
+                const parts = lastLine.split('\t');
+                if (parts[1]) gitMessage = parts[1].trim();
+                const authorPart = parts[0].split(' ');
+                const emailIdx = authorPart.findIndex(p => p.startsWith('<'));
+                if (emailIdx > 2) {
+                  gitAuthor = authorPart.slice(2, emailIdx).join(' ');
+                }
               }
             }
           }
+        } catch (innerErr) {
+          console.log('[withAndroidWidgets] Manual parsing also failed:', innerErr.message);
         }
-      } catch (e) {
-        console.log('[withAndroidWidgets] Failed to read local git details:', e.message);
       }
 
       const gitInfo = {
