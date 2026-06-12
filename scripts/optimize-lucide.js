@@ -17,7 +17,7 @@ function walk(dir) {
   return results;
 }
 
-const srcDir = path.join(__dirname, '..', 'src');
+const srcDir = path.resolve('src');
 const files = walk(srcDir);
 
 let optimizedCount = 0;

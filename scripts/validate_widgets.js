@@ -1,8 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 
-const WIDGET_LIST_PATH = path.join(__dirname, '..', 'src', 'widget list.md');
-const REGISTRY_PATH = path.join(__dirname, '..', 'src', 'widgets', 'registry.ts');
+const WIDGET_LIST_PATH = path.resolve('src/widget list.md');
+const REGISTRY_PATH = path.resolve('src/widgets/registry.ts');
+
 
 if (!fs.existsSync(WIDGET_LIST_PATH)) {
   console.error(`Error: widget list.md not found at ${WIDGET_LIST_PATH}`);

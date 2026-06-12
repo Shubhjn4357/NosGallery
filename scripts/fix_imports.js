@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const WIDGETS_DIR = path.join(__dirname, '..', 'src', 'widgets');
+const WIDGETS_DIR = path.resolve('src/widgets');
 const CATEGORIES = [
   'clock',
   'calendar',
