@@ -1,6 +1,6 @@
 import { Image as ImageIcon, RefreshCw } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';
 import { useFeedback } from '../../hooks/useFeedback';
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   frameBorder: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 8,

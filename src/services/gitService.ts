@@ -11,7 +11,7 @@ export interface GitCommitInfo {
 export function getGitStats(): GitCommitInfo {
   try {
     return fallbackGitInfo as GitCommitInfo;
-  } catch (e) {
+  } catch {
     return {
       branch: 'main',
       commit: 'unknown',

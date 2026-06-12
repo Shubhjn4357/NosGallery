@@ -1,5 +1,5 @@
 import { Play, Pause, SkipForward, SkipBack, Music } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';
@@ -29,19 +29,43 @@ export const MusicWidget: React.FC<MusicWidgetProps> = ({
   globalTheme,
   interactive,
 }) => {
-  const { musicPlaying, setMusicPlaying, currentTrackIndex, setCurrentTrackIndex } = useWidgetStore();
+  const { musicPlaying, currentTrackIndex } = useWidgetStore();
   const { triggerHaptic } = useFeedback();
   const { accentColor, textStyle, subtextStyle } = useWidgetStyle({}, globalTheme);
 
   const [elapsed, setElapsed] = useState(38);
   const track = TRACKS[currentTrackIndex] || TRACKS[0];
+  const trackDuration = track.duration;
+
+  const handlePlayPause = useCallback(() => {
+    if (!interactive) return;
+    triggerHaptic('light');
+    const state = useWidgetStore.getState();
+    state.setMusicPlaying(!state.musicPlaying);
+  }, [interactive, triggerHaptic]);
+
+  const handleSkipForward = useCallback(() => {
+    if (!interactive) return;
+    triggerHaptic('selection');
+    setElapsed(0);
+    const state = useWidgetStore.getState();
+    state.setCurrentTrackIndex((state.currentTrackIndex + 1) % TRACKS.length);
+  }, [interactive, triggerHaptic]);
+
+  const handleSkipBack = useCallback(() => {
+    if (!interactive) return;
+    triggerHaptic('selection');
+    setElapsed(0);
+    const state = useWidgetStore.getState();
+    state.setCurrentTrackIndex(state.currentTrackIndex === 0 ? TRACKS.length - 1 : state.currentTrackIndex - 1);
+  }, [interactive, triggerHaptic]);
 
   useEffect(() => {
     if (!musicPlaying || !interactive) return;
 
     const interval = setInterval(() => {
       setElapsed((prev) => {
-        if (prev >= track.duration) {
+        if (prev >= trackDuration) {
           // Loop or skip
           handleSkipForward();
           return 0;
@@ -51,27 +75,7 @@ export const MusicWidget: React.FC<MusicWidgetProps> = ({
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [musicPlaying, currentTrackIndex, interactive]);
-
-  const handlePlayPause = () => {
-    if (!interactive) return;
-    triggerHaptic('light');
-    setMusicPlaying(!musicPlaying);
-  };
-
-  const handleSkipForward = () => {
-    if (!interactive) return;
-    triggerHaptic('selection');
-    setElapsed(0);
-    setCurrentTrackIndex((currentTrackIndex + 1) % TRACKS.length);
-  };
-
-  const handleSkipBack = () => {
-    if (!interactive) return;
-    triggerHaptic('selection');
-    setElapsed(0);
-    setCurrentTrackIndex(currentTrackIndex === 0 ? TRACKS.length - 1 : currentTrackIndex - 1);
-  };
+  }, [musicPlaying, interactive, trackDuration, handleSkipForward]);
 
   const formatTime = (secs: number) => {
     const m = Math.floor(secs / 60);

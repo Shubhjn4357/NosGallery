@@ -1,5 +1,5 @@
 import { Hourglass, Play, Pause, RotateCcw } from 'lucide-react-native';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';
@@ -29,6 +29,19 @@ export const PomodoroWidget: React.FC<PomodoroWidgetProps> = ({
   const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [running, setRunning] = useState(false);
 
+  const handleStartPause = useCallback(() => {
+    if (!interactive) return;
+    triggerHaptic('light');
+    setRunning((prev) => !prev);
+  }, [interactive, triggerHaptic]);
+
+  const handleReset = useCallback(() => {
+    if (!interactive) return;
+    triggerHaptic('medium');
+    setRunning(false);
+    setTimeLeft(mode === 'focus' ? 25 * 60 : 5 * 60);
+  }, [interactive, triggerHaptic, mode]);
+
   useEffect(() => {
     if (!running || !interactive) return;
 
@@ -51,20 +64,7 @@ export const PomodoroWidget: React.FC<PomodoroWidgetProps> = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [running, mode, interactive]);
-
-  const handleStartPause = () => {
-    if (!interactive) return;
-    triggerHaptic('light');
-    setRunning(!running);
-  };
-
-  const handleReset = () => {
-    if (!interactive) return;
-    triggerHaptic('medium');
-    setRunning(false);
-    setTimeLeft(mode === 'focus' ? 25 * 60 : 5 * 60);
-  };
+  }, [running, mode, interactive, triggerHaptic, triggerSound]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

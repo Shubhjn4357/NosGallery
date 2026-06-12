@@ -13,6 +13,7 @@ export interface WidgetCustomizations {
   blur?: number;
   shadowType?: string;
   themeOverride?: string;
+  fontSize?: number;
 }
 
 export interface ActiveWidget {

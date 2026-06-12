@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ColorValue } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';
@@ -7,10 +7,11 @@ import { ThemeId } from '../../themes/themes';
 interface FlipClockProps {
   currentTime: Date;
   globalTheme: ThemeId;
+  customizations?: any;
 }
 
 // ── 3D FLIP DIGIT COMPONENT ──
-const FlipDigit: React.FC<{ value: string; isLight: boolean; accentColor: string; textColor: string }> = ({
+const FlipDigit: React.FC<{ value: string; isLight: boolean; accentColor: ColorValue; textColor: ColorValue }> = ({
   value,
   isLight,
   accentColor,
@@ -153,7 +154,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   staticHalf: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     justifyContent: 'center',
     alignItems: 'center',
   },

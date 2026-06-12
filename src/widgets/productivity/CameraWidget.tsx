@@ -32,7 +32,6 @@ export const CameraWidget: React.FC<CameraWidgetProps> = ({
   };
 
   const isLight = textStyle.color === '#000000';
-  const controlBg = isLight ? '#e5e5ea' : '#1c1c1e';
 
   return (
     <View style={styles.container}>
@@ -116,7 +115,7 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   viewfinderGrid: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     padding: 6,
   },
   corner: {

@@ -48,6 +48,7 @@ import { BatteryWidget } from './smart_home/BatteryWidget';
 import { SocialFeed } from './social/SocialFeed';
 import { ContactWidget } from './social/ContactWidget';
 import { SocialShortcutsWidget } from './social/SocialShortcutsWidget';
+import { queryAiProvider } from '../services/aiService';
 
 import { SmartHomeControls } from './smart_home/SmartHomeControls';
 import { TorchWidget } from './smart_home/TorchWidget';
@@ -181,17 +182,15 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
     const activeProvider = useWidgetStore.getState().activeAiProvider;
     const apiKey = useWidgetStore.getState().geminiApiKey;
 
-    import('../services/aiService').then(({ queryAiProvider }) => {
-      queryAiProvider(activeProvider, query, apiKey)
-        .then((res) => {
-          setAiThinking(false);
-          setAiResponse(res.response);
-        })
-        .catch((err) => {
-          setAiThinking(false);
-          setAiResponse(`Error: ${err.message}`);
-        });
-    });
+    queryAiProvider(activeProvider, query, apiKey)
+      .then((res) => {
+        setAiThinking(false);
+        setAiResponse(res.response);
+      })
+      .catch((err) => {
+        setAiThinking(false);
+        setAiResponse(`Error: ${err.message}`);
+      });
   };
 
   const customizations = {};

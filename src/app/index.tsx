@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SettingsScreen } from '../settings/settingsScreen';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useWidgetStore, ActiveWidget, WidgetCustomizations } from '../store/widgetStore';
+import { useWidgetStore, ActiveWidget } from '../store/widgetStore';
 import { useFeedback } from '../hooks/useFeedback';
 import { DotGridBackground } from '../components/DotGridBackground';
 import { LiquidGlassBackground } from '../components/LiquidGlassBackground';

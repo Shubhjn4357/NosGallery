@@ -24,7 +24,7 @@ export const QuickControlsWidget: React.FC<QuickControlsWidgetProps> = ({
   globalTheme,
   interactive,
 }) => {
-  const { systemVolume, setSystemVolume, torchEnabled, setTorchEnabled } = useWidgetStore();
+  const { systemVolume, setSystemVolume } = useWidgetStore();
   const { triggerHaptic } = useFeedback();
   const { accentColor, textStyle, subtextStyle } = useWidgetStyle({}, globalTheme);
 

@@ -1,17 +1,20 @@
-import { Share2, MessageSquare, Send, Instagram, Twitter, Compass } from 'lucide-react-native';
+import { Share2, MessageSquare, Send, Compass } from 'lucide-react-native';
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Linking } from 'react-native';
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';
 import { useFeedback } from '../../hooks/useFeedback';
+import { InstagramIcon, TwitterIcon, WhatsappIcon, TelegramIcon } from '../../components/BrandIcons';
 
 const LucideIcons = {
   Share2,
   MessageSquare,
   Send,
-  Instagram,
-  Twitter,
   Compass,
+  Instagram: InstagramIcon,
+  Twitter: TwitterIcon,
+  WhatsApp: WhatsappIcon,
+  Telegram: TelegramIcon,
 };
 
 interface SocialShortcutsWidgetProps {
@@ -20,8 +23,8 @@ interface SocialShortcutsWidgetProps {
 }
 
 const SHORTCUTS = [
-  { name: 'WhatsApp', scheme: 'whatsapp://', icon: 'MessageSquare', color: '#25D366' },
-  { name: 'Telegram', scheme: 'tg://', icon: 'Send', color: '#0088cc' },
+  { name: 'WhatsApp', scheme: 'whatsapp://', icon: 'WhatsApp', color: '#25D366' },
+  { name: 'Telegram', scheme: 'tg://', icon: 'Telegram', color: '#0088cc' },
   { name: 'Instagram', scheme: 'instagram://', icon: 'Instagram', color: '#E1306C' },
   { name: 'Snapchat', scheme: 'snapchat://', icon: 'Compass', color: '#FFFC00' },
   { name: 'Twitter', scheme: 'twitter://', icon: 'Twitter', color: '#1DA1F2' },

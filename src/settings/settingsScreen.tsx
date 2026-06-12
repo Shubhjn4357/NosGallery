@@ -1,10 +1,11 @@
-import { Sliders, Trash2, Volume2, Zap, Github, Heart, Key } from 'lucide-react-native';
+import { Sliders, Trash2, Volume2, Zap, Heart, Key } from 'lucide-react-native';
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, TextInput } from 'react-native';
 import { useWidgetStore, SystemSettings } from '../store/widgetStore';
 import { useFeedback } from '../hooks/useFeedback';
 import { themes } from '../themes/themes';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GithubIcon as Github } from '../components/BrandIcons';
 
 const LucideIcons = {
   Sliders,

@@ -9,6 +9,55 @@ const LucideIcons = {
   Calculator,
 };
 
+const evaluateSafe = (eq: string): number => {
+  const tokens: (string | number)[] = [];
+  let currentNum = '';
+  for (let i = 0; i < eq.length; i++) {
+    const char = eq[i];
+    if (/[0-9.]/.test(char)) {
+      currentNum += char;
+    } else if (['+', '-', '*', '/'].includes(char)) {
+      if (currentNum) {
+        tokens.push(parseFloat(currentNum));
+        currentNum = '';
+      }
+      tokens.push(char);
+    }
+  }
+  if (currentNum) {
+    tokens.push(parseFloat(currentNum));
+  }
+
+  const pass1: (string | number)[] = [];
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    if (token === '*' || token === '/') {
+      const prev = pass1.pop() as number;
+      const next = tokens[++i] as number;
+      if (token === '*') {
+        pass1.push(prev * next);
+      } else {
+        pass1.push(next !== 0 ? prev / next : 0);
+      }
+    } else {
+      pass1.push(token);
+    }
+  }
+
+  let result = pass1[0] as number;
+  for (let i = 1; i < pass1.length; i += 2) {
+    const op = pass1[i] as string;
+    const val = pass1[i + 1] as number;
+    if (op === '+') {
+      result += val;
+    } else if (op === '-') {
+      result -= val;
+    }
+  }
+
+  return result || 0;
+};
+
 interface CalculatorWidgetProps {
   globalTheme: ThemeId;
   interactive: boolean;
@@ -36,14 +85,13 @@ export const CalculatorWidget: React.FC<CalculatorWidgetProps> = ({
 
     if (char === '=') {
       try {
-        // Safe evaluation
         const cleanEq = equation.replace(/[^0-9+\-*/.]/g, '');
-        // eslint-disable-next-line no-eval
-        const result = eval(cleanEq);
+        // Safe mathematical evaluation without eval
+        const result = evaluateSafe(cleanEq);
         const resStr = String(result);
         setDisplay(resStr.substring(0, 8));
         setEquation(resStr);
-      } catch (err) {
+      } catch {
         setDisplay('Error');
       }
       return;

@@ -29,19 +29,6 @@ export const WidgetCard: React.FC<WidgetCardProps> = ({
     y: 0,
     w: template.defaultWidth,
     h: template.defaultHeight,
-    customizations: {
-      fontId: 'inter',
-      fontSize: 10,
-      backgroundType: 'solid',
-      backgroundColor: '#0a0a0c',
-      borderRadius: 14,
-      transparency: 0,
-      blur: 0,
-      shadowType: 'none',
-      titleText: template.defaultTitle,
-      valueText: template.defaultValue,
-      themeOverride: 'none',
-    },
   };
 
   return (

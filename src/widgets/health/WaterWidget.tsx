@@ -15,6 +15,7 @@ const LucideIcons = {
 interface WaterWidgetProps {
   globalTheme: ThemeId;
   interactive: boolean;
+  customizations?: any;
 }
 
 const TARGETS = [1500, 2000, 2500, 3000];
