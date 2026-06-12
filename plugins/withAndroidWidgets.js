@@ -31,10 +31,19 @@ const templateWidgets = [
   // Weather
   { id: 'weather_current', className: 'NOSWeatherCurrentWidget', parentClass: 'NOSWeatherWidget', label: 'NOS Current Weather', w: 2, h: 2, preview: 'nosweatherwidget_preview' },
   { id: 'weather_aqi', className: 'NOSWeatherAqiWidget', parentClass: 'NOSWeatherWidget', label: 'NOS Weather AQI', w: 2, h: 2, preview: 'nosweatherwidget_preview' },
+  { id: 'weather_moon_phase', className: 'NOSMoonPhaseWidget', parentClass: 'NOSWeatherWidget', label: 'NOS Moon Phase', w: 2, h: 2, preview: 'nosweatherwidget_preview' },
 
   // Productivity
   { id: 'productivity_todo', className: 'NOSProductivityTodoWidget', parentClass: 'NOSProductivityWidget', label: 'NOS Tasks Todo', w: 2, h: 2, preview: 'nosproductivitywidget_preview' },
   { id: 'productivity_focus', className: 'NOSProductivityFocusWidget', parentClass: 'NOSProductivityWidget', label: 'NOS Focus Timer', w: 2, h: 2, preview: 'nosproductivitywidget_preview' },
+  { id: 'productivity_calculator', className: 'NOSCalculatorWidget', parentClass: 'NOSProductivityWidget', label: 'NOS Calculator', w: 2, h: 2, preview: 'nosproductivitywidget_preview' },
+  { id: 'productivity_camera', className: 'NOSCameraWidget', parentClass: 'NOSProductivityWidget', label: 'NOS Camera Shortcut', w: 2, h: 2, preview: 'nosproductivitywidget_preview' },
+  { id: 'productivity_music', className: 'NOSMusicWidget', parentClass: 'NOSProductivityWidget', label: 'NOS Music Player', w: 4, h: 2, preview: 'nosproductivitywidget_preview' },
+  { id: 'productivity_text_username', className: 'NOSTextUsernameWidget', parentClass: 'NOSProductivityWidget', label: 'NOS Text Input', w: 2, h: 2, preview: 'nosproductivitywidget_preview' },
+  { id: 'productivity_google_search', className: 'NOSGoogleSearchWidget', parentClass: 'NOSProductivityWidget', label: 'NOS Google Search', w: 4, h: 2, preview: 'nosproductivitywidget_preview' },
+  { id: 'productivity_pomodoro', className: 'NOSPomodoroWidget', parentClass: 'NOSProductivityWidget', label: 'NOS Pomodoro Timer', w: 2, h: 2, preview: 'nosproductivitywidget_preview' },
+  { id: 'productivity_folder', className: 'NOSFolderWidget', parentClass: 'NOSProductivityWidget', label: 'NOS Apps Folder', w: 2, h: 2, preview: 'nosproductivitywidget_preview' },
+  { id: 'productivity_photo_frame', className: 'NOSPhotoFrameWidget', parentClass: 'NOSProductivityWidget', label: 'NOS Photo Frame', w: 2, h: 2, preview: 'nosproductivitywidget_preview' },
 
   // Health
   { id: 'health_steps', className: 'NOSHealthStepsWidget', parentClass: 'NOSHealthWidget', label: 'NOS Steps Tracker', w: 2, h: 2, preview: 'noshealthwidget_preview' },
@@ -48,16 +57,24 @@ const templateWidgets = [
   { id: 'developer_git', className: 'NOSDeveloperGitWidget', parentClass: 'NOSDeveloperWidget', label: 'NOS GitHub Grid', w: 4, h: 2, preview: 'nosdeveloperwidget_preview' },
   { id: 'developer_build', className: 'NOSDeveloperBuildWidget', parentClass: 'NOSDeveloperWidget', label: 'NOS CI/CD Pipeline', w: 4, h: 2, preview: 'nosdeveloperwidget_preview' },
   { id: 'developer_cpu', className: 'NOSDeveloperCpuWidget', parentClass: 'NOSDeveloperWidget', label: 'NOS CPU Monitor', w: 2, h: 2, preview: 'nosdeveloperwidget_preview' },
+  { id: 'developer_quick_controls', className: 'NOSQuickControlsWidget', parentClass: 'NOSDeveloperWidget', label: 'NOS Control Center', w: 4, h: 2, preview: 'nosdeveloperwidget_preview' },
+  { id: 'developer_battery', className: 'NOSBatteryWidget', parentClass: 'NOSDeveloperWidget', label: 'NOS Battery Status', w: 2, h: 2, preview: 'nosdeveloperwidget_preview' },
 
   // Social
   { id: 'social_feed', className: 'NOSSocialFeedWidget', parentClass: 'NOSSocialWidget', label: 'NOS Social Feed', w: 4, h: 2, preview: 'nossocialwidget_preview' },
+  { id: 'social_contact', className: 'NOSContactWidget', parentClass: 'NOSSocialWidget', label: 'NOS Fav Contact', w: 2, h: 2, preview: 'nossocialwidget_preview' },
+  { id: 'social_shortcuts', className: 'NOSSocialShortcutsWidget', parentClass: 'NOSSocialWidget', label: 'NOS Social Direct', w: 2, h: 2, preview: 'nossocialwidget_preview' },
 
   // Smart Home
   { id: 'smart_home_controls', className: 'NOSSmartHomeControlsWidget', parentClass: 'NOSSmartHomeWidget', label: 'NOS Smart Room', w: 2, h: 2, preview: 'nossmarthomewidget_preview' },
+  { id: 'smart_home_torch', className: 'NOSTorchWidget', parentClass: 'NOSSmartHomeWidget', label: 'NOS Torch', w: 2, h: 2, preview: 'nossmarthomewidget_preview' },
+  { id: 'smart_home_bluetooth', className: 'NOSBluetoothWidget', parentClass: 'NOSSmartHomeWidget', label: 'NOS Bluetooth', w: 2, h: 2, preview: 'nossmarthomewidget_preview' },
+  { id: 'smart_home_sound_control', className: 'NOSSoundControlWidget', parentClass: 'NOSSmartHomeWidget', label: 'NOS Sound Control', w: 2, h: 2, preview: 'nossmarthomewidget_preview' },
 
   // AI
   { id: 'ai_chat', className: 'NOSAiChatWidget', parentClass: 'NOSAiWidget', label: 'NOS AI Chat', w: 4, h: 4, preview: 'nosaiwidget_preview' },
-  { id: 'ai_summary', className: 'NOSAiSummaryWidget', parentClass: 'NOSAiWidget', label: 'NOS AI Summary', w: 4, h: 2, preview: 'nosaiwidget_preview' }
+  { id: 'ai_summary', className: 'NOSAiSummaryWidget', parentClass: 'NOSAiWidget', label: 'NOS AI Summary', w: 4, h: 2, preview: 'nosaiwidget_preview' },
+  { id: 'ai_bar', className: 'NOSAiBarWidget', parentClass: 'NOSAiWidget', label: 'NOS AI Router', w: 4, h: 2, preview: 'nosaiwidget_preview' }
 ];
 
 function withAndroidWidgets(config) {
@@ -71,19 +88,7 @@ function withAndroidWidgets(config) {
       mainApplication.receiver = [];
     }
     
-    // We want to add these receivers if they aren't already there
-    const widgetsToInject = [
-      { name: '.widget.NOSClockWidget', label: 'NOS Clock Widget', resource: '@xml/widgetprovider_nosclockwidget' },
-      { name: '.widget.NOSCalendarWidget', label: 'NOS Calendar Widget', resource: '@xml/widgetprovider_noscalendarwidget' },
-      { name: '.widget.NOSWeatherWidget', label: 'NOS Weather Widget', resource: '@xml/widgetprovider_nosweatherwidget' },
-      { name: '.widget.NOSProductivityWidget', label: 'NOS Tasks Widget', resource: '@xml/widgetprovider_nosproductivitywidget' },
-      { name: '.widget.NOSHealthWidget', label: 'NOS Health Widget', resource: '@xml/widgetprovider_noshealthwidget' },
-      { name: '.widget.NOSFinanceWidget', label: 'NOS Finance Widget', resource: '@xml/widgetprovider_nosfinancewidget' },
-      { name: '.widget.NOSDeveloperWidget', label: 'NOS Developer Widget', resource: '@xml/widgetprovider_nosdeveloperwidget' },
-      { name: '.widget.NOSSocialWidget', label: 'NOS Social Widget', resource: '@xml/widgetprovider_nossocialwidget' },
-      { name: '.widget.NOSSmartHomeWidget', label: 'NOS Smart Home Widget', resource: '@xml/widgetprovider_nossmarthomewidget' },
-      { name: '.widget.NOSAiWidget', label: 'NOS AI Widget', resource: '@xml/widgetprovider_nosaiwidget' }
-    ];
+    const widgetsToInject = [];
 
     templateWidgets.forEach((tw) => {
       widgetsToInject.push({
@@ -185,6 +190,60 @@ class ${w.className} : ${w.parentClass}() {
         fs.writeFileSync(path.join(srcWidgetXmlDir, `widgetprovider_${w.id.toLowerCase()}.xml`), xmlContent, 'utf8');
       });
       
+      // Retrieve Git repo stats
+      let gitBranch = 'main';
+      let gitCommit = 'a1b2c3d4';
+      let gitAuthor = 'Shubh';
+      let gitMessage = 'Feat: consolidate gallery studio layout templates';
+      let gitDate = new Date().toISOString();
+
+      try {
+        const gitPath = path.join(projectRoot, '.git');
+        if (fs.existsSync(gitPath)) {
+          const headContent = fs.readFileSync(path.join(gitPath, 'HEAD'), 'utf8').trim();
+          if (headContent.startsWith('ref:')) {
+            gitBranch = headContent.replace('ref:', '').replace('refs/heads/', '').trim();
+            const branchPath = path.join(gitPath, 'refs', 'heads', gitBranch);
+            if (fs.existsSync(branchPath)) {
+              gitCommit = fs.readFileSync(branchPath, 'utf8').trim().substring(0, 8);
+            }
+          } else {
+            gitCommit = headContent.substring(0, 8);
+          }
+
+          const logPath = path.join(gitPath, 'logs', 'HEAD');
+          if (fs.existsSync(logPath)) {
+            const logLines = fs.readFileSync(logPath, 'utf8').trim().split('\n');
+            const lastLine = logLines[logLines.length - 1];
+            if (lastLine) {
+              const parts = lastLine.split('\t');
+              if (parts[1]) gitMessage = parts[1].trim();
+              const authorPart = parts[0].split(' ');
+              const emailIdx = authorPart.findIndex(p => p.startsWith('<'));
+              if (emailIdx > 2) {
+                gitAuthor = authorPart.slice(2, emailIdx).join(' ');
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.log('[withAndroidWidgets] Failed to read local git details:', e.message);
+      }
+
+      const gitInfo = {
+        branch: gitBranch,
+        commit: gitCommit,
+        author: gitAuthor,
+        message: gitMessage,
+        date: gitDate
+      };
+
+      fs.writeFileSync(
+        path.join(projectRoot, 'src', 'services', 'git_info.json'),
+        JSON.stringify(gitInfo, null, 2),
+        'utf8'
+      );
+
       // Copy Kotlin widget code
       const srcJava = path.join(projectRoot, 'src', 'native', 'android', 'java');
       const targetJava = path.join(targetBase, 'java');
@@ -275,9 +334,18 @@ function generateDefaultWidgetsList(projectRoot) {
     "year progress": "calendar_progress",
     "current weather": "weather_current",
     "aqi": "weather_aqi",
+    "moon phase": "weather_moon_phase",
     "to-do": "productivity_todo",
     "focus task": "productivity_focus",
     "focus mode": "productivity_focus",
+    "calculator": "productivity_calculator",
+    "camera": "productivity_camera",
+    "music": "productivity_music",
+    "text input": "productivity_text_username",
+    "google search": "productivity_google_search",
+    "pomodoro": "productivity_pomodoro",
+    "folder": "productivity_folder",
+    "photo frame": "productivity_photo_frame",
     "steps": "health_steps",
     "water intake": "health_water",
     "breathing exercise": "health_breath",
@@ -285,10 +353,18 @@ function generateDefaultWidgetsList(projectRoot) {
     "github activity": "developer_git",
     "ci/cd status": "developer_build",
     "server cpu": "developer_cpu",
+    "quick controls": "developer_quick_controls",
+    "battery status": "developer_battery",
     "notifications": "social_feed",
+    "fav contact": "social_contact",
+    "social direct": "social_shortcuts",
     "lights": "smart_home_controls",
+    "torch": "smart_home_torch",
+    "bluetooth": "smart_home_bluetooth",
+    "sound control": "smart_home_sound_control",
     "ai chat": "ai_chat",
-    "ai summary": "ai_summary"
+    "ai summary": "ai_summary",
+    "ai router": "ai_bar"
   };
   
   const sanitizeId = (category, name) => {
@@ -308,8 +384,17 @@ function generateDefaultWidgetsList(projectRoot) {
     calendar_progress: { w: 2, h: 2, titleText: 'YEAR PROGRESS', valueText: '43%', iconName: 'Calendar', desc: 'Percentage visualizer of the current year.' },
     weather_current: { w: 2, h: 2, titleText: 'LONDON', valueText: '18°C Rain', iconName: 'CloudSun', desc: 'Live climate and temperature stats.' },
     weather_aqi: { w: 2, h: 2, titleText: 'LONDON AQI', valueText: '12 AQI', iconName: 'CloudSun', desc: 'Circular gauge showing air quality status.' },
+    weather_moon_phase: { w: 2, h: 2, titleText: 'MOON PHASE', valueText: 'Waxing Gibbous', iconName: 'Moon', desc: 'Calculates lunar phase details.' },
     productivity_todo: { w: 2, h: 2, titleText: 'TODAY TASKS', valueText: '3 Remaining', iconName: 'CheckSquare', desc: 'Simple task manager checklist.' },
     productivity_focus: { w: 2, h: 2, titleText: 'FOCUS MODE', valueText: '25:00', iconName: 'CheckSquare', desc: 'Pomodoro focus countdown widget.' },
+    productivity_calculator: { w: 2, h: 2, titleText: 'CALCULATOR', valueText: '0', iconName: 'Calculator', desc: 'Interactive pocket calculator.' },
+    productivity_camera: { w: 2, h: 2, titleText: 'CAMERA', valueText: 'Tap to open', iconName: 'Camera', desc: 'Quick camera lens and capture.' },
+    productivity_music: { w: 4, h: 2, titleText: 'MUSIC PLAYER', valueText: 'Nothing Beat - LoFi', iconName: 'Music', desc: 'System music player panel.' },
+    productivity_text_username: { w: 2, h: 2, titleText: 'TEXT INPUT', valueText: 'User Name', iconName: 'Type', desc: 'Enter username for widgets.' },
+    productivity_google_search: { w: 4, h: 2, titleText: 'GOOGLE SEARCH', valueText: 'Search the web', iconName: 'Search', desc: 'Web search bar panel.' },
+    productivity_pomodoro: { w: 2, h: 2, titleText: 'POMODORO', valueText: '25:00', iconName: 'Hourglass', desc: 'Ticking pomodoro focus timer.' },
+    productivity_folder: { w: 2, h: 2, titleText: 'APPS FOLDER', valueText: '4 Shortcuts', iconName: 'Folder', desc: 'App drawer shortcut container.' },
+    productivity_photo_frame: { w: 2, h: 2, titleText: 'PHOTO FRAME', valueText: 'Auto-Scrolling', iconName: 'Image', desc: 'Slideshow frame of gallery.' },
     health_steps: { w: 2, h: 2, titleText: 'STEPS TODAY', valueText: '8,432', iconName: 'Heart', desc: 'Daily step goal progress tracking.' },
     health_water: { w: 2, h: 2, titleText: 'WATER INTAKE', valueText: '1,200 ml', iconName: 'Heart', desc: 'Interactive water intake logger.' },
     health_breath: { w: 2, h: 2, titleText: 'BREATH WORK', valueText: 'Ready', iconName: 'Heart', desc: 'Animated breathing pacer.' },
@@ -317,10 +402,18 @@ function generateDefaultWidgetsList(projectRoot) {
     developer_git: { w: 4, h: 2, titleText: 'GITHUB ACTIVITY', valueText: 'Commits', iconName: 'Terminal', desc: 'Contribution commits grid display.' },
     developer_build: { w: 4, h: 2, titleText: 'CI/CD PIPELINE', valueText: 'Deploying', iconName: 'Terminal', desc: 'Live build status deployment monitor.' },
     developer_cpu: { w: 2, h: 2, titleText: 'SYSTEM CPU', valueText: '28% usage', iconName: 'Terminal', desc: 'Live system load gauge processor monitor.' },
+    developer_quick_controls: { w: 4, h: 2, titleText: 'CONTROL CENTER', valueText: 'WiFi • BT', iconName: 'Sliders', desc: 'System quick control panel.' },
+    developer_battery: { w: 2, h: 2, titleText: 'BATTERY STATUS', valueText: '80%', iconName: 'BatteryCharging', desc: 'Device and wireless buds level.' },
     social_feed: { w: 4, h: 2, titleText: 'SOCIAL NOTIFICATIONS', valueText: 'New Mentions', iconName: 'MessageSquare', desc: 'Aggregated social notifications stream.' },
+    social_contact: { w: 2, h: 2, titleText: 'FAV CONTACT', valueText: 'Shubh', iconName: 'User', desc: 'Quick contact call and dialer.' },
+    social_shortcuts: { w: 2, h: 2, titleText: 'SOCIAL DIRECT', valueText: 'WhatsApp • Telegram', iconName: 'Share2', desc: 'Direct shortcuts to WhatsApp, TG, Insta.' },
     smart_home_controls: { w: 2, h: 2, titleText: 'SMART ROOM', valueText: 'Lights and Plugs', iconName: 'Home', desc: 'Smart toggles for connected lights & appliances.' },
+    smart_home_torch: { w: 2, h: 2, titleText: 'TORCH', valueText: 'OFF', iconName: 'Zap', desc: 'Toggle system flashlight.' },
+    smart_home_bluetooth: { w: 2, h: 2, titleText: 'BLUETOOTH', valueText: 'Nothing Ear Connected', iconName: 'Bluetooth', desc: 'Bluetooth accessory panel.' },
+    smart_home_sound_control: { w: 2, h: 2, titleText: 'SOUND CONTROL', valueText: 'Vibrate', iconName: 'VolumeX', desc: 'Sound profile sound/vibe/mute.' },
     ai_chat: { w: 4, h: 4, titleText: 'AI ASSISTANT', valueText: 'Ask anything', iconName: 'Sparkles', desc: 'Personal assistant chat interface.' },
-    ai_summary: { w: 4, h: 2, titleText: 'AI METRICS BRIEF', valueText: 'Weekly digest ready', iconName: 'Sparkles', desc: 'Contextual summary of daily metrics.' }
+    ai_summary: { w: 4, h: 2, titleText: 'AI METRICS BRIEF', valueText: 'Weekly digest ready', iconName: 'Sparkles', desc: 'Contextual summary of daily metrics.' },
+    ai_bar: { w: 4, h: 2, titleText: 'AI ROUTER', valueText: 'Gemini • GPT', iconName: 'Sparkles', desc: 'AI model selection bar.' }
   };
   
   const categoryDefaults = {

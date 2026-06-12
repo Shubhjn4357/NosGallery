@@ -2,49 +2,40 @@ import { useMemo } from 'react';
 import { ViewStyle, TextStyle, Platform } from 'react-native';
 import { ThemeId, themes, ThemeConfig } from '../themes/themes';
 import { getFontStyle } from '../fonts/fonts';
-import { WidgetCustomizations } from '../store/widgetStore';
 
-export const useWidgetStyle = (customizations: WidgetCustomizations, globalTheme: ThemeId) => {
-  const styles = useMemo(() => {
-    const activeThemeId = customizations.themeOverride && customizations.themeOverride !== 'none'
-      ? customizations.themeOverride
-      : globalTheme;
-
+export const useWidgetStyle = (customizations: any, globalTheme?: ThemeId) => {
+  const activeThemeId = (globalTheme || (typeof customizations === 'string' ? customizations : 'nos')) as ThemeId;
+  return useMemo(() => {
     const themeConfig: ThemeConfig = themes[activeThemeId] || themes.nos;
-    const fontStyle = getFontStyle(customizations.fontId);
-
-    const accent = customizations.accentColor || themeConfig.accentColor;
-    const opacity = 1 - (customizations.transparency / 100);
+    
+    // Choose font based on theme
+    const fontId = activeThemeId === 'nos' ? 'nos_dot' : 'inter';
+    const fontStyle = getFontStyle(fontId);
+    const accent = themeConfig.accentColor;
 
     // 1. Resolve Background Style
     let backgroundStyle: ViewStyle = {};
-    if (customizations.backgroundType === 'none') {
-      backgroundStyle = { backgroundColor: 'transparent' };
-    } else if (customizations.backgroundType === 'glass') {
+    if (activeThemeId === 'glassmorphism') {
       backgroundStyle = {
-        backgroundColor: `rgba(255, 255, 255, ${0.12 * opacity})`,
+        backgroundColor: 'rgba(255, 255, 255, 0.12)',
         borderColor: 'rgba(255, 255, 255, 0.25)',
         borderWidth: 1,
       };
-    } else if (customizations.backgroundType === 'gradient') {
-      const colors = customizations.gradientColors || themeConfig.gradient || ['#333333', '#111111'];
-      backgroundStyle = { backgroundColor: colors[0] };
+    } else if (activeThemeId === 'liquidglass') {
+      backgroundStyle = {
+        backgroundColor: 'rgba(255, 255, 255, 0.14)',
+        borderColor: 'rgba(255, 255, 255, 0.35)',
+        borderWidth: 1.5,
+      };
+    } else if (themeConfig.gradient) {
+      backgroundStyle = { backgroundColor: themeConfig.gradient[0] };
     } else {
-      // Solid background
-      const baseColor = customizations.backgroundColor || themeConfig.backgroundColor;
-      if (baseColor.startsWith('#')) {
-        const r = parseInt(baseColor.slice(1, 3), 16);
-        const g = parseInt(baseColor.slice(3, 5), 16);
-        const b = parseInt(baseColor.slice(5, 7), 16);
-        backgroundStyle = { backgroundColor: `rgba(${r}, ${g}, ${b}, ${opacity})` };
-      } else {
-        backgroundStyle = { backgroundColor: baseColor };
-      }
+      backgroundStyle = { backgroundColor: themeConfig.backgroundColor };
     }
 
     // 2. Resolve Border Style
     const borderStyle: ViewStyle = {
-      borderRadius: customizations.borderRadius !== undefined ? customizations.borderRadius : themeConfig.borderRadius,
+      borderRadius: themeConfig.borderRadius,
       borderWidth: themeConfig.borderWidth,
       borderColor: activeThemeId === 'amoled' || activeThemeId === 'cyberpunk' || activeThemeId === 'luxury'
         ? accent
@@ -54,25 +45,17 @@ export const useWidgetStyle = (customizations: WidgetCustomizations, globalTheme
     // 3. Resolve Shadow Style
     let shadowStyle: ViewStyle = {};
     if (Platform.OS === 'web') {
-      if (customizations.shadowType === 'glow') {
+      if (themeConfig.glow) {
         shadowStyle = {
           boxShadow: `0px 0px 12px ${accent}`,
         } as any;
-      } else if (customizations.shadowType === 'soft') {
+      } else {
         shadowStyle = {
           boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)',
         } as any;
-      } else if (customizations.shadowType === 'medium') {
-        shadowStyle = {
-          boxShadow: '0px 6px 10px rgba(0, 0, 0, 0.2)',
-        } as any;
-      } else if (customizations.shadowType === 'hard') {
-        shadowStyle = {
-          boxShadow: `4px 4px 0px ${themeConfig.textColor}`,
-        } as any;
       }
     } else {
-      if (customizations.shadowType === 'glow') {
+      if (themeConfig.glow) {
         shadowStyle = {
           shadowColor: accent,
           shadowOffset: { width: 0, height: 0 },
@@ -80,7 +63,7 @@ export const useWidgetStyle = (customizations: WidgetCustomizations, globalTheme
           shadowRadius: 12,
           elevation: 8,
         };
-      } else if (customizations.shadowType === 'soft') {
+      } else {
         shadowStyle = {
           shadowColor: '#000000',
           shadowOffset: { width: 0, height: 4 },
@@ -88,29 +71,13 @@ export const useWidgetStyle = (customizations: WidgetCustomizations, globalTheme
           shadowRadius: 6,
           elevation: 2,
         };
-      } else if (customizations.shadowType === 'medium') {
-        shadowStyle = {
-          shadowColor: '#000000',
-          shadowOffset: { width: 0, height: 6 },
-          shadowOpacity: 0.2,
-          shadowRadius: 10,
-          elevation: 5,
-        };
-      } else if (customizations.shadowType === 'hard') {
-        shadowStyle = {
-          shadowColor: themeConfig.textColor,
-          shadowOffset: { width: 4, height: 4 },
-          shadowOpacity: 0.8,
-          shadowRadius: 0,
-          elevation: 4,
-        };
       }
     }
 
     // 4. Resolve Typography Styles
     const textStyle: TextStyle = {
       fontFamily: fontStyle.fontFamily,
-      color: customizations.textColor || themeConfig.textColor,
+      color: themeConfig.textColor,
       letterSpacing: fontStyle.letterSpacing,
       textTransform: fontStyle.textTransform || 'none',
     };
@@ -159,8 +126,7 @@ export const useWidgetStyle = (customizations: WidgetCustomizations, globalTheme
       warningColor,
       themeConfig,
     };
-  }, [customizations, globalTheme]);
-
-  return styles;
+  }, [activeThemeId]);
 };
+
 export type WidgetStyleResult = ReturnType<typeof useWidgetStyle>;

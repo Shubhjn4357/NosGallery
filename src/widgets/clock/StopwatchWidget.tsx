@@ -1,13 +1,16 @@
-import { RotateCcw } from 'lucide-react-native';
+import { RotateCcw, Play, Pause, Flag } from 'lucide-react-native';
 import { WidgetCustomizations } from '../../store/widgetStore';
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';
+import { useFeedback } from '../../hooks/useFeedback';
 
 const LucideIcons = {
   RotateCcw,
+  Play,
+  Pause,
+  Flag,
 };
 
 interface StopwatchWidgetProps {
@@ -29,94 +32,119 @@ export const StopwatchWidget: React.FC<StopwatchWidgetProps> = ({
   handleStopwatch,
   handleStopwatchReset,
 }) => {
-  const { subtextStyle } = useWidgetStyle(customizations, globalTheme);
+  const { accentColor, textStyle, subtextStyle } = useWidgetStyle(customizations, globalTheme);
+  const { triggerHaptic } = useFeedback();
 
-  const swSec = Math.floor(swTime / 10);
-  const displaySec = swSec % 60;
-  
-  // Choose standard orange/espresso accent if none provided
-  const timerAccent = customizations.accentColor || '#ff9500';
-  const isLight = customizations.backgroundColor === '#ffffff';
+  // Local laps state
+  const [laps, setLaps] = useState<string[]>([]);
 
-  // Calculate ticks
-  const maxTicks = 24;
-  // Make ticks fill up to 20 or loop
-  const filledTicks = Math.min(maxTicks, Math.round((swSec % 30) / 30 * maxTicks));
+  // Reset laps when time is reset
+  const [prevSwTime, setPrevSwTime] = useState(swTime);
+  if (swTime !== prevSwTime) {
+    setPrevSwTime(swTime);
+    if (swTime === 0) {
+      setLaps([]);
+    }
+  }
+
+  const formatStopwatchTime = (time: number) => {
+    const mins = Math.floor(time / 600);
+    const secs = Math.floor((time % 600) / 10);
+    const deci = time % 10;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${deci}`;
+  };
+
+  const handleLap = () => {
+    if (!interactive || !swActive) return;
+    triggerHaptic('selection');
+    const lapTimeStr = formatStopwatchTime(swTime);
+    setLaps((prev) => [lapTimeStr, ...prev].slice(0, 3)); // Keep last 3 laps
+  };
+
+  const isLight = textStyle.color === '#000000';
+  const controlBg = isLight ? '#e5e5ea' : '#1c1c1e';
+
+  // Tick calculation for ring or line
+  const maxTicks = 16;
+  const filledTicks = Math.min(maxTicks, Math.round(((swTime / 10) % 15) / 15 * maxTicks));
 
   return (
     <View style={styles.container}>
-      {/* Top Progress Ticks */}
-      <View style={styles.ticksWrapper}>
-        <View style={styles.ticksNumbersRow}>
-          <Text style={[styles.tickNum, subtextStyle]}>10</Text>
-          <Text style={[styles.tickNum, subtextStyle, { marginRight: 20 }]}>20</Text>
-        </View>
+      {/* Top Header */}
+      <View style={styles.header}>
+        <Text style={[styles.title, subtextStyle]}>CHRONOMETER</Text>
         <View style={styles.ticksRow}>
-          {Array.from({ length: maxTicks }).map((_, idx) => {
-            const isFilled = idx < filledTicks;
-            return (
-              <View
-                key={idx}
-                style={[
-                  styles.tickBar,
-                  {
-                    backgroundColor: isFilled 
-                      ? timerAccent 
-                      : (isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.15)'),
-                    height: idx % 6 === 0 ? 10 : 6,
-                  }
-                ]}
-              />
-            );
-          })}
+          {Array.from({ length: maxTicks }).map((_, idx) => (
+            <View
+              key={idx}
+              style={[
+                styles.tickBar,
+                {
+                  backgroundColor: idx < filledTicks ? accentColor : (isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.15)'),
+                },
+              ]}
+            />
+          ))}
         </View>
       </View>
 
-      {/* Main Control Panel */}
-      <View style={styles.controlsRow}>
-        {/* Name Label */}
-        <View>
-          <Text style={[styles.timerTitle, { color: timerAccent }]}>
-            {customizations.titleText || 'Espresso'}
+      {/* Timer readout & Laps side-by-side */}
+      <View style={styles.mainRow}>
+        <View style={styles.timerCol}>
+          <Text style={[styles.timeText, textStyle]}>
+            {formatStopwatchTime(swTime)}
           </Text>
-          <Text style={[styles.timerSubText, subtextStyle]}>Brewing</Text>
         </View>
-
-        {/* Play/Stop Center Trigger Button */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            activeOpacity={0.85}
-            disabled={!interactive}
-            onPress={handleStopwatch}
-            style={[styles.playStopBtn, { borderColor: timerAccent }]}
-          >
-            {swActive ? (
-              <View style={[styles.stopSquare, { backgroundColor: timerAccent }]} />
-            ) : (
-              <View style={[styles.playTriangle, { borderLeftColor: timerAccent }]} />
-            )}
-          </TouchableOpacity>
-
-          {/* Quick Double-tap Reset Area */}
-          {swTime > 0 && !swActive && (
-            <TouchableOpacity 
-              activeOpacity={0.7} 
-              onPress={handleStopwatchReset}
-              style={styles.resetBadge}
-            >
-              <LucideIcons.RotateCcw size={10} color={timerAccent} />
-            </TouchableOpacity>
+        <View style={styles.lapsCol}>
+          {laps.length > 0 ? (
+            laps.map((lap, i) => (
+              <Text key={i} style={[styles.lapTxt, subtextStyle]}>
+                LAP {laps.length - i} • {lap}
+              </Text>
+            ))
+          ) : (
+            <Text style={[styles.noLapsTxt, subtextStyle]}>NO LAPS SAVED</Text>
           )}
         </View>
-
-        {/* Elapsed Timer Counter */}
-        <View style={styles.timeWrapper}>
-          <Text style={[styles.timeText, { color: isLight ? '#000000' : '#ffffff' }]}>
-            {displaySec}
-            <Text style={[styles.timeUnit, { color: timerAccent }]}>s</Text>
-          </Text>
-        </View>
       </View>
+
+      {/* Buttons */}
+      {interactive && (
+        <View style={styles.buttons}>
+          <TouchableOpacity
+            onPress={handleStopwatch}
+            style={[styles.startBtn, { backgroundColor: swActive ? '#ff3b30' : accentColor }]}
+            activeOpacity={0.8}
+          >
+            {swActive ? (
+              <LucideIcons.Pause size={10} color="#ffffff" />
+            ) : (
+              <LucideIcons.Play size={10} color="#000000" />
+            )}
+            <Text style={[styles.btnLabel, { color: swActive ? '#ffffff' : '#000000' }]}>
+              {swActive ? 'PAUSE' : 'START'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={handleLap}
+            disabled={!swActive}
+            style={[styles.iconBtn, { backgroundColor: controlBg, opacity: swActive ? 1 : 0.4 }]}
+            activeOpacity={0.8}
+          >
+            <LucideIcons.Flag size={10} color={textStyle.color} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={handleStopwatchReset}
+            disabled={swActive || swTime === 0}
+            style={[styles.iconBtn, { backgroundColor: controlBg, opacity: !swActive && swTime > 0 ? 1 : 0.4 }]}
+            activeOpacity={0.8}
+          >
+            <LucideIcons.RotateCcw size={10} color={textStyle.color} />
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 };
@@ -125,102 +153,84 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'space-between',
-    paddingVertical: 4,
-    paddingHorizontal: 2,
+    paddingVertical: 2,
   },
-  ticksWrapper: {
-    width: '100%',
-  },
-  ticksNumbersRow: {
+  header: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingLeft: 30,
-    marginBottom: 2,
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  tickNum: {
+  title: {
     fontSize: 7.5,
-    fontWeight: 'bold',
-    opacity: 0.5,
+    fontWeight: '900',
+    letterSpacing: 0.8,
   },
   ticksRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    height: 12,
-    paddingHorizontal: 4,
+    gap: 2,
+    alignItems: 'center',
   },
   tickBar: {
     width: 2.5,
+    height: 6,
     borderRadius: 1,
   },
-  controlsRow: {
+  mainRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 6,
+    gap: 8,
+    flex: 1,
+    marginVertical: 4,
   },
-  timerTitle: {
-    fontSize: 13,
-    fontWeight: '900',
-    letterSpacing: -0.2,
-  },
-  timerSubText: {
-    fontSize: 7.5,
-    fontWeight: 'bold',
-    opacity: 0.6,
-    marginTop: 1,
-  },
-  buttonContainer: {
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  playStopBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stopSquare: {
-    width: 10,
-    height: 10,
-    borderRadius: 1.5,
-  },
-  playTriangle: {
-    width: 0,
-    height: 0,
-    backgroundColor: 'transparent',
-    borderStyle: 'solid',
-    borderLeftWidth: 10,
-    borderRightWidth: 0,
-    borderTopWidth: 6,
-    borderBottomWidth: 6,
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
-    marginLeft: 2.5,
-  },
-  resetBadge: {
-    position: 'absolute',
-    bottom: -8,
-    right: -8,
-    backgroundColor: 'rgba(120, 120, 120, 0.08)',
-    borderRadius: 6,
-    padding: 2,
-  },
-  timeWrapper: {
-    alignItems: 'flex-end',
+  timerCol: {
+    flex: 1.2,
     justifyContent: 'center',
   },
   timeText: {
     fontSize: 22,
     fontWeight: '900',
     letterSpacing: -0.5,
+    fontFamily: 'monospace',
   },
-  timeUnit: {
-    fontSize: 12,
-    fontWeight: 'bold',
+  lapsCol: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: 2,
+  },
+  lapTxt: {
+    fontSize: 7.5,
+    fontWeight: '900',
+    letterSpacing: 0.2,
+  },
+  noLapsTxt: {
+    fontSize: 7.5,
+    fontWeight: '900',
+    opacity: 0.5,
+    letterSpacing: 0.5,
+  },
+  buttons: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  startBtn: {
+    flex: 1.5,
+    height: 22,
+    borderRadius: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  btnLabel: {
+    fontSize: 7.5,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  iconBtn: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
-

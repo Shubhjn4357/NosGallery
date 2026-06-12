@@ -16,7 +16,8 @@ open class NOSProductivityWidget : NosBaseWidgetProvider() {
         context: Context,
         views: RemoteViews,
         config: JSONObject?,
-        theme: String
+        theme: String,
+        appWidgetId: Int
     ) {
         val customizations = config?.optJSONObject("customizations")
         val templateId = config?.optString("templateId", defaultTemplateId) ?: defaultTemplateId
@@ -43,6 +44,7 @@ open class NOSProductivityWidget : NosBaseWidgetProvider() {
                 views.setViewVisibility(R.id.nos_widget_progress, View.VISIBLE)
                 views.setProgressBar(R.id.nos_widget_progress, 100, 60, false)
                 views.setTextViewText(R.id.nos_widget_footer, "NOS • TODO LIST")
+                views.setViewVisibility(R.id.nos_widget_buttons_row, View.GONE)
             }
             templateId.contains("pomodoro") || templateId.contains("focus") || templateId.contains("timer") -> {
                 views.setTextViewText(R.id.nos_widget_value, valueText ?: "25:00")
@@ -51,6 +53,30 @@ open class NOSProductivityWidget : NosBaseWidgetProvider() {
                 views.setTextColor(R.id.nos_widget_sub_value, subtextColor)
                 views.setViewVisibility(R.id.nos_widget_progress, View.GONE)
                 views.setTextViewText(R.id.nos_widget_footer, "NOS • FOCUS TIMER")
+                views.setViewVisibility(R.id.nos_widget_buttons_row, View.GONE)
+            }
+            templateId.contains("music") || templateId.contains("audio") || templateId.contains("player") -> {
+                val playing = config?.optBoolean("musicPlaying", false) ?: false
+                val trackIdx = config?.optInt("currentTrackIndex", 0) ?: 0
+                val tracks = listOf("Nothing Beat", "Antigravity Chill", "Glyph Ambient")
+                val trackName = valueText ?: tracks[trackIdx % tracks.size]
+
+                views.setTextViewText(R.id.nos_widget_value, trackName)
+                views.setTextColor(R.id.nos_widget_value, textColor)
+                views.setTextViewText(R.id.nos_widget_sub_value, if (playing) "PLAYING  •  VOLUME 50%" else "PAUSED")
+                views.setTextColor(R.id.nos_widget_sub_value, subtextColor)
+                views.setViewVisibility(R.id.nos_widget_progress, View.GONE)
+                views.setTextViewText(R.id.nos_widget_footer, "NOS • MUSIC")
+
+                // Enable buttons
+                views.setViewVisibility(R.id.nos_widget_buttons_row, View.VISIBLE)
+                views.setViewVisibility(R.id.nos_widget_btn_left, View.VISIBLE)
+                views.setViewVisibility(R.id.nos_widget_btn_right, View.VISIBLE)
+                views.setViewVisibility(R.id.nos_widget_btn_divider, View.VISIBLE)
+                views.setTextViewText(R.id.nos_widget_btn_left, if (playing) "PAUSE" else "PLAY")
+                views.setOnClickPendingIntent(R.id.nos_widget_btn_left, getClickPendingIntent(context, appWidgetId, "music_play"))
+                views.setTextViewText(R.id.nos_widget_btn_right, "SKIP")
+                views.setOnClickPendingIntent(R.id.nos_widget_btn_right, getClickPendingIntent(context, appWidgetId, "music_skip"))
             }
             else -> {
                 views.setTextViewText(R.id.nos_widget_value, valueText ?: "On Track")
@@ -59,6 +85,7 @@ open class NOSProductivityWidget : NosBaseWidgetProvider() {
                 views.setTextColor(R.id.nos_widget_sub_value, subtextColor)
                 views.setViewVisibility(R.id.nos_widget_progress, View.GONE)
                 views.setTextViewText(R.id.nos_widget_footer, "NOS • PRODUCTIVITY")
+                views.setViewVisibility(R.id.nos_widget_buttons_row, View.GONE)
             }
         }
 

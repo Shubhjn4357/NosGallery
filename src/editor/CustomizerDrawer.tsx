@@ -7,41 +7,40 @@ import {
   ScrollView,
   StyleSheet,
 } from 'react-native';
-import { ChevronDown, Layers, Palette, Sliders } from 'lucide-react-native';
+import { ChevronDown, Layers, Palette } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ActiveWidget, WidgetCustomizations } from '../store/widgetStore';
+import { ActiveWidget } from '../store/widgetStore';
 import { widgetRegistry } from '../widgets/registry';
 import { WidgetRenderer } from '../widgets/widgetRenderer';
 import { DotGridBackground } from '../components/DotGridBackground';
 import { AnimatedSlidingButton } from '../components/AnimatedSlidingButton';
-import { DesignStylesEditor } from './components/DesignStylesEditor';
-import { TextContentEditor } from './components/TextContentEditor';
 import { ThemeId } from '../themes/themes';
 
 interface CustomizerDrawerProps {
   visible: boolean;
   pendingWidget: ActiveWidget | null;
   activeTheme: ThemeId;
-  customizeMode: boolean;
-  setCustomizeMode: (mode: boolean) => void;
-  editorTab: 'style' | 'text';
-  setEditorTab: (tab: 'style' | 'text') => void;
   onClose: () => void;
-  handleUpdate: (updates: Partial<WidgetCustomizations>) => void;
+  handleUpdateSize: (w: number, h: number) => void;
   handleAddToHomeScreen: () => void;
   triggerHaptic: (type: 'light' | 'medium' | 'selection' | 'success') => void;
 }
+
+const SUPPORTED_SIZES = [
+  { label: '1 × 1', w: 1, h: 1 },
+  { label: '2 × 1', w: 2, h: 1 },
+  { label: '1 × 2', w: 1, h: 2 },
+  { label: '2 × 2', w: 2, h: 2 },
+  { label: '4 × 2', w: 4, h: 2 },
+  { label: '2 × 4', w: 2, h: 4 },
+];
 
 export const CustomizerDrawer: React.FC<CustomizerDrawerProps> = ({
   visible,
   pendingWidget,
   activeTheme,
-  customizeMode,
-  setCustomizeMode,
-  editorTab,
-  setEditorTab,
   onClose,
-  handleUpdate,
+  handleUpdateSize,
   handleAddToHomeScreen,
   triggerHaptic,
 }) => {
@@ -60,15 +59,10 @@ export const CustomizerDrawer: React.FC<CustomizerDrawerProps> = ({
         <View style={styles.drawerSheet}>
           {/* Header */}
           <View style={styles.drawerHeader}>
-            <TouchableOpacity
-              onPress={onClose}
-              style={styles.closeBtn}
-            >
+            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
               <ChevronDown size={20} color="#ffffff" />
             </TouchableOpacity>
-            <Text style={styles.drawerTitle}>
-              {customizeMode ? 'CUSTOMIZE DESIGN' : 'WIDGET PREVIEW'}
-            </Text>
+            <Text style={styles.drawerTitle}>WIDGET PREVIEW</Text>
             <View style={{ width: 20 }} />
           </View>
 
@@ -86,84 +80,56 @@ export const CustomizerDrawer: React.FC<CustomizerDrawerProps> = ({
               </View>
             </View>
 
-            {!customizeMode ? (
-              /* Simple Preview Flow Details */
-              <View style={styles.detailsContainer}>
-                <Text style={styles.widgetTitleText}>
-                  {widgetRegistry[pendingWidget.templateId]?.name || 'Custom Widget'}
-                </Text>
-                <Text style={styles.widgetDescText}>
-                  {widgetRegistry[pendingWidget.templateId]?.description || 'A customizable Nothing OS widget.'}
-                </Text>
-                
-                <View style={styles.metaRow}>
-                  <View style={styles.metaChip}>
-                    <Layers size={10} color="#666" />
-                    <Text style={styles.metaChipText}>Size {pendingWidget.w}x{pendingWidget.h}</Text>
-                  </View>
-                  <View style={styles.metaChip}>
-                    <Palette size={10} color="#666" />
-                    <Text style={styles.metaChipText}>Theme OS compatible</Text>
-                  </View>
+            <View style={styles.detailsContainer}>
+              <Text style={styles.widgetTitleText}>
+                {widgetRegistry[pendingWidget.templateId]?.name || 'Custom Widget'}
+              </Text>
+              <Text style={styles.widgetDescText}>
+                {widgetRegistry[pendingWidget.templateId]?.description || 'A customizable Nothing OS widget.'}
+              </Text>
+              
+              <View style={styles.metaRow}>
+                <View style={styles.metaChip}>
+                  <Layers size={10} color="#666" />
+                  <Text style={styles.metaChipText}>Size {pendingWidget.w}x{pendingWidget.h}</Text>
                 </View>
-
-                <TouchableOpacity
-                  style={styles.customizeTriggerBtn}
-                  onPress={() => {
-                    triggerHaptic('selection');
-                    setCustomizeMode(true);
-                  }}
-                >
-                  <Sliders size={14} color="#000000" style={{ marginRight: 6 }} />
-                  <Text style={styles.customizeTriggerBtnText}>Customize Layout & Content</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              /* Customization Design Mode */
-              <View style={styles.propertiesContainer}>
-                {/* Customizer Sub-Tabs */}
-                <View style={styles.customizerTabsHeader}>
-                  <TouchableOpacity
-                    style={[styles.customizerTabBtn, editorTab === 'style' && styles.activeCustomizerTabBtn]}
-                    onPress={() => setEditorTab('style')}
-                  >
-                    <Text style={[styles.customizerTabText, editorTab === 'style' && styles.activeCustomizerTabText]}>Design Styles</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.customizerTabBtn, editorTab === 'text' && styles.activeCustomizerTabBtn]}
-                    onPress={() => setEditorTab('text')}
-                  >
-                    <Text style={[styles.customizerTabText, editorTab === 'text' && styles.activeCustomizerTabText]}>Content Texts</Text>
-                  </TouchableOpacity>
+                <View style={styles.metaChip}>
+                  <Palette size={10} color="#666" />
+                  <Text style={styles.metaChipText}>Theme OS compatible</Text>
                 </View>
-
-                {editorTab === 'style' ? (
-                  <DesignStylesEditor
-                    customizations={pendingWidget.customizations}
-                    handleUpdate={handleUpdate}
-                  />
-                ) : (
-                  <TextContentEditor
-                    customizations={pendingWidget.customizations}
-                    handleUpdate={handleUpdate}
-                  />
-                )}
-
-                <TouchableOpacity
-                  style={styles.backToPreviewBtn}
-                  onPress={() => setCustomizeMode(false)}
-                >
-                  <Text style={styles.backToPreviewBtnText}>Back to Preview</Text>
-                </TouchableOpacity>
               </View>
-            )}
+
+              {/* Size Selection Section */}
+              <View style={styles.sizeSection}>
+                <Text style={styles.sizeSectionTitle}>CHOOSE WIDGET SIZE</Text>
+                <View style={styles.sizeGrid}>
+                  {SUPPORTED_SIZES.map((size) => {
+                    const isSelected = pendingWidget.w === size.w && pendingWidget.h === size.h;
+                    return (
+                      <TouchableOpacity
+                        key={`${size.w}x${size.h}`}
+                        style={[styles.sizeChip, isSelected && styles.activeSizeChip]}
+                        onPress={() => {
+                          triggerHaptic('selection');
+                          handleUpdateSize(size.w, size.h);
+                        }}
+                      >
+                        <Text style={[styles.sizeChipText, isSelected && styles.activeSizeChipText]}>
+                          {size.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            </View>
           </ScrollView>
 
           {/* Bottom Fixed Swipe CTA */}
           <View style={[styles.drawerFooter, { paddingBottom: Math.max(insets.bottom, 20) }]}>
             <AnimatedSlidingButton
               onSwipeSuccess={handleAddToHomeScreen}
-              accentColor={pendingWidget.customizations.accentColor}
+              accentColor="#7C9EFF"
               title="Slide to Pin Widget"
               successTitle="Adding Widget..."
             />
@@ -184,7 +150,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#0a0a0b',
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
-    height: '85%',
+    height: '75%',
     width: '100%',
     borderWidth: 1,
     borderColor: '#1a1a1c',
@@ -264,67 +230,50 @@ const styles = StyleSheet.create({
     color: '#8e8e93',
     fontWeight: 'bold',
   },
-  customizeTriggerBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    marginTop: 20,
-    width: '100%',
-  },
-  customizeTriggerBtnText: {
-    color: '#000000',
-    fontSize: 11.5,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
-  propertiesContainer: {
-    gap: 12,
-  },
-  customizerTabsHeader: {
-    flexDirection: 'row',
-    backgroundColor: '#161618',
-    borderRadius: 12,
-    padding: 3,
-    marginBottom: 10,
-  },
-  customizerTabBtn: {
-    flex: 1,
-    paddingVertical: 8,
-    alignItems: 'center',
-    borderRadius: 10,
-  },
-  activeCustomizerTabBtn: {
-    backgroundColor: '#ffffff',
-  },
-  customizerTabText: {
-    color: '#8e8e93',
-    fontSize: 10.5,
-    fontWeight: 'bold',
-  },
-  activeCustomizerTabText: {
-    color: '#000000',
-  },
-  backToPreviewBtn: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#222',
-    borderRadius: 16,
-    paddingVertical: 12,
-    marginTop: 16,
-    marginBottom: 20,
-  },
-  backToPreviewBtnText: {
-    color: '#ffffff',
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
   drawerFooter: {
     paddingHorizontal: 20,
     marginTop: 10,
+  },
+  sizeSection: {
+    width: '100%',
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  sizeSectionTitle: {
+    color: '#8e8e93',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.5,
+    marginBottom: 10,
+  },
+  sizeGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+    width: '100%',
+  },
+  sizeChip: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#222225',
+    backgroundColor: '#111113',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 78,
+  },
+  activeSizeChip: {
+    backgroundColor: '#ffffff',
+    borderColor: '#ffffff',
+  },
+  sizeChipText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#8e8e93',
+  },
+  activeSizeChipText: {
+    color: '#000000',
   },
 });

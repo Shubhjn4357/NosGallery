@@ -16,7 +16,8 @@ open class NOSHealthWidget : NosBaseWidgetProvider() {
         context: Context,
         views: RemoteViews,
         config: JSONObject?,
-        theme: String
+        theme: String,
+        appWidgetId: Int
     ) {
         val customizations = config?.optJSONObject("customizations")
         val templateId = config?.optString("templateId", defaultTemplateId) ?: defaultTemplateId
@@ -36,14 +37,27 @@ open class NOSHealthWidget : NosBaseWidgetProvider() {
 
         when {
             templateId.contains("water") || templateId.contains("hydration") -> {
-                val hydVal = valueText ?: "1,200 ML"
-                views.setTextViewText(R.id.nos_widget_value, hydVal)
+                val intake = config?.optInt("waterIntake", 1000) ?: 1000
+                val goal = config?.optInt("waterGoal", 2000) ?: 2000
+                val progress = if (goal > 0) (intake * 100) / goal else 0
+
+                views.setTextViewText(R.id.nos_widget_value, "${intake} ML")
                 views.setTextColor(R.id.nos_widget_value, textColor)
-                views.setTextViewText(R.id.nos_widget_sub_value, "HYDRATION  •  GOAL 2,500 ML")
+                views.setTextViewText(R.id.nos_widget_sub_value, "HYDRATION  •  GOAL ${goal} ML")
                 views.setTextColor(R.id.nos_widget_sub_value, subtextColor)
                 views.setViewVisibility(R.id.nos_widget_progress, View.VISIBLE)
-                views.setProgressBar(R.id.nos_widget_progress, 100, 48, false)
+                views.setProgressBar(R.id.nos_widget_progress, 100, progress, false)
                 views.setTextViewText(R.id.nos_widget_footer, "NOS • HYDRATION")
+
+                // Enable buttons
+                views.setViewVisibility(R.id.nos_widget_buttons_row, View.VISIBLE)
+                views.setViewVisibility(R.id.nos_widget_btn_left, View.VISIBLE)
+                views.setViewVisibility(R.id.nos_widget_btn_right, View.VISIBLE)
+                views.setViewVisibility(R.id.nos_widget_btn_divider, View.VISIBLE)
+                views.setTextViewText(R.id.nos_widget_btn_left, "+250ML")
+                views.setOnClickPendingIntent(R.id.nos_widget_btn_left, getClickPendingIntent(context, appWidgetId, "add_water"))
+                views.setTextViewText(R.id.nos_widget_btn_right, "RESET")
+                views.setOnClickPendingIntent(R.id.nos_widget_btn_right, getClickPendingIntent(context, appWidgetId, "reset_water"))
             }
             templateId.contains("breath") || templateId.contains("meditation") -> {
                 views.setTextViewText(R.id.nos_widget_value, "Ready")
@@ -52,6 +66,7 @@ open class NOSHealthWidget : NosBaseWidgetProvider() {
                 views.setTextColor(R.id.nos_widget_sub_value, subtextColor)
                 views.setViewVisibility(R.id.nos_widget_progress, View.GONE)
                 views.setTextViewText(R.id.nos_widget_footer, "NOS • MINDFULNESS")
+                views.setViewVisibility(R.id.nos_widget_buttons_row, View.GONE)
             }
             else -> {
                 // Steps
@@ -63,6 +78,7 @@ open class NOSHealthWidget : NosBaseWidgetProvider() {
                 views.setViewVisibility(R.id.nos_widget_progress, View.VISIBLE)
                 views.setProgressBar(R.id.nos_widget_progress, 100, 84, false)
                 views.setTextViewText(R.id.nos_widget_footer, "NOS • HEALTH")
+                views.setViewVisibility(R.id.nos_widget_buttons_row, View.GONE)
             }
         }
 

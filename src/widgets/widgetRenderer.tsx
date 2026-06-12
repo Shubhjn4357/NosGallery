@@ -20,9 +20,18 @@ import { YearProgress } from './calendar/YearProgress';
 
 import { WeatherCurrent } from './weather/WeatherCurrent';
 import { WeatherAqi } from './weather/WeatherAqi';
+import { MoonPhaseWidget } from './weather/MoonPhaseWidget';
 
 import { TodoWidget } from './productivity/TodoWidget';
 import { FocusWidget } from './productivity/FocusWidget';
+import { CalculatorWidget } from './productivity/CalculatorWidget';
+import { CameraWidget } from './productivity/CameraWidget';
+import { MusicWidget } from './productivity/MusicWidget';
+import { TextUsernameWidget } from './productivity/TextUsernameWidget';
+import { GoogleSearchWidget } from './productivity/GoogleSearchWidget';
+import { PomodoroWidget } from './productivity/PomodoroWidget';
+import { FolderWidget } from './productivity/FolderWidget';
+import { PhotoFrameWidget } from './productivity/PhotoFrameWidget';
 
 import { WaterWidget } from './health/WaterWidget';
 import { BreathingWidget } from './health/BreathingWidget';
@@ -33,12 +42,21 @@ import { FinanceStockCrypto } from './finance/FinanceStockCrypto';
 import { GithubGrid } from './developer/GithubGrid';
 import { CicdPipeline } from './developer/CicdPipeline';
 import { CpuMonitor } from './developer/CpuMonitor';
+import { QuickControlsWidget } from './smart_home/QuickControlsWidget';
+import { BatteryWidget } from './smart_home/BatteryWidget';
 
 import { SocialFeed } from './social/SocialFeed';
+import { ContactWidget } from './social/ContactWidget';
+import { SocialShortcutsWidget } from './social/SocialShortcutsWidget';
+
 import { SmartHomeControls } from './smart_home/SmartHomeControls';
+import { TorchWidget } from './smart_home/TorchWidget';
+import { BluetoothWidget } from './smart_home/BluetoothWidget';
+import { SoundControlWidget } from './smart_home/SoundControlWidget';
 
 import { AiChatWidget } from './ai/AiChatWidget';
 import { AiSummaryWidget } from './ai/AiSummaryWidget';
+import { AiBarWidget } from './ai/AiBarWidget';
 
 const LucideIcons = {
   Calendar,
@@ -68,7 +86,6 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
   onPress,
   interactive = false,
 }) => {
-  const { googleUser } = useWidgetStore();
   const { triggerHaptic, triggerSound } = useFeedback();
 
   // State definitions for interactive widgets
@@ -161,21 +178,23 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
     const query = aiInput;
     setAiInput('');
 
-    setTimeout(() => {
-      setAiThinking(false);
-      const responses: Record<string, string> = {
-        weather: 'Open-Meteo local stations report dry spells. Humidity is dropping.',
-        stocks: 'AAPL has a +1.2% daily drift. Bitcoin ranges at support levels.',
-        todo: 'Check the Vercel branch. Standup starts in 10 minutes.',
-      };
+    const activeProvider = useWidgetStore.getState().activeAiProvider;
+    const apiKey = useWidgetStore.getState().geminiApiKey;
 
-      const matchedKey = Object.keys(responses).find(key => query.toLowerCase().includes(key));
-      const prefix = googleUser ? `Hello ${googleUser.name}! ` : '';
-      setAiResponse(matchedKey ? prefix + responses[matchedKey] : prefix + 'Query processed. Daily schedule metrics look optimal.');
-    }, 1200);
+    import('../services/aiService').then(({ queryAiProvider }) => {
+      queryAiProvider(activeProvider, query, apiKey)
+        .then((res) => {
+          setAiThinking(false);
+          setAiResponse(res.response);
+        })
+        .catch((err) => {
+          setAiThinking(false);
+          setAiResponse(`Error: ${err.message}`);
+        });
+    });
   };
 
-  const customizations = widget.customizations;
+  const customizations = {};
   const { containerStyle, accentColor, textStyle } = useWidgetStyle(customizations, globalTheme);
 
   // Selector for modular rendering
@@ -189,7 +208,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
           <StopwatchWidget
             swTime={swTime}
             swActive={swActive}
-            customizations={customizations}
+            customizations={customizations as any}
             globalTheme={globalTheme}
             interactive={interactive}
             handleStopwatch={handleStopwatch}
@@ -201,7 +220,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
         return (
           <AnalogClock
             currentTime={currentTime}
-            customizations={customizations}
+            customizations={customizations as any}
             globalTheme={globalTheme}
           />
         );
@@ -210,7 +229,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
         return (
           <FlipClock
             currentTime={currentTime}
-            customizations={customizations}
+            customizations={customizations as any}
             globalTheme={globalTheme}
           />
         );
@@ -218,7 +237,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
       return (
         <DigitalClock
           currentTime={currentTime}
-          customizations={customizations}
+          customizations={customizations as any}
           globalTheme={globalTheme}
         />
       );
@@ -230,7 +249,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
         return (
           <YearProgress
             currentTime={currentTime}
-            customizations={customizations}
+            customizations={customizations as any}
             globalTheme={globalTheme}
           />
         );
@@ -238,7 +257,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
       if (template.includes('agenda') || template.includes('list') || template.includes('timeline')) {
         return (
           <AgendaWidget
-            customizations={customizations}
+            customizations={customizations as any}
             globalTheme={globalTheme}
           />
         );
@@ -246,7 +265,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
       return (
         <CalendarMonthly
           currentTime={currentTime}
-          customizations={customizations}
+          customizations={customizations as any}
           globalTheme={globalTheme}
         />
       );
@@ -257,7 +276,15 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
       if (template.includes('aqi')) {
         return (
           <WeatherAqi
-            customizations={customizations}
+            customizations={customizations as any}
+            globalTheme={globalTheme}
+            interactive={interactive}
+          />
+        );
+      }
+      if (template.includes('moon')) {
+        return (
+          <MoonPhaseWidget
             globalTheme={globalTheme}
             interactive={interactive}
           />
@@ -265,7 +292,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
       }
       return (
         <WeatherCurrent
-          customizations={customizations}
+          customizations={customizations as any}
           globalTheme={globalTheme}
           interactive={interactive}
         />
@@ -277,7 +304,71 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
       if (template.includes('todo') || template.includes('task') || template.includes('checklist')) {
         return (
           <TodoWidget
-            customizations={customizations}
+            customizations={customizations as any}
+            globalTheme={globalTheme}
+            interactive={interactive}
+          />
+        );
+      }
+      if (template.includes('calculator')) {
+        return (
+          <CalculatorWidget
+            globalTheme={globalTheme}
+            interactive={interactive}
+          />
+        );
+      }
+      if (template.includes('camera')) {
+        return (
+          <CameraWidget
+            globalTheme={globalTheme}
+            interactive={interactive}
+          />
+        );
+      }
+      if (template.includes('music')) {
+        return (
+          <MusicWidget
+            globalTheme={globalTheme}
+            interactive={interactive}
+          />
+        );
+      }
+      if (template.includes('text') || template.includes('username')) {
+        return (
+          <TextUsernameWidget
+            globalTheme={globalTheme}
+            interactive={interactive}
+          />
+        );
+      }
+      if (template.includes('search')) {
+        return (
+          <GoogleSearchWidget
+            globalTheme={globalTheme}
+            interactive={interactive}
+          />
+        );
+      }
+      if (template.includes('pomodoro')) {
+        return (
+          <PomodoroWidget
+            globalTheme={globalTheme}
+            interactive={interactive}
+          />
+        );
+      }
+      if (template.includes('folder')) {
+        return (
+          <FolderWidget
+            globalTheme={globalTheme}
+            interactive={interactive}
+          />
+        );
+      }
+      if (template.includes('photo')) {
+        return (
+          <PhotoFrameWidget
             globalTheme={globalTheme}
             interactive={interactive}
           />
@@ -285,7 +376,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
       }
       return (
         <FocusWidget
-          customizations={customizations}
+          customizations={customizations as any}
           globalTheme={globalTheme}
           interactive={interactive}
         />
@@ -297,7 +388,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
       if (template.includes('water')) {
         return (
           <WaterWidget
-            customizations={customizations}
+            customizations={customizations as any}
             globalTheme={globalTheme}
             interactive={interactive}
           />
@@ -306,7 +397,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
       if (template.includes('breath') || template.includes('meditation')) {
         return (
           <BreathingWidget
-            customizations={customizations}
+            customizations={customizations as any}
             globalTheme={globalTheme}
             interactive={interactive}
           />
@@ -314,7 +405,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
       }
       return (
         <StepsWidget
-          customizations={customizations}
+          customizations={customizations as any}
           globalTheme={globalTheme}
           interactive={interactive}
         />
@@ -325,7 +416,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
     if (template.startsWith('finance_')) {
       return (
         <FinanceStockCrypto
-          customizations={customizations}
+          customizations={customizations as any}
           globalTheme={globalTheme}
           interactive={interactive}
         />
@@ -337,7 +428,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
       if (template.includes('git')) {
         return (
           <GithubGrid
-            customizations={customizations}
+            customizations={customizations as any}
             globalTheme={globalTheme}
             interactive={interactive}
           />
@@ -348,16 +439,32 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
           <CicdPipeline
             buildStatus={buildStatus}
             buildProgress={buildProgress}
-            customizations={customizations}
+            customizations={customizations as any}
             globalTheme={globalTheme}
             interactive={interactive}
             triggerCICDBuild={triggerCICDBuild}
           />
         );
       }
+      if (template.includes('controls')) {
+        return (
+          <QuickControlsWidget
+            globalTheme={globalTheme}
+            interactive={interactive}
+          />
+        );
+      }
+      if (template.includes('battery')) {
+        return (
+          <BatteryWidget
+            globalTheme={globalTheme}
+            interactive={interactive}
+          />
+        );
+      }
       return (
         <CpuMonitor
-          customizations={customizations}
+          customizations={customizations as any}
           globalTheme={globalTheme}
           interactive={interactive}
         />
@@ -366,9 +473,25 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
 
     // 8. SOCIAL
     if (template.startsWith('social_')) {
+      if (template.includes('contact')) {
+        return (
+          <ContactWidget
+            globalTheme={globalTheme}
+            interactive={interactive}
+          />
+        );
+      }
+      if (template.includes('shortcuts')) {
+        return (
+          <SocialShortcutsWidget
+            globalTheme={globalTheme}
+            interactive={interactive}
+          />
+        );
+      }
       return (
         <SocialFeed
-          customizations={customizations}
+          customizations={customizations as any}
           globalTheme={globalTheme}
           interactive={interactive}
         />
@@ -377,10 +500,34 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
 
     // 9. SMART HOME
     if (template.startsWith('smart_home_')) {
+      if (template.includes('torch')) {
+        return (
+          <TorchWidget
+            globalTheme={globalTheme}
+            interactive={interactive}
+          />
+        );
+      }
+      if (template.includes('bluetooth')) {
+        return (
+          <BluetoothWidget
+            globalTheme={globalTheme}
+            interactive={interactive}
+          />
+        );
+      }
+      if (template.includes('sound_control')) {
+        return (
+          <SoundControlWidget
+            globalTheme={globalTheme}
+            interactive={interactive}
+          />
+        );
+      }
       return (
         <SmartHomeControls
           lightOn={lightOn}
-          customizations={customizations}
+          customizations={customizations as any}
           globalTheme={globalTheme}
           interactive={interactive}
           toggleLight={() => {
@@ -399,7 +546,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
             aiInput={aiInput}
             aiResponse={aiResponse}
             aiThinking={aiThinking}
-            customizations={customizations}
+            customizations={customizations as any}
             globalTheme={globalTheme}
             interactive={interactive}
             setAiInput={setAiInput}
@@ -407,10 +554,18 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
           />
         );
       }
+      if (template.includes('bar') || template.includes('router')) {
+        return (
+          <AiBarWidget
+            globalTheme={globalTheme}
+            interactive={interactive}
+          />
+        );
+      }
       return (
         <AiSummaryWidget
-          valText={customizations.valueText || ''}
-          customizations={customizations}
+          valText={(customizations as any).valueText || ''}
+          customizations={customizations as any}
           globalTheme={globalTheme}
         />
       );
@@ -423,13 +578,15 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
     return (
       <View style={styles.fallbackContainer}>
         <IconComponent size={14} color={accentColor} />
-        <Text style={[styles.fallbackText, textStyle]}>{customizations.valueText || 'Information Card'}</Text>
+        <Text style={[styles.fallbackText, textStyle]}>{(customizations as any).valueText || 'Information Card'}</Text>
       </View>
     );
   };
 
   const widgetWidth = widget.w * 80;
   const widgetHeight = widget.h * 80;
+  const isLiquidGlass = globalTheme === 'liquidglass';
+  const borderRadius = (containerStyle.borderRadius as number) || 16;
 
   return (
     <TouchableOpacity
@@ -446,17 +603,25 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
       ]}
     >
       {renderWidgetContent()}
+
+      {/* Iridescent Chromatic Aberration corner sheen for 2026 Liquid Glass style */}
+      {isLiquidGlass && (
+        <>
+          <View style={[styles.sheenRed, { borderTopLeftRadius: borderRadius }]} />
+          <View style={[styles.sheenCyan, { borderTopLeftRadius: borderRadius }]} />
+          <View style={[styles.sheenWhite, { borderTopLeftRadius: borderRadius }]} />
+        </>
+      )}
     </TouchableOpacity>
   );
 };
-
-
 
 const styles = StyleSheet.create({
   widgetCard: {
     padding: 12,
     justifyContent: 'space-between',
     overflow: 'hidden',
+    position: 'relative',
   },
   fallbackContainer: {
     flex: 1,
@@ -466,5 +631,38 @@ const styles = StyleSheet.create({
   },
   fallbackText: {
     fontSize: 10,
+  },
+  sheenRed: {
+    position: 'absolute',
+    top: -1,
+    left: -1,
+    width: 32,
+    height: 32,
+    borderTopWidth: 2,
+    borderLeftWidth: 2,
+    borderColor: '#ff0055',
+    opacity: 0.6,
+  },
+  sheenCyan: {
+    position: 'absolute',
+    top: -0.5,
+    left: -0.5,
+    width: 32,
+    height: 32,
+    borderTopWidth: 2,
+    borderLeftWidth: 2,
+    borderColor: '#00ffff',
+    opacity: 0.6,
+  },
+  sheenWhite: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: 32,
+    height: 32,
+    borderTopWidth: 1.5,
+    borderLeftWidth: 1.5,
+    borderColor: '#ffffff',
+    opacity: 0.85,
   },
 });

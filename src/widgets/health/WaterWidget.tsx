@@ -1,33 +1,33 @@
-import { Droplets } from 'lucide-react-native';
-import { WidgetCustomizations } from '../../store/widgetStore';
+import { Droplets, Plus, Target } from 'lucide-react-native';
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';
+import { useWidgetStore } from '../../store/widgetStore';
+import { useFeedback } from '../../hooks/useFeedback';
 
 const LucideIcons = {
   Droplets,
+  Plus,
+  Target,
 };
 
 interface WaterWidgetProps {
-  customizations: WidgetCustomizations;
   globalTheme: ThemeId;
   interactive: boolean;
 }
 
+const TARGETS = [1500, 2000, 2500, 3000];
+
 export const WaterWidget: React.FC<WaterWidgetProps> = ({
-  customizations,
   globalTheme,
   interactive,
 }) => {
-  const { accentColor } = useWidgetStyle(customizations, globalTheme);
+  const { waterIntake, waterGoal, setWaterIntake, setWaterGoal, incrementWaterIntake } = useWidgetStore();
+  const { triggerHaptic } = useFeedback();
+  const { accentColor, textStyle, subtextStyle } = useWidgetStyle({}, globalTheme);
 
-  const [cups, setCups] = useState(4);
   const [waveAnim] = useState(new Animated.Value(0));
-
-  const GOAL = 8;
-  const fillPct = (cups / GOAL) * 100;
-  const title = customizations.titleText || 'HYDRATION';
 
   useEffect(() => {
     if (!interactive) {
@@ -49,42 +49,45 @@ export const WaterWidget: React.FC<WaterWidgetProps> = ({
     outputRange: [-3, 3],
   });
 
-  const logWater = () => {
+  const handleLogWater = () => {
     if (!interactive) return;
-    setCups(prev => prev >= GOAL ? 0 : prev + 1);
+    triggerHaptic('light');
+    incrementWaterIntake(250);
   };
 
-  const getHydrationLabel = (c: number) => {
-    if (c === 0) return 'Not Started';
-    if (c < 3) return 'Dehydrated';
-    if (c < 6) return 'Getting There';
-    if (c < 8) return 'Almost Done!';
-    return 'Goal Reached!';
+  const handleCycleTarget = () => {
+    if (!interactive) return;
+    triggerHaptic('selection');
+    const curIdx = TARGETS.indexOf(waterGoal);
+    const nextIdx = (curIdx + 1) % TARGETS.length;
+    setWaterGoal(TARGETS[nextIdx]);
   };
 
-  const isLight = customizations.backgroundColor === '#ffffff';
-  const textColor = isLight ? '#000' : '#fff';
-  const subtextColor = isLight ? '#666' : '#888';
+  const handleReset = () => {
+    if (!interactive) return;
+    triggerHaptic('medium');
+    setWaterIntake(0);
+  };
+
+  const fillPct = Math.min(100, (waterIntake / waterGoal) * 100);
+  const isLight = textStyle.color === '#000000';
+  const controlBg = isLight ? '#e5e5ea' : '#1c1c1e';
 
   return (
-    <TouchableOpacity
-      activeOpacity={interactive ? 0.85 : 1}
-      onPress={logWater}
-      disabled={!interactive}
-      style={styles.container}
-    >
+    <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.titleRow}>
           <LucideIcons.Droplets size={10} color={accentColor} />
-          <Text style={[styles.title, { color: subtextColor }]}>{title}</Text>
+          <Text style={[styles.title, subtextStyle]}>HYDRATION</Text>
         </View>
-        <Text style={[styles.cupsText, { color: textColor }]}>
-          {cups}<Text style={{ fontSize: 9, color: subtextColor }}>/{GOAL}</Text>
+        <Text style={[styles.cupsText, textStyle]}>
+          {waterIntake}
+          <Text style={{ fontSize: 9, color: subtextStyle.color }}>/{waterGoal}ml</Text>
         </Text>
       </View>
 
-      {/* Fluid fill bar */}
+      {/* Fluid progress bar */}
       <View style={[styles.fluidTrack, { backgroundColor: isLight ? '#efeff4' : '#1a1a1f' }]}>
         <Animated.View
           style={[
@@ -98,25 +101,36 @@ export const WaterWidget: React.FC<WaterWidgetProps> = ({
         />
       </View>
 
-      {/* Cup grid */}
-      <View style={styles.cupsGrid}>
-        {Array.from({ length: GOAL }).map((_, i) => (
-          <View
-            key={i}
-            style={[
-              styles.cupDot,
-              {
-                backgroundColor: i < cups ? accentColor : (isLight ? '#d1d1d6' : '#2c2c2e'),
-              },
-            ]}
-          />
-        ))}
-      </View>
+      {/* Interactive controls */}
+      {interactive && (
+        <View style={styles.controlsRow}>
+          <TouchableOpacity
+            onPress={handleLogWater}
+            style={[styles.btn, { backgroundColor: accentColor }]}
+            activeOpacity={0.8}
+          >
+            <LucideIcons.Plus size={10} color="#000000" />
+            <Text style={styles.btnLabel}>+250ML</Text>
+          </TouchableOpacity>
 
-      <Text style={[styles.status, { color: subtextColor }]}>
-        {getHydrationLabel(cups).toUpperCase()}
-      </Text>
-    </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleCycleTarget}
+            style={[styles.iconBtn, { backgroundColor: controlBg }]}
+            activeOpacity={0.8}
+          >
+            <LucideIcons.Target size={10} color={textStyle.color} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={handleReset}
+            style={[styles.iconBtn, { backgroundColor: controlBg }]}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.resetText, textStyle]}>C</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
   );
 };
 
@@ -124,6 +138,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'space-between',
+    paddingVertical: 2,
   },
   header: {
     flexDirection: 'row',
@@ -141,34 +156,48 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   cupsText: {
-    fontSize: 20,
+    fontSize: 14,
     fontWeight: '900',
     letterSpacing: -0.5,
   },
   fluidTrack: {
-    height: 8,
-    borderRadius: 4,
+    height: 10,
+    borderRadius: 5,
     overflow: 'hidden',
     marginVertical: 6,
   },
   fluidFill: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: 5,
   },
-  cupsGrid: {
+  controlsRow: {
     flexDirection: 'row',
+    gap: 6,
+  },
+  btn: {
+    flex: 1.5,
+    height: 22,
+    borderRadius: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: 4,
-    flexWrap: 'wrap',
   },
-  cupDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 3,
-  },
-  status: {
-    fontSize: 7,
+  btnLabel: {
+    color: '#000000',
+    fontSize: 7.5,
     fontWeight: '900',
-    letterSpacing: 1.2,
-    marginTop: 2,
+    letterSpacing: 0.5,
+  },
+  iconBtn: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  resetText: {
+    fontSize: 8.5,
+    fontWeight: 'bold',
   },
 });

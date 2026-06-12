@@ -1,6 +1,6 @@
-import { Sliders, Trash2, Volume2, Zap } from 'lucide-react-native';
+import { Sliders, Trash2, Volume2, Zap, Github, Heart, Key } from 'lucide-react-native';
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, TextInput } from 'react-native';
 import { useWidgetStore, SystemSettings } from '../store/widgetStore';
 import { useFeedback } from '../hooks/useFeedback';
 import { themes } from '../themes/themes';
@@ -11,6 +11,9 @@ const LucideIcons = {
   Trash2,
   Volume2,
   Zap,
+  Github,
+  Heart,
+  Key,
 };
 
 export const SettingsScreen: React.FC = () => {
@@ -22,6 +25,12 @@ export const SettingsScreen: React.FC = () => {
     setActiveTheme,
     clearWidgets,
     showToast,
+    githubUsername,
+    setGithubUsername,
+    googleHealthConnected,
+    setGoogleHealthConnected,
+    geminiApiKey,
+    setGeminiApiKey,
   } = useWidgetStore();
 
   const { triggerHaptic, triggerSound } = useFeedback();
@@ -107,6 +116,78 @@ export const SettingsScreen: React.FC = () => {
               </TouchableOpacity>
             ))}
           </ScrollView>
+        </View>
+      </View>
+
+      {/* Developer Accounts & APIs Settings */}
+      <View style={styles.sectionCard}>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionHeader}>Developer & Accounts</Text>
+          <LucideIcons.Github size={13} color="#7C9EFF" />
+        </View>
+
+        {/* GitHub Username Input */}
+        <View style={styles.settingRow}>
+          <View style={styles.settingDetails}>
+            <Text style={styles.settingTitle}>GitHub Username</Text>
+            <Text style={styles.settingDesc}>Specify username to fetch contributions and stats</Text>
+          </View>
+          <TextInput
+            style={styles.textInput}
+            value={githubUsername}
+            onChangeText={(text) => {
+              setGithubUsername(text);
+            }}
+            placeholder="e.g. octocat"
+            placeholderTextColor="#666"
+            autoCapitalize="none"
+          />
+        </View>
+
+        {/* Gemini API Key Input */}
+        <View style={styles.settingRow}>
+          <View style={styles.settingDetails}>
+            <Text style={styles.settingTitle}>Gemini API Key</Text>
+            <Text style={styles.settingDesc}>API Key for Google Generative AI integration</Text>
+          </View>
+          <TextInput
+            style={styles.textInput}
+            value={geminiApiKey}
+            onChangeText={(text) => {
+              setGeminiApiKey(text);
+            }}
+            secureTextEntry
+            placeholder="AIzaSy..."
+            placeholderTextColor="#666"
+            autoCapitalize="none"
+          />
+        </View>
+      </View>
+
+      {/* Google Health Sync Settings */}
+      <View style={styles.sectionCard}>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionHeader}>Health Sync Integration</Text>
+          <LucideIcons.Heart size={13} color="#ff2d2d" />
+        </View>
+
+        <View style={styles.settingRow}>
+          <View style={styles.settingDetails}>
+            <Text style={styles.settingTitle}>Google Health Sync</Text>
+            <Text style={styles.settingDesc}>Sync steps and health metrics with Google Fit / Health Connect</Text>
+          </View>
+          <Switch
+            value={googleHealthConnected}
+            onValueChange={(val) => {
+              triggerHaptic('selection');
+              setGoogleHealthConnected(val);
+              if (val) {
+                showToast('Google Health synchronized successfully!', 'success');
+              }
+            }}
+            trackColor={{ false: '#222224', true: '#ff2d2d' }}
+            thumbColor={googleHealthConnected ? '#ffffff' : '#8e8e93'}
+          />
         </View>
       </View>
 
@@ -501,5 +582,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 12,
     letterSpacing: 1,
+  },
+  textInput: {
+    backgroundColor: '#161618',
+    borderColor: '#242426',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    color: '#ffffff',
+    fontSize: 12,
+    marginTop: 8,
   },
 });

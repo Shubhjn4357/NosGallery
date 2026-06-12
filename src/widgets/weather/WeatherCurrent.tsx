@@ -1,4 +1,4 @@
-import { Droplets, Thermometer, Wind } from 'lucide-react-native';
+import { Droplets, Thermometer, Wind, Sun, Cloud, CloudRain, CloudDrizzle, Snowflake, CloudLightning, CloudSun } from 'lucide-react-native';
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
@@ -11,6 +11,13 @@ const LucideIcons = {
   Droplets,
   Thermometer,
   Wind,
+  Sun,
+  Cloud,
+  CloudRain,
+  CloudDrizzle,
+  Snowflake,
+  CloudLightning,
+  CloudSun,
 };
 
 interface WeatherCurrentProps {

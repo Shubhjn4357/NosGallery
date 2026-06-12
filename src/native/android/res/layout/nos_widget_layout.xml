@@ -89,6 +89,50 @@
         android:layout_weight="1"
         android:textSize="0sp" />
 
+    <!-- Row 3b: Action buttons row (interactive widgets) -->
+    <LinearLayout
+        android:id="@+id/nos_widget_buttons_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="4dp"
+        android:visibility="gone"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/nos_widget_btn_left"
+            android:layout_width="0dp"
+            android:layout_height="24dp"
+            android:layout_weight="1.5"
+            android:background="#22ffffff"
+            android:textColor="#FFFFFFFF"
+            android:textSize="8sp"
+            android:textStyle="bold"
+            android:fontFamily="monospace"
+            android:gravity="center"
+            android:text="ACTION" />
+
+        <TextView
+            android:id="@+id/nos_widget_btn_divider"
+            android:layout_width="4dp"
+            android:layout_height="24dp"
+            android:textSize="0sp" />
+
+        <TextView
+            android:id="@+id/nos_widget_btn_right"
+            android:layout_width="0dp"
+            android:layout_height="24dp"
+            android:layout_weight="1"
+            android:background="#11ffffff"
+            android:textColor="#FFFFFFFF"
+            android:textSize="8sp"
+            android:textStyle="bold"
+            android:fontFamily="monospace"
+            android:gravity="center"
+            android:text="RESET" />
+
+    </LinearLayout>
+
     <!-- Row 4: Footer tag line -->
     <TextView
         android:id="@+id/nos_widget_footer"

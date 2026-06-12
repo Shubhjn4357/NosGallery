@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useWidgetStore, ActiveWidget, WidgetCustomizations } from '../store/widgetStore';
 import { useFeedback } from '../hooks/useFeedback';
 import { DotGridBackground } from '../components/DotGridBackground';
+import { LiquidGlassBackground } from '../components/LiquidGlassBackground';
 import { widgetRegistry, WidgetTemplate, WidgetCategory } from '../widgets/registry';
 import { themes, ThemeId } from '../themes/themes';
 import { WidgetCard } from '../components/WidgetCard';
@@ -79,8 +80,8 @@ export default function Index() {
     activeTheme,
     pendingWidget,
     setPendingWidget,
-    updateWidgetCustomizations,
     applyPendingToGrid,
+    setPendingWidgetSize,
     showToast,
   } = useWidgetStore();
   
@@ -104,8 +105,6 @@ export default function Index() {
   
   // Preview Drawer Modal State
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [customizeMode, setCustomizeMode] = useState(false);
-  const [editorTab, setEditorTab] = useState<'style' | 'text'>('style');
 
   const allTemplates = Object.values(widgetRegistry);
   const filtered = activeCategory === 'all'
@@ -143,31 +142,16 @@ export default function Index() {
       y: 0,
       w: template.defaultWidth,
       h: template.defaultHeight,
-      customizations: {
-        fontId: 'inter',
-        fontSize: template.defaultWidth === 4 ? 20 : 14,
-        backgroundType: 'solid',
-        backgroundColor: '#0c0c0c',
-        borderRadius: 16,
-        transparency: 10,
-        blur: 10,
-        shadowType: 'glow',
-        titleText: template.defaultTitle,
-        valueText: template.defaultValue,
-        themeOverride: 'none',
-        accentColor: '#7C9EFF',
-      },
     };
     
     setPendingWidget(newWidget);
-    setCustomizeMode(false);
     setPreviewOpen(true);
   };
 
-  const handleUpdate = (updates: Partial<WidgetCustomizations>) => {
+  const handleUpdateSize = (w: number, h: number) => {
     if (!pendingWidget) return;
-    updateWidgetCustomizations('widget_pending', updates);
-    triggerHaptic('light');
+    setPendingWidgetSize(w, h);
+    triggerHaptic('selection');
   };
 
   const getWidgetProviderName = (templateId: string) => {
@@ -267,7 +251,7 @@ export default function Index() {
 
   return (
     <View style={styles.root}>
-      <DotGridBackground />
+      {activeTheme === 'liquidglass' ? <LiquidGlassBackground /> : <DotGridBackground />}
       <StatusBar barStyle="light-content" backgroundColor="#000000" translucent />
 
       {/* ── HEADER ── */}
@@ -384,12 +368,8 @@ export default function Index() {
         visible={previewOpen}
         pendingWidget={pendingWidget}
         activeTheme={activeTheme}
-        customizeMode={customizeMode}
-        setCustomizeMode={setCustomizeMode}
-        editorTab={editorTab}
-        setEditorTab={setEditorTab}
         onClose={() => setPreviewOpen(false)}
-        handleUpdate={handleUpdate}
+        handleUpdateSize={handleUpdateSize}
         handleAddToHomeScreen={handleAddToHomeScreen}
         triggerHaptic={triggerHaptic}
       />

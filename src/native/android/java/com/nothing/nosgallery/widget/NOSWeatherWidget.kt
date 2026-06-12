@@ -16,7 +16,8 @@ open class NOSWeatherWidget : NosBaseWidgetProvider() {
         context: Context,
         views: RemoteViews,
         config: JSONObject?,
-        theme: String
+        theme: String,
+        appWidgetId: Int
     ) {
         val customizations = config?.optJSONObject("customizations")
         val templateId = config?.optString("templateId", defaultTemplateId) ?: defaultTemplateId

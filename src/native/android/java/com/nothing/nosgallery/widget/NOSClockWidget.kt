@@ -18,7 +18,8 @@ open class NOSClockWidget : NosBaseWidgetProvider() {
         context: Context,
         views: RemoteViews,
         config: JSONObject?,
-        theme: String
+        theme: String,
+        appWidgetId: Int
     ) {
         val customizations = config?.optJSONObject("customizations")
         val templateId = config?.optString("templateId", defaultTemplateId) ?: defaultTemplateId
@@ -39,30 +40,55 @@ open class NOSClockWidget : NosBaseWidgetProvider() {
         val dateFormat = SimpleDateFormat("EEE, MMM d", Locale.getDefault())
         val now = Date()
 
-        val timeStr = customizations?.optString("valueText", null)?.takeIf { it.isNotBlank() }
-            ?: timeFormat.format(now)
-
-        val subStr = when {
-            templateId.contains("stopwatch") || templateId.contains("countdown") -> "00:00.0  STOPWATCH"
-            templateId.contains("analog") -> "ANALOG CLOCK"
-            else -> dateFormat.format(now).uppercase(Locale.getDefault())
-        }
-
         val label = (customizations?.optString("titleText", null) ?: "NOTHING CLOCK")
             .uppercase(Locale.getDefault())
-
         views.setTextViewText(R.id.nos_widget_label, label)
         views.setTextColor(R.id.nos_widget_label, subtextColor)
 
-        views.setTextViewText(R.id.nos_widget_value, timeStr)
-        views.setTextColor(R.id.nos_widget_value, textColor)
+        if (templateId.contains("stopwatch") || templateId.contains("countdown")) {
+            val running = config?.optBoolean("stopwatchRunning", false) ?: false
+            val time = config?.optInt("stopwatchTime", 0) ?: 0
+            val mins = time / 600
+            val secs = (time % 600) / 10
+            val deci = time % 10
+            val timeFormatted = String.format(Locale.getDefault(), "%02d:%02d.%d", mins, secs, deci)
 
-        views.setTextViewText(R.id.nos_widget_sub_value, subStr)
-        views.setTextColor(R.id.nos_widget_sub_value, subtextColor)
+            views.setTextViewText(R.id.nos_widget_value, timeFormatted)
+            views.setTextColor(R.id.nos_widget_value, textColor)
+            views.setTextViewText(R.id.nos_widget_sub_value, "STOPWATCH")
+            views.setTextColor(R.id.nos_widget_sub_value, subtextColor)
+            views.setViewVisibility(R.id.nos_widget_progress, View.GONE)
+            views.setTextViewText(R.id.nos_widget_footer, "NOS • CHRONOMETER")
 
-        views.setViewVisibility(R.id.nos_widget_progress, View.GONE)
+            // Bind action buttons
+            views.setViewVisibility(R.id.nos_widget_buttons_row, View.VISIBLE)
+            views.setViewVisibility(R.id.nos_widget_btn_left, View.VISIBLE)
+            views.setViewVisibility(R.id.nos_widget_btn_right, View.VISIBLE)
+            views.setViewVisibility(R.id.nos_widget_btn_divider, View.VISIBLE)
+            views.setTextViewText(R.id.nos_widget_btn_left, if (running) "PAUSE" else "START")
+            views.setOnClickPendingIntent(R.id.nos_widget_btn_left, getClickPendingIntent(context, appWidgetId, "toggle_stopwatch"))
+            views.setTextViewText(R.id.nos_widget_btn_right, "RESET")
+            views.setOnClickPendingIntent(R.id.nos_widget_btn_right, getClickPendingIntent(context, appWidgetId, "reset_stopwatch"))
+        } else {
+            val timeStr = customizations?.optString("valueText", null)?.takeIf { it.isNotBlank() }
+                ?: timeFormat.format(now)
 
-        views.setTextViewText(R.id.nos_widget_footer, "NOS • CLOCK")
+            val subStr = when {
+                templateId.contains("analog") -> "ANALOG CLOCK"
+                else -> dateFormat.format(now).uppercase(Locale.getDefault())
+            }
+
+            views.setTextViewText(R.id.nos_widget_value, timeStr)
+            views.setTextColor(R.id.nos_widget_value, textColor)
+            views.setTextViewText(R.id.nos_widget_sub_value, subStr)
+            views.setTextColor(R.id.nos_widget_sub_value, subtextColor)
+            views.setViewVisibility(R.id.nos_widget_progress, View.GONE)
+            views.setTextViewText(R.id.nos_widget_footer, "NOS • CLOCK")
+
+            // Hide action buttons
+            views.setViewVisibility(R.id.nos_widget_buttons_row, View.GONE)
+        }
+
         views.setTextColor(R.id.nos_widget_footer, accentColor)
     }
 }
