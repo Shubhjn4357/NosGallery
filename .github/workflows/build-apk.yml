@@ -50,7 +50,7 @@ jobs:
 
       - name: Accept Android SDK Licenses
         run: |
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null || true
 
       - name: Setup Gradle Cache
         uses: gradle/actions/setup-gradle@v4
@@ -116,7 +116,7 @@ jobs:
 
       - name: Accept Android SDK Licenses
         run: |
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null || true
 
       - name: Setup Gradle Cache
         uses: gradle/actions/setup-gradle@v4
