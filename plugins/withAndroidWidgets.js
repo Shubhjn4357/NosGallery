@@ -278,6 +278,52 @@ class ${w.className} : ${w.parentClass}() {
         'utf8'
       );
       
+      // 3. Auto-modify generated build files to support Windows paths and disable Foojay toolchain downloads
+      try {
+        const buildGradlePath = path.join(projectRoot, 'android', 'build.gradle');
+        if (fs.existsSync(buildGradlePath)) {
+          let content = fs.readFileSync(buildGradlePath, 'utf8');
+          if (!content.includes('build-cache')) {
+            content += `\nsubprojects {\n  if (project.name != "app") {\n    project.buildDir = new File(rootProject.projectDir, "../build-cache/\${project.name}")\n  }\n}\n\njava {\n  toolchain {\n    languageVersion = JavaLanguageVersion.of(JavaVersion.current().majorVersion.toInteger())\n  }\n}\n`;
+            fs.writeFileSync(buildGradlePath, content, 'utf8');
+            console.log('[withAndroidWidgets] Successfully appended build-cache redirection and dynamic Java toolchain to android/build.gradle');
+          }
+        }
+      } catch (err) {
+        console.error('[withAndroidWidgets] Failed to patch android/build.gradle:', err.message);
+      }
+
+      try {
+        const settingsGradlePath = path.join(projectRoot, 'android', 'settings.gradle');
+        if (fs.existsSync(settingsGradlePath)) {
+          let content = fs.readFileSync(settingsGradlePath, 'utf8');
+          if (!content.includes('foojay-resolver-convention:1.0.0')) {
+            content = content.replace(
+              /pluginManagement\s*\{([\s\S]*?)\}\s*plugins\s*\{/,
+              `pluginManagement {$1}\n\nbuildscript {\n  repositories {\n    gradlePluginPortal()\n  }\n  dependencies {\n    classpath("org.gradle.toolchains:foojay-resolver-convention:1.0.0")\n  }\n}\n\nplugins {`
+            );
+            fs.writeFileSync(settingsGradlePath, content, 'utf8');
+            console.log('[withAndroidWidgets] Successfully patched android/settings.gradle to insert buildscript with foojay-resolver-convention 1.0.0');
+          }
+        }
+      } catch (err) {
+        console.error('[withAndroidWidgets] Failed to patch android/settings.gradle:', err.message);
+      }
+
+      try {
+        const gradlePropertiesPath = path.join(projectRoot, 'android', 'gradle.properties');
+        if (fs.existsSync(gradlePropertiesPath)) {
+          let content = fs.readFileSync(gradlePropertiesPath, 'utf8');
+          if (!content.includes('org.gradle.java.installations.auto-download')) {
+            content += `\n# Disable java toolchain auto-download to prevent Foojay resolver crashes\norg.gradle.java.installations.auto-download=false\n`;
+            fs.writeFileSync(gradlePropertiesPath, content, 'utf8');
+            console.log('[withAndroidWidgets] Successfully appended auto-download=false to android/gradle.properties');
+          }
+        }
+      } catch (err) {
+        console.error('[withAndroidWidgets] Failed to patch android/gradle.properties:', err.message);
+      }
+
       console.log('[withAndroidWidgets] Copied native code, resources, and generated assets/default_widgets.json');
       return config;
     }

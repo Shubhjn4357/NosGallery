@@ -1,0 +1,15 @@
+allprojects {
+    afterEvaluate { project ->
+        if (project.extensions.findByName('java') != null) {
+            try {
+                project.extensions.configure('java') { ext ->
+                    ext.toolchain {
+                        languageVersion = JavaLanguageVersion.of(JavaVersion.current().majorVersion.toInteger())
+                    }
+                }
+            } catch (Exception e) {
+                // Ignore
+            }
+        }
+    }
+}

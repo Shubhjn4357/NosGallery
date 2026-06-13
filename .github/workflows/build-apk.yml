@@ -48,10 +48,9 @@ jobs:
           distribution: zulu
           java-version: ${{ env.JAVA_VERSION }}
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v4
-        with:
-          accept-android-sdk-licenses: true
+      - name: Accept Android SDK Licenses
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Setup Gradle Cache
         uses: gradle/actions/setup-gradle@v4
@@ -115,10 +114,9 @@ jobs:
           distribution: zulu
           java-version: ${{ env.JAVA_VERSION }}
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v4
-        with:
-          accept-android-sdk-licenses: true
+      - name: Accept Android SDK Licenses
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Setup Gradle Cache
         uses: gradle/actions/setup-gradle@v4
@@ -170,7 +168,7 @@ jobs:
           retention-days: 30
 
 # ─────────────────────────────────────────────────────────────────
-# JOB 3: GITHUB RELEASE (on tags only, both APKs attached)
+# JOB 3: GITHUB RELEASE (on tags and push to main, both APKs attached)
 # ─────────────────────────────────────────────────────────────────
   release:
     name: GitHub Release
