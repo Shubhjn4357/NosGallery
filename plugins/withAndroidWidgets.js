@@ -284,7 +284,7 @@ class ${w.className} : ${w.parentClass}() {
         if (fs.existsSync(buildGradlePath)) {
           let content = fs.readFileSync(buildGradlePath, 'utf8');
           if (!content.includes('build-cache')) {
-            content += `\nsubprojects {\n  if (project.name != "app") {\n    project.buildDir = new File(rootProject.projectDir, "../build-cache/\${project.name}")\n  }\n}\n`;
+            content += `\nsubprojects {\n  if (project.name != "app") {\n    project.buildDir = new File(rootProject.projectDir, "build-cache/\${project.name}")\n  }\n}\n`;
             fs.writeFileSync(buildGradlePath, content, 'utf8');
             console.log('[withAndroidWidgets] Successfully appended build-cache redirection to android/build.gradle');
           }

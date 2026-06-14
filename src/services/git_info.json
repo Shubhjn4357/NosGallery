@@ -1,7 +1,7 @@
 {
   "branch": "main",
-  "commit": "16b467c",
+  "commit": "23b3003",
   "author": "Shubhjn4357",
-  "message": "fix the build runner and add runner script",
-  "date": "2026-06-12 23:18:23 +0530"
+  "message": "chore(build): move build configuration to Expo plugins and redirect sdkmanager output to dev/null",
+  "date": "2026-06-13 21:54:53 +0530"
 }

@@ -29,6 +29,7 @@
     },
     "plugins": [
       "./plugins/withAndroidWidgets",
+      "./plugins/withGradleTaskFix",
       "expo-router",
       "expo-dev-client",
       [
