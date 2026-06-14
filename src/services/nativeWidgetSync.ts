@@ -1,7 +1,7 @@
 
 import { Platform } from 'react-native';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
-import NosWidgetPinning from '../../modules/nos-widget-pinning/src/NosWidgetPinningModule';
+import { ExpoWidget } from '../../modules/expo-widget/src';
 import { useWidgetStore } from '../store/widgetStore';
 
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
@@ -15,7 +15,7 @@ export function startNativeWidgetSync() {
 
   const syncToNative = async (state: { widgets: any[]; activeTheme: string }) => {
     try {
-      await NosWidgetPinning.saveWidgetsStore(
+      await ExpoWidget.saveWidgetsStore(
         JSON.stringify(state.widgets),
         state.activeTheme
       );

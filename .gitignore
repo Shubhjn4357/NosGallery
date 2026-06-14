@@ -44,6 +44,8 @@ example
 
 # local build cache
 /build-cache/
+.gradle/
+**/.gradle/
 
 # Android build outputs
 **/build/

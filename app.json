@@ -28,8 +28,7 @@
       "favicon": "./assets/images/logo_vibrant.png"
     },
     "plugins": [
-      "./plugins/withAndroidWidgets",
-      "./plugins/withGradleTaskFix",
+      "./modules/expo-widget/app.plugin.js",
       "expo-router",
       "expo-dev-client",
       [

@@ -21,7 +21,7 @@ import { widgetRegistry, WidgetTemplate, WidgetCategory } from '../widgets/regis
 import { themes, ThemeId } from '../themes/themes';
 import { WidgetCard } from '../components/WidgetCard';
 import { CustomizerDrawer } from '@/editor/CustomizerDrawer';
-import NosWidgetPinning from '../../modules/nos-widget-pinning/src/NosWidgetPinningModule';
+import { ExpoWidget } from '../../modules/expo-widget/src';
 import { startNativeWidgetSync } from '../services/nativeWidgetSync';
 
 const LucideIcons = {
@@ -155,62 +155,15 @@ export default function Index() {
   };
 
   const getWidgetProviderName = (templateId: string) => {
-    const templateClassMap: Record<string, string> = {
-      clock_digital: 'NOSClockDigitalWidget',
-      clock_dot: 'NOSClockDotWidget',
-      clock_analog: 'NOSClockAnalogWidget',
-      clock_flip: 'NOSClockFlipWidget',
-      clock_stopwatch: 'NOSClockStopwatchWidget',
-      calendar_monthly: 'NOSCalendarMonthlyWidget',
-      calendar_agenda: 'NOSCalendarAgendaWidget',
-      calendar_progress: 'NOSCalendarProgressWidget',
-      weather_current: 'NOSWeatherCurrentWidget',
-      weather_aqi: 'NOSWeatherAqiWidget',
-      productivity_todo: 'NOSProductivityTodoWidget',
-      productivity_focus: 'NOSProductivityFocusWidget',
-      health_steps: 'NOSHealthStepsWidget',
-      health_water: 'NOSHealthWaterWidget',
-      health_breath: 'NOSHealthBreathWidget',
-      finance_crypto: 'NOSFinanceCryptoWidget',
-      developer_git: 'NOSDeveloperGitWidget',
-      developer_build: 'NOSDeveloperBuildWidget',
-      developer_cicd: 'NOSDeveloperBuildWidget',
-      developer_cpu: 'NOSDeveloperCpuWidget',
-      social_feed: 'NOSSocialFeedWidget',
-      smart_home_controls: 'NOSSmartHomeControlsWidget',
-      ai_chat: 'NOSAiChatWidget',
-      ai_summary: 'NOSAiSummaryWidget',
-    };
-
-    if (templateClassMap[templateId]) {
-      return templateClassMap[templateId];
-    }
-
-    if (templateId.startsWith('clock_')) return 'NOSClockWidget';
-    if (templateId.startsWith('calendar_')) return 'NOSCalendarWidget';
-    if (templateId.startsWith('weather_')) return 'NOSWeatherWidget';
-    if (templateId.startsWith('productivity_')) return 'NOSProductivityWidget';
-    if (templateId.startsWith('health_')) return 'NOSHealthWidget';
-    if (templateId.startsWith('finance_')) return 'NOSFinanceWidget';
-    if (templateId.startsWith('developer_')) return 'NOSDeveloperWidget';
-    if (templateId.startsWith('social_')) return 'NOSSocialWidget';
-    if (templateId.startsWith('smart_home_')) return 'NOSSmartHomeWidget';
-    if (templateId.startsWith('ai_')) return 'NOSAiWidget';
-    return 'NOSClockWidget';
+    const template = widgetRegistry[templateId];
+    const w = pendingWidget?.w ?? template?.defaultWidth ?? 2;
+    const h = pendingWidget?.h ?? template?.defaultHeight ?? 2;
+    return `NOSWidget${w}x${h}`;
   };
 
   const getWidgetCategory = (templateId: string): string => {
-    if (templateId.startsWith('clock_')) return 'clock';
-    if (templateId.startsWith('calendar_')) return 'calendar';
-    if (templateId.startsWith('weather_')) return 'weather';
-    if (templateId.startsWith('productivity_')) return 'productivity';
-    if (templateId.startsWith('health_')) return 'health';
-    if (templateId.startsWith('finance_')) return 'finance';
-    if (templateId.startsWith('developer_')) return 'developer';
-    if (templateId.startsWith('social_')) return 'social';
-    if (templateId.startsWith('smart_home_')) return 'smart_home';
-    if (templateId.startsWith('ai_')) return 'ai';
-    return 'clock';
+    const template = widgetRegistry[templateId];
+    return template?.category ?? 'clock';
   };
 
   const handleAddToHomeScreen = async () => {
@@ -230,7 +183,7 @@ export default function Index() {
       const providerName = getWidgetProviderName(pendingWidget.templateId);
       const category = getWidgetCategory(pendingWidget.templateId);
       
-      const success = await NosWidgetPinning.requestPinWidget(
+      const success = await ExpoWidget.requestPinWidget(
         providerName,
         newWidgetId,
         category,
