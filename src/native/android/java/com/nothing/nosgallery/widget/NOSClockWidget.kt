@@ -40,7 +40,7 @@ open class NOSClockWidget : NosBaseWidgetProvider() {
         val dateFormat = SimpleDateFormat("EEE, MMM d", Locale.getDefault())
         val now = Date()
 
-        val label = (customizations?.optString("titleText", null) ?: "NOTHING CLOCK")
+        val label = (customizations?.optString("titleText")?.takeIf { it.isNotEmpty() } ?: "NOTHING CLOCK")
             .uppercase(Locale.getDefault())
         views.setTextViewText(R.id.nos_widget_label, label)
         views.setTextColor(R.id.nos_widget_label, subtextColor)
@@ -70,7 +70,7 @@ open class NOSClockWidget : NosBaseWidgetProvider() {
             views.setTextViewText(R.id.nos_widget_btn_right, "RESET")
             views.setOnClickPendingIntent(R.id.nos_widget_btn_right, getClickPendingIntent(context, appWidgetId, "reset_stopwatch"))
         } else {
-            val timeStr = customizations?.optString("valueText", null)?.takeIf { it.isNotBlank() }
+            val timeStr = customizations?.optString("valueText")?.takeIf { it.isNotBlank() }
                 ?: timeFormat.format(now)
 
             val subStr = when {

@@ -30,7 +30,7 @@ open class NOSCalendarWidget : NosBaseWidgetProvider() {
 
         views.setInt(R.id.nos_widget_dot, "setBackgroundColor", accentColor)
 
-        val label = (customizations?.optString("titleText", null) ?: "CALENDAR")
+        val label = (customizations?.optString("titleText")?.takeIf { it.isNotEmpty() } ?: "CALENDAR")
             .uppercase(Locale.getDefault())
         views.setTextViewText(R.id.nos_widget_label, label)
         views.setTextColor(R.id.nos_widget_label, subtextColor)

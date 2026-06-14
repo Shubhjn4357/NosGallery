@@ -28,12 +28,12 @@ open class NOSSmartHomeWidget : NosBaseWidgetProvider() {
 
         views.setInt(R.id.nos_widget_dot, "setBackgroundColor", accentColor)
 
-        val label = (customizations?.optString("titleText", null) ?: "SMART HOME")
+        val label = (customizations?.optString("titleText")?.takeIf { it.isNotEmpty() } ?: "SMART HOME")
             .uppercase(Locale.getDefault())
         views.setTextViewText(R.id.nos_widget_label, label)
         views.setTextColor(R.id.nos_widget_label, subtextColor)
 
-        val valueText = customizations?.optString("valueText", null)
+        val valueText = customizations?.optString("valueText")?.takeIf { it.isNotEmpty() }
 
         when {
             templateId.contains("light") || templateId.contains("lamp") -> {

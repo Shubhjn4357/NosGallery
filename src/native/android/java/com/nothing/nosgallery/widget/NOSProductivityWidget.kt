@@ -28,12 +28,12 @@ open class NOSProductivityWidget : NosBaseWidgetProvider() {
 
         views.setInt(R.id.nos_widget_dot, "setBackgroundColor", accentColor)
 
-        val label = (customizations?.optString("titleText", null) ?: "TASKS")
+        val label = (customizations?.optString("titleText")?.takeIf { it.isNotEmpty() } ?: "TASKS")
             .uppercase(Locale.getDefault())
         views.setTextViewText(R.id.nos_widget_label, label)
         views.setTextColor(R.id.nos_widget_label, subtextColor)
 
-        val valueText = customizations?.optString("valueText", null)
+        val valueText = customizations?.optString("valueText")?.takeIf { it.isNotEmpty() }
 
         when {
             templateId.contains("todo") || templateId.contains("task") || templateId.contains("checklist") -> {
@@ -53,6 +53,60 @@ open class NOSProductivityWidget : NosBaseWidgetProvider() {
                 views.setTextColor(R.id.nos_widget_sub_value, subtextColor)
                 views.setViewVisibility(R.id.nos_widget_progress, View.GONE)
                 views.setTextViewText(R.id.nos_widget_footer, "NOS • FOCUS TIMER")
+                views.setViewVisibility(R.id.nos_widget_buttons_row, View.GONE)
+            }
+            templateId.contains("calculator") -> {
+                views.setTextViewText(R.id.nos_widget_value, valueText ?: "0")
+                views.setTextColor(R.id.nos_widget_value, textColor)
+                views.setTextViewText(R.id.nos_widget_sub_value, "CALCULATOR  •  TAP TO OPEN")
+                views.setTextColor(R.id.nos_widget_sub_value, subtextColor)
+                views.setViewVisibility(R.id.nos_widget_progress, View.GONE)
+                views.setTextViewText(R.id.nos_widget_footer, "NOS • CALCULATOR")
+                views.setViewVisibility(R.id.nos_widget_buttons_row, View.GONE)
+            }
+            templateId.contains("camera") -> {
+                views.setTextViewText(R.id.nos_widget_value, valueText ?: "TAP TO OPEN")
+                views.setTextColor(R.id.nos_widget_value, textColor)
+                views.setTextViewText(R.id.nos_widget_sub_value, "CAMERA  •  QUICK SHORTCUT")
+                views.setTextColor(R.id.nos_widget_sub_value, subtextColor)
+                views.setViewVisibility(R.id.nos_widget_progress, View.GONE)
+                views.setTextViewText(R.id.nos_widget_footer, "NOS • CAMERA")
+                views.setViewVisibility(R.id.nos_widget_buttons_row, View.GONE)
+            }
+            templateId.contains("username") || templateId.contains("user") || templateId.contains("text_username") -> {
+                views.setTextViewText(R.id.nos_widget_value, valueText ?: "NOTHING USER")
+                views.setTextColor(R.id.nos_widget_value, textColor)
+                views.setTextViewText(R.id.nos_widget_sub_value, "USERNAME  •  TAP TO EDIT")
+                views.setTextColor(R.id.nos_widget_sub_value, subtextColor)
+                views.setViewVisibility(R.id.nos_widget_progress, View.GONE)
+                views.setTextViewText(R.id.nos_widget_footer, "NOS • PROFILE")
+                views.setViewVisibility(R.id.nos_widget_buttons_row, View.GONE)
+            }
+            templateId.contains("search") || templateId.contains("google") -> {
+                views.setTextViewText(R.id.nos_widget_value, valueText ?: "Search...")
+                views.setTextColor(R.id.nos_widget_value, textColor)
+                views.setTextViewText(R.id.nos_widget_sub_value, "GOOGLE SEARCH  •  TAP TO SEARCH")
+                views.setTextColor(R.id.nos_widget_sub_value, subtextColor)
+                views.setViewVisibility(R.id.nos_widget_progress, View.GONE)
+                views.setTextViewText(R.id.nos_widget_footer, "NOS • SEARCH")
+                views.setViewVisibility(R.id.nos_widget_buttons_row, View.GONE)
+            }
+            templateId.contains("folder") -> {
+                views.setTextViewText(R.id.nos_widget_value, valueText ?: "4 Apps")
+                views.setTextColor(R.id.nos_widget_value, textColor)
+                views.setTextViewText(R.id.nos_widget_sub_value, "APP DRAWER  •  TAP TO OPEN")
+                views.setTextColor(R.id.nos_widget_sub_value, subtextColor)
+                views.setViewVisibility(R.id.nos_widget_progress, View.GONE)
+                views.setTextViewText(R.id.nos_widget_footer, "NOS • FOLDER")
+                views.setViewVisibility(R.id.nos_widget_buttons_row, View.GONE)
+            }
+            templateId.contains("photo") || templateId.contains("frame") || templateId.contains("image") -> {
+                views.setTextViewText(R.id.nos_widget_value, valueText ?: "Memory Lane")
+                views.setTextColor(R.id.nos_widget_value, textColor)
+                views.setTextViewText(R.id.nos_widget_sub_value, "PHOTO FRAME  •  TAP TO VIEW")
+                views.setTextColor(R.id.nos_widget_sub_value, subtextColor)
+                views.setViewVisibility(R.id.nos_widget_progress, View.GONE)
+                views.setTextViewText(R.id.nos_widget_footer, "NOS • GALLERY")
                 views.setViewVisibility(R.id.nos_widget_buttons_row, View.GONE)
             }
             templateId.contains("music") || templateId.contains("audio") || templateId.contains("player") -> {

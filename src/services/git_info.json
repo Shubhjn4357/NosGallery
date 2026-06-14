@@ -1,7 +1,7 @@
 {
   "branch": "main",
-  "commit": "0c4125e",
+  "commit": "7771a41",
   "author": "Shubhjn4357",
-  "message": "chore:fix gradele build symlink",
-  "date": "2026-06-14 10:34:40 +0530"
+  "message": "fix build",
+  "date": "2026-06-14 17:04:33 +0530"
 }

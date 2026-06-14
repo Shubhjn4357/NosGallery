@@ -28,12 +28,12 @@ open class NOSAiWidget : NosBaseWidgetProvider() {
 
         views.setInt(R.id.nos_widget_dot, "setBackgroundColor", accentColor)
 
-        val label = (customizations?.optString("titleText", null) ?: "NOS AI")
+        val label = (customizations?.optString("titleText")?.takeIf { it.isNotEmpty() } ?: "NOS AI")
             .uppercase(Locale.getDefault())
         views.setTextViewText(R.id.nos_widget_label, label)
         views.setTextColor(R.id.nos_widget_label, subtextColor)
 
-        val valueText = customizations?.optString("valueText", null)
+        val valueText = customizations?.optString("valueText")?.takeIf { it.isNotEmpty() }
 
         when {
             templateId.contains("brief") || templateId.contains("summary") -> {

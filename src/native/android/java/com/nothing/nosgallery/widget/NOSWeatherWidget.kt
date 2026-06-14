@@ -28,14 +28,21 @@ open class NOSWeatherWidget : NosBaseWidgetProvider() {
 
         views.setInt(R.id.nos_widget_dot, "setBackgroundColor", accentColor)
 
-        val city = (customizations?.optString("titleText", null) ?: "LOCATION")
+        val city = (customizations?.optString("titleText")?.takeIf { it.isNotEmpty() } ?: "LOCATION")
             .uppercase(Locale.getDefault())
         views.setTextViewText(R.id.nos_widget_label, city)
         views.setTextColor(R.id.nos_widget_label, subtextColor)
 
-        val valueText = customizations?.optString("valueText", null)
+        val valueText = customizations?.optString("valueText")?.takeIf { it.isNotEmpty() }
 
         when {
+            templateId.contains("moon") || templateId.contains("lunar") -> {
+                views.setTextViewText(R.id.nos_widget_value, valueText ?: "Waxing Gibbous")
+                views.setTextColor(R.id.nos_widget_value, textColor)
+                views.setTextViewText(R.id.nos_widget_sub_value, "LUNAR CYCLE  •  ILLUMINATION 78%")
+                views.setTextColor(R.id.nos_widget_sub_value, subtextColor)
+                views.setViewVisibility(R.id.nos_widget_progress, View.GONE)
+            }
             templateId.contains("aqi") -> {
                 views.setTextViewText(R.id.nos_widget_value, valueText ?: "12 AQI")
                 views.setTextColor(R.id.nos_widget_value, textColor)

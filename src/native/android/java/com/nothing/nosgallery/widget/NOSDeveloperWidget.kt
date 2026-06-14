@@ -1,6 +1,9 @@
 package com.nothing.nosgallery.widget
 
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.BatteryManager
 import android.view.View
 import android.widget.RemoteViews
 import com.nothing.nosgallery.R
@@ -28,14 +31,30 @@ open class NOSDeveloperWidget : NosBaseWidgetProvider() {
 
         views.setInt(R.id.nos_widget_dot, "setBackgroundColor", accentColor)
 
-        val label = (customizations?.optString("titleText", null) ?: "DEVELOPER")
+        val label = (customizations?.optString("titleText")?.takeIf { it.isNotEmpty() } ?: "DEVELOPER")
             .uppercase(Locale.getDefault())
         views.setTextViewText(R.id.nos_widget_label, label)
         views.setTextColor(R.id.nos_widget_label, subtextColor)
 
-        val valueText = customizations?.optString("valueText", null)
+        val valueText = customizations?.optString("valueText")?.takeIf { it.isNotEmpty() }
 
         when {
+            templateId.contains("battery") -> {
+                val batteryStatus: Intent? = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+                val level = batteryStatus?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
+                val scale = batteryStatus?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
+                val pct = if (level >= 0 && scale > 0) (level * 100) / scale else 80
+                val status = batteryStatus?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
+                val isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL
+
+                views.setTextViewText(R.id.nos_widget_value, valueText ?: "$pct%")
+                views.setTextColor(R.id.nos_widget_value, textColor)
+                views.setTextViewText(R.id.nos_widget_sub_value, if (isCharging) "CHARGING  •  POWER CONNECTED" else "DISCHARGING  •  ON BATTERY")
+                views.setTextColor(R.id.nos_widget_sub_value, subtextColor)
+                views.setViewVisibility(R.id.nos_widget_progress, View.VISIBLE)
+                views.setProgressBar(R.id.nos_widget_progress, 100, pct, false)
+                views.setTextViewText(R.id.nos_widget_footer, "NOS • BATTERY")
+            }
             templateId.contains("git") || templateId.contains("commit") -> {
                 views.setTextViewText(R.id.nos_widget_value, valueText ?: "27 Commits")
                 views.setTextColor(R.id.nos_widget_value, textColor)

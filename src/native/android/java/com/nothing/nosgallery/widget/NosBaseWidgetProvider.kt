@@ -265,7 +265,7 @@ abstract class NosBaseWidgetProvider : AppWidgetProvider() {
 
     private fun resolveBackgroundColor(config: JSONObject?, theme: String): Int {
         val custom = config?.optJSONObject("customizations")
-        val hex = custom?.optString("backgroundColor", null)
+        val hex = custom?.optString("backgroundColor")?.takeIf { it.isNotEmpty() }
         if (!hex.isNullOrBlank()) {
             return NosWidgetPreferences.parseColor(hex, themeBackground(theme))
         }
@@ -274,7 +274,7 @@ abstract class NosBaseWidgetProvider : AppWidgetProvider() {
 
     protected fun resolveAccentColor(config: JSONObject?, theme: String): Int {
         val custom = config?.optJSONObject("customizations")
-        val hex = custom?.optString("accentColor", null)
+        val hex = custom?.optString("accentColor")?.takeIf { it.isNotEmpty() }
         if (!hex.isNullOrBlank()) {
             return NosWidgetPreferences.parseColor(hex, themeAccent(theme))
         }
@@ -283,7 +283,7 @@ abstract class NosBaseWidgetProvider : AppWidgetProvider() {
 
     protected fun resolveTextColor(config: JSONObject?, theme: String): Int {
         val custom = config?.optJSONObject("customizations")
-        val hex = custom?.optString("textColor", null)
+        val hex = custom?.optString("textColor")?.takeIf { it.isNotEmpty() }
         if (!hex.isNullOrBlank()) {
             return NosWidgetPreferences.parseColor(hex, themeText(theme))
         }

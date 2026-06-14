@@ -28,12 +28,12 @@ open class NOSHealthWidget : NosBaseWidgetProvider() {
 
         views.setInt(R.id.nos_widget_dot, "setBackgroundColor", accentColor)
 
-        val label = (customizations?.optString("titleText", null) ?: "HEALTH")
+        val label = (customizations?.optString("titleText")?.takeIf { it.isNotEmpty() } ?: "HEALTH")
             .uppercase(Locale.getDefault())
         views.setTextViewText(R.id.nos_widget_label, label)
         views.setTextColor(R.id.nos_widget_label, subtextColor)
 
-        val valueText = customizations?.optString("valueText", null)
+        val valueText = customizations?.optString("valueText")?.takeIf { it.isNotEmpty() }
 
         when {
             templateId.contains("water") || templateId.contains("hydration") -> {

@@ -28,14 +28,30 @@ open class NOSSocialWidget : NosBaseWidgetProvider() {
 
         views.setInt(R.id.nos_widget_dot, "setBackgroundColor", accentColor)
 
-        val label = (customizations?.optString("titleText", null) ?: "SOCIAL")
+        val label = (customizations?.optString("titleText")?.takeIf { it.isNotEmpty() } ?: "SOCIAL")
             .uppercase(Locale.getDefault())
         views.setTextViewText(R.id.nos_widget_label, label)
         views.setTextColor(R.id.nos_widget_label, subtextColor)
 
-        val valueText = customizations?.optString("valueText", null)
+        val valueText = customizations?.optString("valueText")?.takeIf { it.isNotEmpty() }
 
         when {
+            templateId.contains("contact") -> {
+                views.setTextViewText(R.id.nos_widget_value, valueText ?: "FAV CONTACT")
+                views.setTextColor(R.id.nos_widget_value, textColor)
+                views.setTextViewText(R.id.nos_widget_sub_value, "TAP TO CALL  •  MOBILE")
+                views.setTextColor(R.id.nos_widget_sub_value, subtextColor)
+                views.setViewVisibility(R.id.nos_widget_progress, View.GONE)
+                views.setTextViewText(R.id.nos_widget_footer, "NOS • CONTACT")
+            }
+            templateId.contains("shortcuts") || templateId.contains("direct") -> {
+                views.setTextViewText(R.id.nos_widget_value, valueText ?: "Socials")
+                views.setTextColor(R.id.nos_widget_value, textColor)
+                views.setTextViewText(R.id.nos_widget_sub_value, "QUICK LINKS  •  TAP TO OPEN")
+                views.setTextColor(R.id.nos_widget_sub_value, subtextColor)
+                views.setViewVisibility(R.id.nos_widget_progress, View.GONE)
+                views.setTextViewText(R.id.nos_widget_footer, "NOS • SHORTCUTS")
+            }
             templateId.contains("counter") || templateId.contains("follower") -> {
                 views.setTextViewText(R.id.nos_widget_value, valueText ?: "12.4K")
                 views.setTextColor(R.id.nos_widget_value, textColor)
