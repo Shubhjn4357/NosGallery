@@ -1,7 +1,7 @@
 {
   "branch": "main",
-  "commit": "23b3003",
+  "commit": "0c4125e",
   "author": "Shubhjn4357",
-  "message": "chore(build): move build configuration to Expo plugins and redirect sdkmanager output to dev/null",
-  "date": "2026-06-13 21:54:53 +0530"
+  "message": "chore:fix gradele build symlink",
+  "date": "2026-06-14 10:34:40 +0530"
 }

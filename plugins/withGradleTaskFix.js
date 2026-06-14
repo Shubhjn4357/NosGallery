@@ -1,18 +1,6 @@
-import { ConfigPlugin, withAppBuildGradle } from '@expo/config-plugins';
+const { withAppBuildGradle } = require('@expo/config-plugins');
 
-/**
- * Expo Config Plugin: Fix Gradle 9 implicit task dependency validation
- *
- * React Native's BundleHermesCTask (createBundle*JsAndAssets) uses the project
- * root directory as its working directory. Gradle 9 requires explicit ordering
- * when other subproject tasks (e.g. :expo:*) also output to that location.
- *
- * This plugin patches android/app/build.gradle to add mustRunAfter() declarations
- * so Gradle knows the correct task execution order.
- *
- * @see https://docs.gradle.org/9.3.1/userguide/validation_problems.html#implicit_dependency
- */
-const withGradleTaskFix: ConfigPlugin = (config) => {
+const withGradleTaskFix = (config) => {
   return withAppBuildGradle(config, (modConfig) => {
     const contents = modConfig.modResults.contents;
 
@@ -40,7 +28,7 @@ afterEvaluate {
                     ].each { depName ->
                         def depTask = proj.tasks.findByName(depName)
                         if (depTask != null) {
-                            bundleTask.mustRunAfter(depTask)
+                            bundleTask.dependsOn(depTask)
                         }
                     }
                 }
@@ -55,4 +43,4 @@ afterEvaluate {
   });
 };
 
-export default withGradleTaskFix;
+module.exports = withGradleTaskFix;

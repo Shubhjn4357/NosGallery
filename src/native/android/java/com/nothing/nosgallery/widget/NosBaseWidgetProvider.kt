@@ -218,9 +218,7 @@ abstract class NosBaseWidgetProvider : AppWidgetProvider() {
     private fun getLaunchIntentForCategory(context: Context, categoryPrefix: String): Intent {
         val intent = when {
             categoryPrefix.contains("clock") -> {
-                Intent(Intent.ACTION_MAIN).apply {
-                    addCategory(Intent.CATEGORY_APP_CLOCK)
-                }
+                Intent(android.provider.AlarmClock.ACTION_SHOW_ALARMS)
             }
             categoryPrefix.contains("calendar") -> {
                 Intent(Intent.ACTION_MAIN).apply {
