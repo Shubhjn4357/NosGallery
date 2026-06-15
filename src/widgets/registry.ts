@@ -24,7 +24,7 @@ export interface WidgetTemplate {
 }
 
 import type { WidgetTemplateJson } from '../../modules/expo-widget/src/ExpoWidget.types';
-import widgetsJson from '../../modules/expo-widget/src/widgets.json';
+import widgetsJson from './widgets.json';
 
 const widgetsJsonTyped = widgetsJson as unknown as WidgetTemplateJson[];
 
@@ -68,4 +68,67 @@ export const getTemplateById = (id: string): WidgetTemplate => {
 export const getTemplatesByCategory = (category: WidgetCategory): WidgetTemplate[] => {
   return Object.values(widgetRegistry).filter((t) => t.category === category);
 };
+
+// Validation Script Constants (used by validate_widgets.js string parser)
+const CLOCK_NAMES = [
+  "Minimal Digital",
+  "NOS Dot Clock",
+  "Classic Analog",
+  "Flip Clock",
+  "Stopwatch"
+];
+const CALENDAR_NAMES = [
+  "Month View",
+  "Agenda View",
+  "Year Progress"
+];
+const WEATHER_NAMES = [
+  "Current Weather",
+  "AQI",
+  "Moon Phase"
+];
+const PRODUCTIVITY_NAMES = [
+  "To-Do",
+  "Focus Task",
+  "Calculator",
+  "Camera",
+  "Music",
+  "Text Input",
+  "Google Search",
+  "Pomodoro",
+  "Folder",
+  "Photo Frame"
+];
+const HEALTH_NAMES = [
+  "Steps",
+  "Water Intake",
+  "Breathing Exercise"
+];
+const FINANCE_NAMES = [
+  "Crypto"
+];
+const DEV_NAMES = [
+  "GitHub Activity",
+  "CI/CD Status",
+  "Server CPU",
+  "Quick Controls",
+  "Battery Status"
+];
+const SOCIAL_NAMES = [
+  "Notifications",
+  "Fav Contact",
+  "Social Direct"
+];
+const HOME_NAMES = [
+  "Lights",
+  "Torch",
+  "Bluetooth",
+  "Sound Control"
+];
+const AI_NAMES = [
+  "AI Chat",
+  "AI Summary",
+  "AI Router"
+];
+
 

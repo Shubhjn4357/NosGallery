@@ -7,13 +7,13 @@ import { NativeModule, requireNativeModule } from 'expo';
 declare class ExpoWidgetNativeModule extends NativeModule<{}> {
   requestPinWidget(widgetName: string, widgetId: string, category: string, widgetJson: string): Promise<boolean>;
   saveWidgetConfig(category: string, widgetJson: string): Promise<void>;
-  saveWidgetsStore(widgetsJson: string, activeTheme: string): Promise<void>;
+  saveWidgetsStore(widgetsJson: string, activeTheme: string, dynamicStateJson: string): Promise<void>;
 }
 
 let ExpoWidget: {
   requestPinWidget(widgetName: string, widgetId: string, category: string, widgetJson: string): Promise<boolean>;
   saveWidgetConfig(category: string, widgetJson: string): Promise<void>;
-  saveWidgetsStore(widgetsJson: string, activeTheme: string): Promise<void>;
+  saveWidgetsStore(widgetsJson: string, activeTheme: string, dynamicStateJson: string): Promise<void>;
 };
 
 try {
@@ -28,7 +28,7 @@ try {
     async saveWidgetConfig(_category: string, _widgetJson: string) {
       console.log(`[ExpoWidget Mock] saveWidgetConfig(${_category})`);
     },
-    async saveWidgetsStore(_widgetsJson: string, _activeTheme: string) {
+    async saveWidgetsStore(_widgetsJson: string, _activeTheme: string, _dynamicStateJson: string) {
       console.log(`[ExpoWidget Mock] saveWidgetsStore(theme=${_activeTheme})`);
     },
   };

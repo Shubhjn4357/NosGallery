@@ -88,6 +88,40 @@ open class NosBaseWidgetProvider : AppWidgetProvider() {
      * Everything else is pure JSON state mutation.
      */
     private fun handleWidgetClick(context: Context, appWidgetId: Int, clickAction: String) {
+        // Intercept stopwatch clicks
+        if (clickAction == "toggle_stopwatch") {
+            try {
+                val dynamicState = NosWidgetPreferences.getDynamicStateJson(context)
+                val isRunning = dynamicState.optBoolean("stopwatchRunning", false)
+                val now = android.os.SystemClock.elapsedRealtime()
+                if (isRunning) {
+                    val startBase = NosWidgetPreferences.getPrefs(context).getLong("stopwatch_start_base", now)
+                    val elapsedMs = now - startBase
+                    val elapsedDeci = elapsedMs / 100
+                    dynamicState.put("stopwatchTime", elapsedDeci)
+                    dynamicState.put("stopwatchRunning", false)
+                } else {
+                    val currentDeci = dynamicState.optLong("stopwatchTime", 0L)
+                    val startBase = now - (currentDeci * 100)
+                    NosWidgetPreferences.getPrefs(context).edit().putLong("stopwatch_start_base", startBase).apply()
+                    dynamicState.put("stopwatchRunning", true)
+                }
+                NosWidgetPreferences.getPrefs(context).edit()
+                    .putString("dynamicState", dynamicState.toString())
+                    .apply()
+            } catch (_: Exception) {}
+        } else if (clickAction == "reset_stopwatch") {
+            try {
+                val dynamicState = NosWidgetPreferences.getDynamicStateJson(context)
+                dynamicState.put("stopwatchTime", 0L)
+                dynamicState.put("stopwatchRunning", false)
+                NosWidgetPreferences.getPrefs(context).edit()
+                    .putString("dynamicState", dynamicState.toString())
+                    .remove("stopwatch_start_base")
+                    .apply()
+            } catch (_: Exception) {}
+        }
+
         val config = NosWidgetPreferences.resolveWidgetConfig(context, appWidgetId, null, "") ?: JSONObject()
         val handlers = config.optJSONObject("clickHandlers")
             ?: config.optJSONObject("customizations")?.optJSONObject("clickHandlers")
@@ -158,6 +192,17 @@ open class NosBaseWidgetProvider : AppWidgetProvider() {
                     }
                 }
             }
+
+            // Sync updated field value to global dynamicState
+            if (field.isNotEmpty()) {
+                try {
+                    val dynamicState = NosWidgetPreferences.getDynamicStateJson(context)
+                    dynamicState.put(field, config.opt(field))
+                    NosWidgetPreferences.getPrefs(context).edit()
+                        .putString("dynamicState", dynamicState.toString())
+                        .apply()
+                } catch (_: Exception) {}
+            }
         }
 
         // Save updated config
@@ -207,7 +252,7 @@ open class NosBaseWidgetProvider : AppWidgetProvider() {
         }
     }
 
-    private fun getClickPendingIntent(
+    fun getClickPendingIntent(
         context: Context,
         appWidgetId: Int,
         clickAction: String
@@ -350,7 +395,7 @@ open class NosBaseWidgetProvider : AppWidgetProvider() {
 
     // ── Purely data-driven view population ────────────────────────────────────────
 
-    private fun populateViews(
+    open fun populateViews(
         context: Context,
         views: RemoteViews,
         config: JSONObject?,
@@ -362,41 +407,188 @@ open class NosBaseWidgetProvider : AppWidgetProvider() {
         val textColor = parseColorOr(customs?.optString("textColor"), themeText(theme))
         val subtextColor = parseColorOr(customs?.optString("subValueColor"), themeSubtext(theme))
 
+        val templateId = config?.optString("templateId") ?: defaultTemplateId ?: ""
+        val dynamicState = NosWidgetPreferences.getDynamicStateJson(context)
+
+        // Reset default visibilities
+        views.setViewVisibility(R.id.nos_widget_image, View.GONE)
+        views.setViewVisibility(R.id.nos_widget_clock_value, View.GONE)
+        views.setViewVisibility(R.id.nos_widget_chronometer, View.GONE)
+        views.setViewVisibility(R.id.nos_widget_value, View.VISIBLE)
+        views.setViewVisibility(R.id.nos_widget_progress, View.GONE)
+        views.setViewVisibility(R.id.nos_widget_buttons_row, View.GONE)
+
+        // Resolve and set preview image
+        val previewName = config?.optString("preview")
+        if (!previewName.isNullOrBlank()) {
+            val resId = context.resources.getIdentifier(previewName, "drawable", context.packageName)
+            if (resId != 0) {
+                views.setImageViewResource(R.id.nos_widget_image, resId)
+                views.setViewVisibility(R.id.nos_widget_image, View.VISIBLE)
+            }
+        }
+
         // Accent dot
         views.setInt(R.id.nos_widget_dot, "setBackgroundColor", accentColor)
 
         // Title label
-        val titleText = customs?.optString("titleText")?.takeIf { it.isNotBlank() }
+        var titleText = customs?.optString("titleText")?.takeIf { it.isNotBlank() }
             ?: config?.optString("titleText")?.takeIf { it.isNotBlank() }
             ?: "NOS WIDGET"
+
+        // Primary value
+        var valueText = customs?.optString("valueText")?.takeIf { it.isNotBlank() }
+            ?: config?.optString("valueText")?.takeIf { it.isNotBlank() }
+            ?: "--"
+
+        // Sub value
+        var subValueText = customs?.optString("subValueText")?.takeIf { it.isNotBlank() }
+            ?: config?.optString("subValueText")?.takeIf { it.isNotBlank() }
+            ?: ""
+
+        // Progress bar options
+        var showProgress = customs?.optBoolean("showProgressBar", false)
+            ?: config?.optBoolean("showProgressBar", false)
+            ?: false
+        var progressVal = customs?.optInt("progressBarValue", 0)
+            ?: config?.optInt("progressBarValue", 0)
+            ?: 0
+        var progressMax = customs?.optInt("progressBarMax", 100)
+            ?: config?.optInt("progressBarMax", 100)
+            ?: 100
+
+        // Buttons options
+        var showButtons = customs?.optBoolean("showActionButtons", false)
+            ?: config?.optBoolean("showActionButtons", false)
+            ?: false
+        var btnLeftText = customs?.optString("btnLeftText")?.takeIf { it.isNotBlank() }
+            ?: config?.optString("btnLeftText")?.takeIf { it.isNotBlank() }
+            ?: "ACTION"
+        var btnLeftAction = customs?.optString("btnLeftAction")?.takeIf { it.isNotBlank() }
+            ?: config?.optString("btnLeftAction")?.takeIf { it.isNotBlank() }
+            ?: "none"
+        var btnRightText = customs?.optString("btnRightText")?.takeIf { it.isNotBlank() }
+            ?: config?.optString("btnRightText")?.takeIf { it.isNotBlank() }
+            ?: "RESET"
+        var btnRightAction = customs?.optString("btnRightAction")?.takeIf { it.isNotBlank() }
+            ?: config?.optString("btnRightAction")?.takeIf { it.isNotBlank() }
+            ?: "none"
+
+        // ── Template Specific Dynamic State Resolving ──────────────────────────────────────────
+        when (templateId) {
+            "clock_digital", "clock_dot", "clock_flip" -> {
+                views.setViewVisibility(R.id.nos_widget_clock_value, View.VISIBLE)
+                views.setViewVisibility(R.id.nos_widget_value, View.GONE)
+                views.setCharSequence(R.id.nos_widget_clock_value, "setFormat12Hour", "h:mm a")
+                views.setCharSequence(R.id.nos_widget_clock_value, "setFormat24Hour", "HH:mm")
+                views.setTextColor(R.id.nos_widget_clock_value, textColor)
+            }
+            "clock_analog" -> {
+                views.setViewVisibility(R.id.nos_widget_clock_value, View.VISIBLE)
+                views.setViewVisibility(R.id.nos_widget_value, View.GONE)
+                views.setCharSequence(R.id.nos_widget_clock_value, "setFormat12Hour", "h:mm:ss a")
+                views.setCharSequence(R.id.nos_widget_clock_value, "setFormat24Hour", "HH:mm:ss")
+                views.setTextColor(R.id.nos_widget_clock_value, textColor)
+            }
+            "clock_stopwatch" -> {
+                val stopwatchRunning = dynamicState.optBoolean("stopwatchRunning", false)
+                val stopwatchTime = dynamicState.optLong("stopwatchTime", 0L)
+                if (stopwatchRunning) {
+                    views.setViewVisibility(R.id.nos_widget_chronometer, View.VISIBLE)
+                    views.setViewVisibility(R.id.nos_widget_value, View.GONE)
+                    val baseTime = android.os.SystemClock.elapsedRealtime() - (stopwatchTime * 100)
+                    views.setChronometer(R.id.nos_widget_chronometer, baseTime, null, true)
+                    views.setTextColor(R.id.nos_widget_chronometer, textColor)
+                } else {
+                    views.setViewVisibility(R.id.nos_widget_value, View.VISIBLE)
+                    val mins = stopwatchTime / 600
+                    val secs = (stopwatchTime % 600) / 10
+                    val deci = stopwatchTime % 10
+                    valueText = String.format("%02d:%02d.%d", mins, secs, deci)
+                }
+                showButtons = true
+                btnLeftText = if (stopwatchRunning) "PAUSE" else "START"
+                btnLeftAction = "toggle_stopwatch"
+                btnRightText = "RESET"
+                btnRightAction = "reset_stopwatch"
+            }
+            "health_water" -> {
+                val waterIntake = dynamicState.optInt("waterIntake", config?.optInt("waterIntake") ?: customs?.optInt("waterIntake") ?: 0)
+                val waterGoal = dynamicState.optInt("waterGoal", config?.optInt("waterGoal") ?: customs?.optInt("waterGoal") ?: 2000)
+                valueText = "${waterIntake} ML"
+                subValueText = "HYDRATION • GOAL ${waterGoal} ML"
+                showProgress = true
+                progressVal = waterIntake
+                progressMax = waterGoal
+                showButtons = true
+                btnLeftText = "+250ML"
+                btnLeftAction = "add_water"
+                btnRightText = "RESET"
+                btnRightAction = "reset_water"
+            }
+            "developer_battery" -> {
+                try {
+                    val batteryManager = context.getSystemService(Context.BATTERY_SERVICE) as android.os.BatteryManager
+                    val batteryLevel = batteryManager.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY)
+                    val isCharging = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                        batteryManager.isCharging
+                    } else {
+                        false
+                    }
+                    valueText = "$batteryLevel%"
+                    subValueText = if (isCharging) "CHARGING • PLUGGED IN" else "DISCHARGING • ON BATTERY"
+                    showProgress = true
+                    progressVal = batteryLevel
+                    progressMax = 100
+                } catch (e: Exception) {
+                    // Fallback to static values if battery manager fails
+                }
+            }
+            "developer_cpu" -> {
+                val cpuUsage = (15..35).random()
+                val ramUsage = (45..65).random()
+                valueText = "CPU: $cpuUsage%"
+                subValueText = "RAM $ramUsage% • SYSTEM COOL"
+                showProgress = true
+                progressVal = cpuUsage
+                progressMax = 100
+            }
+            "smart_home_torch" -> {
+                val torchEnabled = dynamicState.optBoolean("torchEnabled", false)
+                valueText = if (torchEnabled) "ON" else "OFF"
+                subValueText = "SYSTEM FLASHLIGHT"
+                showButtons = true
+                btnLeftText = "TOGGLE"
+                btnLeftAction = "toggle_torch"
+                btnRightText = "TOGGLE"
+                btnRightAction = "toggle_torch"
+            }
+            "productivity_music" -> {
+                val musicPlaying = dynamicState.optBoolean("musicPlaying", false)
+                val currentTrackIndex = dynamicState.optInt("currentTrackIndex", 0)
+                val tracks = arrayOf("Nothing Beat", "Antigravity Chill", "Glyph Ambient")
+                val trackName = tracks.getOrElse(currentTrackIndex % tracks.size) { "Nothing Beat" }
+                valueText = trackName
+                subValueText = if (musicPlaying) "PLAYING • VOLUME ${dynamicState.optInt("systemVolume", 50)}%" else "PAUSED"
+                showButtons = true
+                btnLeftText = if (musicPlaying) "PAUSE" else "PLAY"
+                btnLeftAction = "music_play"
+                btnRightText = "SKIP"
+                btnRightAction = "music_skip"
+            }
+        }
+
+        // Apply updated/resolved values to the UI
         views.setTextViewText(R.id.nos_widget_label, titleText.uppercase(Locale.getDefault()))
         views.setTextColor(R.id.nos_widget_label, subtextColor)
 
-        // Primary value
-        val valueText = customs?.optString("valueText")?.takeIf { it.isNotBlank() }
-            ?: config?.optString("valueText")?.takeIf { it.isNotBlank() }
-            ?: "--"
         views.setTextViewText(R.id.nos_widget_value, valueText)
         views.setTextColor(R.id.nos_widget_value, textColor)
 
-        // Sub value
-        val subValueText = customs?.optString("subValueText")?.takeIf { it.isNotBlank() }
-            ?: config?.optString("subValueText")?.takeIf { it.isNotBlank() }
-            ?: ""
         views.setTextViewText(R.id.nos_widget_sub_value, subValueText)
         views.setTextColor(R.id.nos_widget_sub_value, subtextColor)
 
-        // Progress bar
-        val showProgress = customs?.optBoolean("showProgressBar", false)
-            ?: config?.optBoolean("showProgressBar", false)
-            ?: false
         if (showProgress) {
-            val progressVal = customs?.optInt("progressBarValue", 0)
-                ?: config?.optInt("progressBarValue", 0)
-                ?: 0
-            val progressMax = customs?.optInt("progressBarMax", 100)
-                ?: config?.optInt("progressBarMax", 100)
-                ?: 100
             views.setViewVisibility(R.id.nos_widget_progress, View.VISIBLE)
             views.setProgressBar(R.id.nos_widget_progress, progressMax, progressVal, false)
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
@@ -406,42 +598,20 @@ open class NosBaseWidgetProvider : AppWidgetProvider() {
                     android.content.res.ColorStateList.valueOf(accentColor)
                 )
             }
-        } else {
-            views.setViewVisibility(R.id.nos_widget_progress, View.GONE)
         }
 
-        // Action buttons
-        val showButtons = customs?.optBoolean("showActionButtons", false)
-            ?: config?.optBoolean("showActionButtons", false)
-            ?: false
         if (showButtons) {
             views.setViewVisibility(R.id.nos_widget_buttons_row, View.VISIBLE)
             views.setViewVisibility(R.id.nos_widget_btn_left, View.VISIBLE)
             views.setViewVisibility(R.id.nos_widget_btn_right, View.VISIBLE)
             views.setViewVisibility(R.id.nos_widget_btn_divider, View.VISIBLE)
 
-            val btnLeftText = customs?.optString("btnLeftText")?.takeIf { it.isNotBlank() }
-                ?: config?.optString("btnLeftText")?.takeIf { it.isNotBlank() }
-                ?: "ACTION"
-            val btnLeftAction = customs?.optString("btnLeftAction")?.takeIf { it.isNotBlank() }
-                ?: config?.optString("btnLeftAction")?.takeIf { it.isNotBlank() }
-                ?: "none"
-            val btnRightText = customs?.optString("btnRightText")?.takeIf { it.isNotBlank() }
-                ?: config?.optString("btnRightText")?.takeIf { it.isNotBlank() }
-                ?: "RESET"
-            val btnRightAction = customs?.optString("btnRightAction")?.takeIf { it.isNotBlank() }
-                ?: config?.optString("btnRightAction")?.takeIf { it.isNotBlank() }
-                ?: "none"
-
             views.setTextViewText(R.id.nos_widget_btn_left, btnLeftText)
             views.setOnClickPendingIntent(R.id.nos_widget_btn_left, getClickPendingIntent(context, appWidgetId, btnLeftAction))
             views.setTextViewText(R.id.nos_widget_btn_right, btnRightText)
             views.setOnClickPendingIntent(R.id.nos_widget_btn_right, getClickPendingIntent(context, appWidgetId, btnRightAction))
-        } else {
-            views.setViewVisibility(R.id.nos_widget_buttons_row, View.GONE)
         }
 
-        // Footer
         val footerText = customs?.optString("footerText")?.takeIf { it.isNotBlank() }
             ?: config?.optString("footerText")?.takeIf { it.isNotBlank() }
             ?: "NOS • STUDIO"
@@ -451,7 +621,7 @@ open class NosBaseWidgetProvider : AppWidgetProvider() {
 
     // ── Color helpers ─────────────────────────────────────────────────────────────
 
-    private fun parseColorOr(hex: String?, default: Int): Int {
+    fun parseColorOr(hex: String?, default: Int): Int {
         if (hex.isNullOrBlank()) return default
         return try {
             Color.parseColor(hex)
@@ -462,7 +632,7 @@ open class NosBaseWidgetProvider : AppWidgetProvider() {
 
     // ── Theme defaults (only used when customizations don't specify colors) ──────
 
-    private fun themeBackground(theme: String): Int = when (theme) {
+    fun themeBackground(theme: String): Int = when (theme) {
         "glassmorphism" -> Color.parseColor("#CC0d1117")
         "liquidglass"   -> Color.parseColor("#990B1E24")
         "luxury"        -> Color.parseColor("#FF1c1a17")
@@ -472,7 +642,7 @@ open class NosBaseWidgetProvider : AppWidgetProvider() {
         else            -> Color.parseColor("#FF000000")
     }
 
-    private fun themeAccent(theme: String): Int = when (theme) {
+    fun themeAccent(theme: String): Int = when (theme) {
         "glassmorphism" -> Color.parseColor("#FF39ff14")
         "liquidglass"   -> Color.parseColor("#FF00F0FF")
         "luxury"        -> Color.parseColor("#FFdfba6b")
@@ -482,12 +652,12 @@ open class NosBaseWidgetProvider : AppWidgetProvider() {
         else            -> Color.parseColor("#FFff0000")
     }
 
-    private fun themeText(theme: String): Int = when (theme) {
+    fun themeText(theme: String): Int = when (theme) {
         "minimal" -> Color.parseColor("#FF111111")
         else      -> Color.parseColor("#FFFFFFFF")
     }
 
-    private fun themeSubtext(theme: String): Int = when (theme) {
+    fun themeSubtext(theme: String): Int = when (theme) {
         "minimal" -> Color.parseColor("#FF666666")
         else      -> Color.parseColor("#FF888888")
     }

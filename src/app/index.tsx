@@ -19,7 +19,7 @@ import { DotGridBackground } from '../components/DotGridBackground';
 import { LiquidGlassBackground } from '../components/LiquidGlassBackground';
 import { widgetRegistry, WidgetTemplate, WidgetCategory } from '../widgets/registry';
 import type { WidgetTemplateJson } from '../../modules/expo-widget/src/ExpoWidget.types';
-import widgetsJson from '../../modules/expo-widget/src/widgets.json';
+import widgetsJson from '../widgets/widgets.json';
 import { themes, ThemeId } from '../themes/themes';
 import { WidgetCard } from '../components/WidgetCard';
 import { CustomizerDrawer } from '@/editor/CustomizerDrawer';

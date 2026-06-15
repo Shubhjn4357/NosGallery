@@ -132,5 +132,7 @@ export interface WidgetTemplateJson {
   iconName?: string;
   description?: string;
   supportedSizes?: { w: number; h: number }[];
+  kotlinCode?: string;
+  kotlinImports?: string[];
 }
 

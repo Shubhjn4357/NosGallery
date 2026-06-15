@@ -1,6 +1,6 @@
 import type { WidgetConfig, WidgetCustomizations, ClickHandler, WidgetTemplateJson } from './ExpoWidget.types';
 
-import widgetsJson from './widgets.json';
+import widgetsJson from '../../../src/widgets/widgets.json';
 
 const widgetsJsonTyped = widgetsJson as unknown as WidgetTemplateJson[];
 

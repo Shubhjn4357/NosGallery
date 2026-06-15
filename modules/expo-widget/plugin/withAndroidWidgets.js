@@ -1,10 +1,11 @@
 const { withDangerousMod, withAndroidManifest } = require('@expo/config-plugins');
 const fs = require('fs');
 const path = require('path');
+const { parseTsxToKotlin } = require('./tsxParser');
 
 function withAndroidWidgets(config) {
   const projectRoot = config.modRequest?.projectRoot || process.cwd();
-  const widgetsJsonPath = path.join(projectRoot, 'modules', 'expo-widget', 'src', 'widgets.json');
+  const widgetsJsonPath = path.join(projectRoot, 'src', 'widgets', 'widgets.json');
   let templateWidgets = [];
   try {
     templateWidgets = JSON.parse(fs.readFileSync(widgetsJsonPath, 'utf8'));
@@ -109,11 +110,61 @@ function withAndroidWidgets(config) {
         fs.mkdirSync(widgetJavaDir, { recursive: true });
       }
       
+      const tsxMapping = {
+        clock_digital: 'src/widgets/clock/DigitalClock.tsx',
+        clock_dot: 'src/widgets/clock/DigitalClock.tsx',
+        clock_analog: 'src/widgets/clock/AnalogClock.tsx',
+        clock_flip: 'src/widgets/clock/FlipClock.tsx',
+        clock_stopwatch: 'src/widgets/clock/StopwatchWidget.tsx',
+        health_water: 'src/widgets/health/WaterWidget.tsx',
+        developer_battery: 'src/widgets/smart_home/BatteryWidget.tsx',
+        developer_cpu: 'src/widgets/developer/CpuMonitor.tsx',
+        smart_home_torch: 'src/widgets/smart_home/TorchWidget.tsx',
+        productivity_music: 'src/widgets/productivity/MusicWidget.tsx'
+      };
+
       templateWidgets.forEach((w) => {
+        let customMethods = '';
+        let extraImports = '';
+        
+        const relPath = tsxMapping[w.id];
+        if (relPath) {
+          const tsxFilePath = path.join(projectRoot, relPath);
+          if (fs.existsSync(tsxFilePath)) {
+            const tsxContent = fs.readFileSync(tsxFilePath, 'utf8');
+            const { kotlinCode, kotlinImports } = parseTsxToKotlin(tsxContent, w);
+            
+            if (kotlinCode) {
+              extraImports = '\n' + kotlinImports.map(imp => `import ${imp}`).join('\n');
+              const indentedCode = kotlinCode.split('\n').map(line => `        ${line}`).join('\n');
+              
+              customMethods = `
+
+    override fun populateViews(
+        context: Context,
+        views: RemoteViews,
+        config: JSONObject?,
+        customs: JSONObject?,
+        theme: String,
+        appWidgetId: Int
+    ) {
+${indentedCode}
+    }
+`;
+            }
+          }
+        }
+
         const ktContent = `package com.nothing.nosgallery.widget
 
+import android.appwidget.AppWidgetManager
+import android.content.Context
+import android.widget.RemoteViews
+import org.json.JSONObject
+import expo.modules.expowidget.R${extraImports}
+
 class ${w.className} : NosBaseWidgetProvider() {
-    override val defaultTemplateId = "${w.id}"
+    override val defaultTemplateId = "${w.id}"${customMethods}
 }
 `;
         fs.writeFileSync(path.join(widgetJavaDir, `${w.className}.kt`), ktContent, 'utf8');
@@ -353,6 +404,7 @@ function generateDefaultWidgetsList(templateWidgets) {
       y: 0,
       w: w,
       h: h,
+      preview: tw.preview,
       customizations: customizations,
     };
 

@@ -13,11 +13,28 @@ let unsubscribe: (() => void) | null = null;
 export function startNativeWidgetSync() {
   if (!isAndroid || isExpoGo) return;
 
-  const syncToNative = async (state: { widgets: any[]; activeTheme: string }) => {
+  const syncToNative = async (state: any) => {
     try {
+      const dynamicState = {
+        githubUsername: state.githubUsername,
+        googleHealthConnected: state.googleHealthConnected,
+        geminiApiKey: state.geminiApiKey,
+        activeAiProvider: state.activeAiProvider,
+        waterGoal: state.waterGoal,
+        waterIntake: state.waterIntake,
+        stopwatchTime: state.stopwatchTime,
+        stopwatchRunning: state.stopwatchRunning,
+        stopwatchLaps: state.stopwatchLaps,
+        torchEnabled: state.torchEnabled,
+        musicPlaying: state.musicPlaying,
+        currentTrackIndex: state.currentTrackIndex,
+        systemVolume: state.systemVolume,
+      };
+
       await ExpoWidget.saveWidgetsStore(
         JSON.stringify(state.widgets),
-        state.activeTheme
+        state.activeTheme,
+        JSON.stringify(dynamicState)
       );
     } catch (err) {
       // Non-fatal — widget will fall back to defaults next update
@@ -33,7 +50,7 @@ export function startNativeWidgetSync() {
   let pendingTimeout: ReturnType<typeof setTimeout> | null = null;
 
   unsubscribe = useWidgetStore.subscribe(
-    (state: { widgets: any[]; activeTheme: string }) => {
+    (state) => {
       if (pendingTimeout) clearTimeout(pendingTimeout);
       pendingTimeout = setTimeout(() => {
         syncToNative(state);

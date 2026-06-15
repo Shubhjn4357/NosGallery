@@ -47,6 +47,14 @@ object NosWidgetPreferences {
     fun getActiveTheme(context: Context): String =
         getPrefs(context).getString("activeTheme", "nos") ?: "nos"
 
+    fun getDynamicStateJson(context: Context): JSONObject {
+        val raw = getPrefs(context).getString("dynamicState", null)
+        if (raw != null) {
+            return try { JSONObject(raw) } catch (e: Exception) { JSONObject() }
+        }
+        return JSONObject()
+    }
+
     // ── Per-instance (appWidgetId) config ────────────────────────────────────────
 
     fun getWidgetConfig(context: Context, appWidgetId: Int): JSONObject? {
@@ -93,6 +101,35 @@ object NosWidgetPreferences {
 
     // ── Helpers ───────────────────────────────────────────────────────────────────
 
+    private fun getDefaultWidgetsJson(context: Context): JSONArray {
+        return try {
+            val inputStream = context.assets.open("default_widgets.json")
+            val size = inputStream.available()
+            val buffer = ByteArray(size)
+            inputStream.read(buffer)
+            inputStream.close()
+            val jsonStr = String(buffer, Charsets.UTF_8)
+            JSONArray(jsonStr)
+        } catch (e: Exception) {
+            JSONArray()
+        }
+    }
+
+    private fun mergeJSONObjects(target: JSONObject, source: JSONObject): JSONObject {
+        val merged = JSONObject(target.toString())
+        val keys = source.keys()
+        while (keys.hasNext()) {
+            val key = keys.next()
+            val sourceVal = source.get(key)
+            if (sourceVal is JSONObject && merged.has(key) && merged.get(key) is JSONObject) {
+                merged.put(key, mergeJSONObjects(merged.getJSONObject(key), sourceVal))
+            } else {
+                merged.put(key, sourceVal)
+            }
+        }
+        return merged
+    }
+
     /** Find first widget in the stored array whose templateId starts with [prefix]. */
     fun findFirstByCategory(context: Context, prefix: String): JSONObject? {
         val arr = getWidgetsJson(context)
@@ -111,6 +148,8 @@ object NosWidgetPreferences {
         templateId: String?,
         categoryPrefix: String
     ): JSONObject? {
+        var resolved: JSONObject? = null
+
         // 1. Check if there is a mapping to a React Native widget ID
         val mappedId = getPrefs(context).getString("map_$appWidgetId", null)
         if (mappedId != null) {
@@ -118,25 +157,66 @@ object NosWidgetPreferences {
             for (i in 0 until widgets.length()) {
                 val obj = widgets.optJSONObject(i) ?: continue
                 if (obj.optString("id") == mappedId) {
-                    return obj
+                    resolved = obj
+                    break
                 }
             }
         }
+
         // 2. Fall back to per-instance saved config (backup)
-        val pinned = getWidgetConfig(context, appWidgetId)
-        if (pinned != null) return pinned
+        if (resolved == null) {
+            resolved = getWidgetConfig(context, appWidgetId)
+        }
         
         // 3. Fall back to the default config for the specific templateId (if provided)
-        if (templateId != null) {
-            val widgets = getWidgetsJson(context)
-            for (i in 0 until widgets.length()) {
-                val obj = widgets.optJSONObject(i) ?: continue
-                if (obj.optString("templateId") == templateId) return obj
+        if (resolved == null && templateId != null) {
+            val defaults = getDefaultWidgetsJson(context)
+            for (i in 0 until defaults.length()) {
+                val obj = defaults.optJSONObject(i) ?: continue
+                if (obj.optString("templateId") == templateId) {
+                    resolved = obj
+                    break
+                }
             }
         }
         
         // 4. Fall back to the first stored widget of this category
-        return findFirstByCategory(context, categoryPrefix)
+        if (resolved == null) {
+            resolved = findFirstByCategory(context, categoryPrefix)
+        }
+
+        // 5. Fall back to the first default widget of this category from assets
+        if (resolved == null) {
+            val defaults = getDefaultWidgetsJson(context)
+            for (i in 0 until defaults.length()) {
+                val obj = defaults.optJSONObject(i) ?: continue
+                val tempId = obj.optString("templateId", "")
+                if (tempId.startsWith(categoryPrefix)) {
+                    resolved = obj
+                    break
+                }
+            }
+        }
+
+        if (resolved == null) return null
+
+        // Merge resolved on top of its corresponding default_widgets.json configuration
+        val resolvedTemplateId = resolved.optString("templateId", templateId ?: "")
+        val defaultsArray = getDefaultWidgetsJson(context)
+        var defaultObj: JSONObject? = null
+        for (i in 0 until defaultsArray.length()) {
+            val obj = defaultsArray.optJSONObject(i) ?: continue
+            if (obj.optString("templateId") == resolvedTemplateId) {
+                defaultObj = obj
+                break
+            }
+        }
+
+        if (defaultObj != null) {
+            return mergeJSONObjects(defaultObj, resolved)
+        }
+
+        return resolved
     }
 
     // ── Color helpers ─────────────────────────────────────────────────────────────

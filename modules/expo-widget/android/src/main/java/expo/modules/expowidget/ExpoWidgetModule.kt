@@ -78,14 +78,15 @@ class ExpoWidgetModule : Module() {
     }
 
     /**
-     * Persist the entire widgets array and active theme from React Native.
+     * Persist the entire widgets array, active theme, and dynamic states from React Native.
      * Called from a Zustand/state store subscriber when state changes.
      */
-    AsyncFunction("saveWidgetsStore") { widgetsJson: String, activeTheme: String ->
+    AsyncFunction("saveWidgetsStore") { widgetsJson: String, activeTheme: String, dynamicStateJson: String ->
       val context = appContext.reactContext ?: throw IllegalStateException("React context is not available")
       getPrefs(context).edit()
         .putString("widgets", widgetsJson)
         .putString("activeTheme", activeTheme)
+        .putString("dynamicState", dynamicStateJson)
         .apply()
       notifyAllWidgets(context)
     }

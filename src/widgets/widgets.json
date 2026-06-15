@@ -1,12 +1,27 @@
 [
   {
     "id": "clock_digital",
-    "templateId": "clock_digital",
-    "x": 0,
-    "y": 0,
+    "name": "Minimal Digital",
+    "category": "clock",
+    "className": "NOSClockDigitalWidget",
     "w": 2,
     "h": 2,
+    "label": "NOS Digital Clock",
     "preview": "nosclockwidget_preview",
+    "defaultTitle": "DIGITAL CLOCK",
+    "defaultValue": "10:42 PM",
+    "iconName": "Clock",
+    "description": "Modern digital clock display.",
+    "supportedSizes": [
+      {
+        "w": 1,
+        "h": 1
+      },
+      {
+        "w": 2,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 14,
@@ -35,12 +50,23 @@
   },
   {
     "id": "clock_dot",
-    "templateId": "clock_dot",
-    "x": 0,
-    "y": 0,
+    "name": "NOS Dot Clock",
+    "category": "clock",
+    "className": "NOSClockDotWidget",
     "w": 4,
     "h": 2,
+    "label": "NOS Dot Clock",
     "preview": "nosclockwidget_preview",
+    "defaultTitle": "NOTHING CLOCK",
+    "defaultValue": "10:42 PM",
+    "iconName": "Clock",
+    "description": "Signature Nothing style dot-matrix clock.",
+    "supportedSizes": [
+      {
+        "w": 4,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 20,
@@ -69,12 +95,23 @@
   },
   {
     "id": "clock_analog",
-    "templateId": "clock_analog",
-    "x": 0,
-    "y": 0,
+    "name": "Classic Analog",
+    "category": "clock",
+    "className": "NOSClockAnalogWidget",
     "w": 2,
     "h": 2,
+    "label": "NOS Analog Clock",
     "preview": "nosclockwidget_preview",
+    "defaultTitle": "ANALOG CLOCK",
+    "defaultValue": "Ticking",
+    "iconName": "Clock",
+    "description": "Minimal classic ticking analog clock.",
+    "supportedSizes": [
+      {
+        "w": 2,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 14,
@@ -103,12 +140,23 @@
   },
   {
     "id": "clock_flip",
-    "templateId": "clock_flip",
-    "x": 0,
-    "y": 0,
+    "name": "Flip Clock",
+    "category": "clock",
+    "className": "NOSClockFlipWidget",
     "w": 4,
     "h": 2,
+    "label": "NOS Flip Clock",
     "preview": "nosclockwidget_preview",
+    "defaultTitle": "FLIP CLOCK",
+    "defaultValue": "21:09",
+    "iconName": "Clock",
+    "description": "Retro animated flip clock.",
+    "supportedSizes": [
+      {
+        "w": 4,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 20,
@@ -137,12 +185,23 @@
   },
   {
     "id": "clock_stopwatch",
-    "templateId": "clock_stopwatch",
-    "x": 0,
-    "y": 0,
+    "name": "Stopwatch",
+    "category": "clock",
+    "className": "NOSClockStopwatchWidget",
     "w": 2,
     "h": 2,
+    "label": "NOS Stopwatch",
     "preview": "nosclockwidget_preview",
+    "defaultTitle": "STOPWATCH",
+    "defaultValue": "00:00.0",
+    "iconName": "Timer",
+    "description": "Interactive stopwatch timer.",
+    "supportedSizes": [
+      {
+        "w": 2,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 14,
@@ -186,12 +245,23 @@
   },
   {
     "id": "calendar_monthly",
-    "templateId": "calendar_monthly",
-    "x": 0,
-    "y": 0,
+    "name": "Month View",
+    "category": "calendar",
+    "className": "NOSCalendarMonthlyWidget",
     "w": 2,
     "h": 2,
+    "label": "NOS Month View",
     "preview": "noscalendarwidget_preview",
+    "defaultTitle": "JUNE 2026",
+    "defaultValue": "Monthly Calendar",
+    "iconName": "Calendar",
+    "description": "Grid display of the current month.",
+    "supportedSizes": [
+      {
+        "w": 2,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 14,
@@ -219,12 +289,23 @@
   },
   {
     "id": "calendar_agenda",
-    "templateId": "calendar_agenda",
-    "x": 0,
-    "y": 0,
+    "name": "Agenda View",
+    "category": "calendar",
+    "className": "NOSCalendarAgendaWidget",
     "w": 4,
     "h": 2,
+    "label": "NOS Agenda View",
     "preview": "noscalendarwidget_preview",
+    "defaultTitle": "UPCOMING EVENTS",
+    "defaultValue": "Meeting, Work Sync",
+    "iconName": "Calendar",
+    "description": "Timeline view of upcoming events.",
+    "supportedSizes": [
+      {
+        "w": 4,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 20,
@@ -252,12 +333,23 @@
   },
   {
     "id": "calendar_progress",
-    "templateId": "calendar_progress",
-    "x": 0,
-    "y": 0,
+    "name": "Year Progress",
+    "category": "calendar",
+    "className": "NOSCalendarProgressWidget",
     "w": 2,
     "h": 2,
+    "label": "NOS Year Progress",
     "preview": "noscalendarwidget_preview",
+    "defaultTitle": "YEAR PROGRESS",
+    "defaultValue": "43%",
+    "iconName": "Calendar",
+    "description": "Percentage visualizer of the current year.",
+    "supportedSizes": [
+      {
+        "w": 2,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 14,
@@ -285,12 +377,23 @@
   },
   {
     "id": "weather_current",
-    "templateId": "weather_current",
-    "x": 0,
-    "y": 0,
+    "name": "Current Weather",
+    "category": "weather",
+    "className": "NOSWeatherCurrentWidget",
     "w": 2,
     "h": 2,
+    "label": "NOS Current Weather",
     "preview": "nosweatherwidget_preview",
+    "defaultTitle": "LONDON",
+    "defaultValue": "18°C Rain",
+    "iconName": "CloudSun",
+    "description": "Live climate and temperature stats.",
+    "supportedSizes": [
+      {
+        "w": 2,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 14,
@@ -319,12 +422,23 @@
   },
   {
     "id": "weather_aqi",
-    "templateId": "weather_aqi",
-    "x": 0,
-    "y": 0,
+    "name": "AQI",
+    "category": "weather",
+    "className": "NOSWeatherAqiWidget",
     "w": 2,
     "h": 2,
+    "label": "NOS Air Quality",
     "preview": "nosweatherwidget_preview",
+    "defaultTitle": "LONDON AQI",
+    "defaultValue": "12 AQI",
+    "iconName": "CloudSun",
+    "description": "Circular gauge showing air quality status.",
+    "supportedSizes": [
+      {
+        "w": 2,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 14,
@@ -352,12 +466,23 @@
   },
   {
     "id": "weather_moon_phase",
-    "templateId": "weather_moon_phase",
-    "x": 0,
-    "y": 0,
+    "name": "Moon Phase",
+    "category": "weather",
+    "className": "NOSMoonPhaseWidget",
     "w": 2,
     "h": 2,
+    "label": "NOS Moon Phase",
     "preview": "nosweatherwidget_preview",
+    "defaultTitle": "MOON PHASE",
+    "defaultValue": "Waxing Gibbous",
+    "iconName": "Moon",
+    "description": "Calculates lunar phase details.",
+    "supportedSizes": [
+      {
+        "w": 2,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 14,
@@ -385,12 +510,23 @@
   },
   {
     "id": "productivity_todo",
-    "templateId": "productivity_todo",
-    "x": 0,
-    "y": 0,
+    "name": "To-Do",
+    "category": "productivity",
+    "className": "NOSProductivityTodoWidget",
     "w": 2,
     "h": 2,
+    "label": "NOS To-Do List",
     "preview": "nosproductivitywidget_preview",
+    "defaultTitle": "TODAY TASKS",
+    "defaultValue": "3 Remaining",
+    "iconName": "CheckSquare",
+    "description": "Simple task manager checklist.",
+    "supportedSizes": [
+      {
+        "w": 2,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 14,
@@ -418,12 +554,23 @@
   },
   {
     "id": "productivity_focus",
-    "templateId": "productivity_focus",
-    "x": 0,
-    "y": 0,
+    "name": "Focus Task",
+    "category": "productivity",
+    "className": "NOSProductivityFocusWidget",
     "w": 2,
     "h": 2,
+    "label": "NOS Focus Mode",
     "preview": "nosproductivitywidget_preview",
+    "defaultTitle": "FOCUS MODE",
+    "defaultValue": "25:00",
+    "iconName": "CheckSquare",
+    "description": "Pomodoro focus countdown widget.",
+    "supportedSizes": [
+      {
+        "w": 2,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 14,
@@ -451,12 +598,23 @@
   },
   {
     "id": "productivity_calculator",
-    "templateId": "productivity_calculator",
-    "x": 0,
-    "y": 0,
+    "name": "Calculator",
+    "category": "productivity",
+    "className": "NOSCalculatorWidget",
     "w": 2,
     "h": 2,
+    "label": "NOS Calculator",
     "preview": "nosproductivitywidget_preview",
+    "defaultTitle": "CALCULATOR",
+    "defaultValue": "0",
+    "iconName": "Calculator",
+    "description": "Interactive pocket calculator.",
+    "supportedSizes": [
+      {
+        "w": 2,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 14,
@@ -484,12 +642,23 @@
   },
   {
     "id": "productivity_camera",
-    "templateId": "productivity_camera",
-    "x": 0,
-    "y": 0,
+    "name": "Camera",
+    "category": "productivity",
+    "className": "NOSCameraWidget",
     "w": 2,
     "h": 2,
+    "label": "NOS Camera Shortcut",
     "preview": "nosproductivitywidget_preview",
+    "defaultTitle": "CAMERA",
+    "defaultValue": "Tap to open",
+    "iconName": "Camera",
+    "description": "Quick camera lens and capture.",
+    "supportedSizes": [
+      {
+        "w": 2,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 14,
@@ -517,12 +686,23 @@
   },
   {
     "id": "productivity_music",
-    "templateId": "productivity_music",
-    "x": 0,
-    "y": 0,
+    "name": "Music",
+    "category": "productivity",
+    "className": "NOSMusicWidget",
     "w": 4,
     "h": 2,
+    "label": "NOS Music Player",
     "preview": "nosproductivitywidget_preview",
+    "defaultTitle": "MUSIC PLAYER",
+    "defaultValue": "Nothing Beat - LoFi",
+    "iconName": "Music",
+    "description": "System music player panel.",
+    "supportedSizes": [
+      {
+        "w": 4,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 20,
@@ -570,12 +750,23 @@
   },
   {
     "id": "productivity_text_username",
-    "templateId": "productivity_text_username",
-    "x": 0,
-    "y": 0,
+    "name": "Text Input",
+    "category": "productivity",
+    "className": "NOSTextUsernameWidget",
     "w": 2,
     "h": 2,
+    "label": "NOS Custom Username",
     "preview": "nosproductivitywidget_preview",
+    "defaultTitle": "TEXT INPUT",
+    "defaultValue": "User Name",
+    "iconName": "Type",
+    "description": "Enter username for widgets.",
+    "supportedSizes": [
+      {
+        "w": 2,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 14,
@@ -603,12 +794,23 @@
   },
   {
     "id": "productivity_google_search",
-    "templateId": "productivity_google_search",
-    "x": 0,
-    "y": 0,
+    "name": "Google Search",
+    "category": "productivity",
+    "className": "NOSGoogleSearchWidget",
     "w": 4,
     "h": 2,
+    "label": "NOS Google Search",
     "preview": "nosproductivitywidget_preview",
+    "defaultTitle": "GOOGLE SEARCH",
+    "defaultValue": "Search the web",
+    "iconName": "Search",
+    "description": "Web search bar panel.",
+    "supportedSizes": [
+      {
+        "w": 4,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 20,
@@ -637,12 +839,23 @@
   },
   {
     "id": "productivity_pomodoro",
-    "templateId": "productivity_pomodoro",
-    "x": 0,
-    "y": 0,
+    "name": "Pomodoro",
+    "category": "productivity",
+    "className": "NOSPomodoroWidget",
     "w": 2,
     "h": 2,
+    "label": "NOS Pomodoro Timer",
     "preview": "nosproductivitywidget_preview",
+    "defaultTitle": "POMODORO",
+    "defaultValue": "25:00",
+    "iconName": "Hourglass",
+    "description": "Ticking pomodoro focus timer.",
+    "supportedSizes": [
+      {
+        "w": 2,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 14,
@@ -670,12 +883,23 @@
   },
   {
     "id": "productivity_folder",
-    "templateId": "productivity_folder",
-    "x": 0,
-    "y": 0,
+    "name": "Folder",
+    "category": "productivity",
+    "className": "NOSFolderWidget",
     "w": 2,
     "h": 2,
+    "label": "NOS Apps Folder",
     "preview": "nosproductivitywidget_preview",
+    "defaultTitle": "APPS FOLDER",
+    "defaultValue": "4 Shortcuts",
+    "iconName": "Folder",
+    "description": "App drawer shortcut container.",
+    "supportedSizes": [
+      {
+        "w": 2,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 14,
@@ -703,12 +927,23 @@
   },
   {
     "id": "productivity_photo_frame",
-    "templateId": "productivity_photo_frame",
-    "x": 0,
-    "y": 0,
+    "name": "Photo Frame",
+    "category": "productivity",
+    "className": "NOSPhotoFrameWidget",
     "w": 2,
     "h": 2,
+    "label": "NOS Photo Frame",
     "preview": "nosproductivitywidget_preview",
+    "defaultTitle": "PHOTO FRAME",
+    "defaultValue": "Auto-Scrolling",
+    "iconName": "Image",
+    "description": "Slideshow frame of gallery.",
+    "supportedSizes": [
+      {
+        "w": 2,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 14,
@@ -736,12 +971,23 @@
   },
   {
     "id": "health_steps",
-    "templateId": "health_steps",
-    "x": 0,
-    "y": 0,
+    "name": "Steps",
+    "category": "health",
+    "className": "NOSHealthStepsWidget",
     "w": 2,
     "h": 2,
+    "label": "NOS Steps Tracker",
     "preview": "noshealthwidget_preview",
+    "defaultTitle": "STEPS TODAY",
+    "defaultValue": "8,432",
+    "iconName": "Heart",
+    "description": "Daily step goal progress tracking.",
+    "supportedSizes": [
+      {
+        "w": 2,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 14,
@@ -769,12 +1015,23 @@
   },
   {
     "id": "health_water",
-    "templateId": "health_water",
-    "x": 0,
-    "y": 0,
+    "name": "Water Intake",
+    "category": "health",
+    "className": "NOSHealthWaterWidget",
     "w": 2,
     "h": 2,
+    "label": "NOS Water Tracker",
     "preview": "noshealthwidget_preview",
+    "defaultTitle": "WATER INTAKE",
+    "defaultValue": "1,200 ml",
+    "iconName": "Heart",
+    "description": "Interactive water intake logger.",
+    "supportedSizes": [
+      {
+        "w": 2,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 14,
@@ -818,12 +1075,23 @@
   },
   {
     "id": "health_breath",
-    "templateId": "health_breath",
-    "x": 0,
-    "y": 0,
+    "name": "Breathing Exercise",
+    "category": "health",
+    "className": "NOSHealthBreathWidget",
     "w": 2,
     "h": 2,
+    "label": "NOS Breathing Pacer",
     "preview": "noshealthwidget_preview",
+    "defaultTitle": "BREATH WORK",
+    "defaultValue": "Ready",
+    "iconName": "Heart",
+    "description": "Animated breathing pacer.",
+    "supportedSizes": [
+      {
+        "w": 2,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 14,
@@ -851,12 +1119,23 @@
   },
   {
     "id": "finance_crypto",
-    "templateId": "finance_crypto",
-    "x": 0,
-    "y": 0,
+    "name": "Crypto",
+    "category": "finance",
+    "className": "NOSFinanceCryptoWidget",
     "w": 2,
     "h": 2,
+    "label": "NOS Crypto Tracker",
     "preview": "nosfinancewidget_preview",
+    "defaultTitle": "BTC / USD",
+    "defaultValue": "$67,490",
+    "iconName": "Coins",
+    "description": "Real-time stock/crypto trend tracker.",
+    "supportedSizes": [
+      {
+        "w": 2,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 14,
@@ -885,12 +1164,23 @@
   },
   {
     "id": "developer_git",
-    "templateId": "developer_git",
-    "x": 0,
-    "y": 0,
+    "name": "GitHub Activity",
+    "category": "developer",
+    "className": "NOSDeveloperGitWidget",
     "w": 4,
     "h": 2,
+    "label": "NOS GitHub Grid",
     "preview": "nosdeveloperwidget_preview",
+    "defaultTitle": "GITHUB ACTIVITY",
+    "defaultValue": "Commits",
+    "iconName": "Terminal",
+    "description": "Contribution commits grid display.",
+    "supportedSizes": [
+      {
+        "w": 4,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 20,
@@ -918,12 +1208,23 @@
   },
   {
     "id": "developer_build",
-    "templateId": "developer_build",
-    "x": 0,
-    "y": 0,
+    "name": "CI/CD Status",
+    "category": "developer",
+    "className": "NOSDeveloperBuildWidget",
     "w": 4,
     "h": 2,
+    "label": "NOS CI/CD Pipeline",
     "preview": "nosdeveloperwidget_preview",
+    "defaultTitle": "CI/CD PIPELINE",
+    "defaultValue": "Deploying",
+    "iconName": "Terminal",
+    "description": "Live build status deployment monitor.",
+    "supportedSizes": [
+      {
+        "w": 4,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 20,
@@ -951,12 +1252,23 @@
   },
   {
     "id": "developer_cpu",
-    "templateId": "developer_cpu",
-    "x": 0,
-    "y": 0,
+    "name": "Server CPU",
+    "category": "developer",
+    "className": "NOSDeveloperCpuWidget",
     "w": 2,
     "h": 2,
+    "label": "NOS CPU Monitor",
     "preview": "nosdeveloperwidget_preview",
+    "defaultTitle": "SYSTEM CPU",
+    "defaultValue": "28% usage",
+    "iconName": "Terminal",
+    "description": "Live system load gauge processor monitor.",
+    "supportedSizes": [
+      {
+        "w": 2,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 14,
@@ -984,12 +1296,23 @@
   },
   {
     "id": "developer_quick_controls",
-    "templateId": "developer_quick_controls",
-    "x": 0,
-    "y": 0,
+    "name": "Quick Controls",
+    "category": "developer",
+    "className": "NOSQuickControlsWidget",
     "w": 4,
     "h": 2,
+    "label": "NOS Control Center",
     "preview": "nosdeveloperwidget_preview",
+    "defaultTitle": "CONTROL CENTER",
+    "defaultValue": "WiFi • BT",
+    "iconName": "Sliders",
+    "description": "System quick control panel.",
+    "supportedSizes": [
+      {
+        "w": 4,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 20,
@@ -1017,12 +1340,23 @@
   },
   {
     "id": "developer_battery",
-    "templateId": "developer_battery",
-    "x": 0,
-    "y": 0,
+    "name": "Battery Status",
+    "category": "developer",
+    "className": "NOSBatteryWidget",
     "w": 2,
     "h": 2,
+    "label": "NOS Battery Status",
     "preview": "nosdeveloperwidget_preview",
+    "defaultTitle": "BATTERY STATUS",
+    "defaultValue": "80%",
+    "iconName": "BatteryCharging",
+    "description": "Device and wireless buds level.",
+    "supportedSizes": [
+      {
+        "w": 2,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 14,
@@ -1050,12 +1384,23 @@
   },
   {
     "id": "social_feed",
-    "templateId": "social_feed",
-    "x": 0,
-    "y": 0,
+    "name": "Notifications",
+    "category": "social",
+    "className": "NOSSocialFeedWidget",
     "w": 4,
     "h": 2,
+    "label": "NOS Social Feed",
     "preview": "nossocialwidget_preview",
+    "defaultTitle": "SOCIAL NOTIFICATIONS",
+    "defaultValue": "New Mentions",
+    "iconName": "MessageSquare",
+    "description": "Aggregated social notifications stream.",
+    "supportedSizes": [
+      {
+        "w": 4,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 20,
@@ -1083,12 +1428,23 @@
   },
   {
     "id": "social_contact",
-    "templateId": "social_contact",
-    "x": 0,
-    "y": 0,
+    "name": "Fav Contact",
+    "category": "social",
+    "className": "NOSContactWidget",
     "w": 2,
     "h": 2,
+    "label": "NOS Fav Contact",
     "preview": "nossocialwidget_preview",
+    "defaultTitle": "FAV CONTACT",
+    "defaultValue": "Shubh",
+    "iconName": "User",
+    "description": "Quick contact call and dialer.",
+    "supportedSizes": [
+      {
+        "w": 2,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 14,
@@ -1116,12 +1472,23 @@
   },
   {
     "id": "social_shortcuts",
-    "templateId": "social_shortcuts",
-    "x": 0,
-    "y": 0,
+    "name": "Social Direct",
+    "category": "social",
+    "className": "NOSSocialShortcutsWidget",
     "w": 2,
     "h": 2,
+    "label": "NOS Social Direct",
     "preview": "nossocialwidget_preview",
+    "defaultTitle": "SOCIAL DIRECT",
+    "defaultValue": "WhatsApp • Telegram",
+    "iconName": "Share2",
+    "description": "Direct shortcuts to WhatsApp, TG, Insta.",
+    "supportedSizes": [
+      {
+        "w": 2,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 14,
@@ -1149,12 +1516,23 @@
   },
   {
     "id": "smart_home_controls",
-    "templateId": "smart_home_controls",
-    "x": 0,
-    "y": 0,
+    "name": "Lights",
+    "category": "smart_home",
+    "className": "NOSSmartHomeControlsWidget",
     "w": 2,
     "h": 2,
+    "label": "NOS Smart Room",
     "preview": "nossmarthomewidget_preview",
+    "defaultTitle": "SMART ROOM",
+    "defaultValue": "Lights and Plugs",
+    "iconName": "Home",
+    "description": "Smart toggles for connected lights & appliances.",
+    "supportedSizes": [
+      {
+        "w": 2,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 14,
@@ -1182,12 +1560,23 @@
   },
   {
     "id": "smart_home_torch",
-    "templateId": "smart_home_torch",
-    "x": 0,
-    "y": 0,
+    "name": "Torch",
+    "category": "smart_home",
+    "className": "NOSTorchWidget",
     "w": 2,
     "h": 2,
+    "label": "NOS Torch",
     "preview": "nossmarthomewidget_preview",
+    "defaultTitle": "TORCH",
+    "defaultValue": "OFF",
+    "iconName": "Zap",
+    "description": "Toggle system flashlight.",
+    "supportedSizes": [
+      {
+        "w": 2,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 14,
@@ -1222,12 +1611,23 @@
   },
   {
     "id": "smart_home_bluetooth",
-    "templateId": "smart_home_bluetooth",
-    "x": 0,
-    "y": 0,
+    "name": "Bluetooth",
+    "category": "smart_home",
+    "className": "NOSBluetoothWidget",
     "w": 2,
     "h": 2,
+    "label": "NOS Bluetooth",
     "preview": "nossmarthomewidget_preview",
+    "defaultTitle": "BLUETOOTH",
+    "defaultValue": "Nothing Ear Connected",
+    "iconName": "Bluetooth",
+    "description": "Bluetooth accessory panel.",
+    "supportedSizes": [
+      {
+        "w": 2,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 14,
@@ -1255,12 +1655,23 @@
   },
   {
     "id": "smart_home_sound_control",
-    "templateId": "smart_home_sound_control",
-    "x": 0,
-    "y": 0,
+    "name": "Sound Control",
+    "category": "smart_home",
+    "className": "NOSSoundControlWidget",
     "w": 2,
     "h": 2,
+    "label": "NOS Sound Control",
     "preview": "nossmarthomewidget_preview",
+    "defaultTitle": "SOUND CONTROL",
+    "defaultValue": "Vibrate",
+    "iconName": "VolumeX",
+    "description": "Sound profile sound/vibe/mute.",
+    "supportedSizes": [
+      {
+        "w": 2,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 14,
@@ -1301,12 +1712,23 @@
   },
   {
     "id": "ai_chat",
-    "templateId": "ai_chat",
-    "x": 0,
-    "y": 0,
+    "name": "AI Chat",
+    "category": "ai",
+    "className": "NOSAiChatWidget",
     "w": 4,
     "h": 4,
+    "label": "NOS AI Chat",
     "preview": "nosaiwidget_preview",
+    "defaultTitle": "AI ASSISTANT",
+    "defaultValue": "Ask anything",
+    "iconName": "Sparkles",
+    "description": "Personal assistant chat interface.",
+    "supportedSizes": [
+      {
+        "w": 4,
+        "h": 4
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 20,
@@ -1334,12 +1756,23 @@
   },
   {
     "id": "ai_summary",
-    "templateId": "ai_summary",
-    "x": 0,
-    "y": 0,
+    "name": "AI Summary",
+    "category": "ai",
+    "className": "NOSAiSummaryWidget",
     "w": 4,
     "h": 2,
+    "label": "NOS AI Summary",
     "preview": "nosaiwidget_preview",
+    "defaultTitle": "AI METRICS BRIEF",
+    "defaultValue": "Weekly digest ready",
+    "iconName": "Sparkles",
+    "description": "Contextual summary of daily metrics.",
+    "supportedSizes": [
+      {
+        "w": 4,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 20,
@@ -1367,12 +1800,23 @@
   },
   {
     "id": "ai_bar",
-    "templateId": "ai_bar",
-    "x": 0,
-    "y": 0,
+    "name": "AI Router",
+    "category": "ai",
+    "className": "NOSAiBarWidget",
     "w": 4,
     "h": 2,
+    "label": "NOS AI Router",
     "preview": "nosaiwidget_preview",
+    "defaultTitle": "AI ROUTER",
+    "defaultValue": "Gemini • GPT",
+    "iconName": "Sparkles",
+    "description": "AI model selection bar.",
+    "supportedSizes": [
+      {
+        "w": 4,
+        "h": 2
+      }
+    ],
     "customizations": {
       "fontId": "inter",
       "fontSize": 20,
@@ -1390,38 +1834,6 @@
       "themeOverride": "none",
       "showProgressBar": false,
       "progressBarValue": 0,
-      "progressBarMax": 100,
-      "showActionButtons": false,
-      "btnLeftText": "",
-      "btnLeftAction": "",
-      "btnRightText": "",
-      "btnRightAction": ""
-    }
-  },
-  {
-    "id": "developer_cicd",
-    "templateId": "developer_build",
-    "x": 0,
-    "y": 0,
-    "w": 4,
-    "h": 2,
-    "customizations": {
-      "fontId": "inter",
-      "fontSize": 20,
-      "backgroundType": "solid",
-      "backgroundColor": "#0c0c0c",
-      "borderRadius": 16,
-      "transparency": 10,
-      "blur": 10,
-      "shadowType": "soft",
-      "titleText": "CI/CD STATUS",
-      "valueText": "Deploying",
-      "subValueText": "CI/CD PIPELINE • STAGE 3 / 5",
-      "footerText": "NOS • CI/CD",
-      "accentColor": "#7C9EFF",
-      "themeOverride": "none",
-      "showProgressBar": true,
-      "progressBarValue": 60,
       "progressBarMax": 100,
       "showActionButtons": false,
       "btnLeftText": "",
