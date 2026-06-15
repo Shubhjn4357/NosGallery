@@ -52,6 +52,8 @@ import java.util.Locale
  */
 open class NosBaseWidgetProvider : AppWidgetProvider() {
 
+    open val defaultTemplateId: String? = null
+
     // ── AppWidgetProvider callbacks ───────────────────────────────────────────────
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -245,7 +247,9 @@ open class NosBaseWidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int
     ) {
-        val config = NosWidgetPreferences.resolveWidgetConfig(context, appWidgetId, null, "")
+        val template = defaultTemplateId
+        val categoryPrefix = template?.substringBefore('_') ?: ""
+        val config = NosWidgetPreferences.resolveWidgetConfig(context, appWidgetId, template, categoryPrefix)
         val theme = NosWidgetPreferences.getActiveTheme(context)
         val customs = config?.optJSONObject("customizations")
 

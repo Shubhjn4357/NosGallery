@@ -116,3 +116,21 @@ export interface WidgetConfig {
   /** Click action handlers (keyed by action ID) */
   clickHandlers?: Record<string, ClickHandler>;
 }
+
+/** Configuration template item structure in widgets.json */
+export interface WidgetTemplateJson {
+  id: string;
+  name: string;
+  category: string;
+  className: string;
+  w: number;
+  h: number;
+  label: string;
+  preview: string;
+  defaultTitle?: string;
+  defaultValue?: string;
+  iconName?: string;
+  description?: string;
+  supportedSizes?: { w: number; h: number }[];
+}
+

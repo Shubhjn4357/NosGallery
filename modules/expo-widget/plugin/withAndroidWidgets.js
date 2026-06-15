@@ -1,14 +1,151 @@
-const { withDangerousMod } = require('@expo/config-plugins');
+const { withDangerousMod, withAndroidManifest } = require('@expo/config-plugins');
 const fs = require('fs');
 const path = require('path');
 
 function withAndroidWidgets(config) {
+  const projectRoot = config.modRequest?.projectRoot || process.cwd();
+  const widgetsJsonPath = path.join(projectRoot, 'modules', 'expo-widget', 'src', 'widgets.json');
+  let templateWidgets = [];
+  try {
+    templateWidgets = JSON.parse(fs.readFileSync(widgetsJsonPath, 'utf8'));
+  } catch (e) {
+    console.error('[withAndroidWidgets] Failed to load widgets.json from ' + widgetsJsonPath, e);
+  }
+
+  // 1. Add receivers to AndroidManifest.xml dynamically
+  config = withAndroidManifest(config, (modConfig) => {
+    const manifest = modConfig.modResults;
+    const mainApplication = manifest.manifest.application[0];
+    
+    if (!mainApplication.receiver) {
+      mainApplication.receiver = [];
+    }
+    
+    templateWidgets.forEach((tw) => {
+      const receiverName = `com.nothing.nosgallery.widget.${tw.className}`;
+      const resourceName = `@xml/widgetprovider_${tw.id.toLowerCase()}`;
+      
+      const exists = mainApplication.receiver.some(r => r.$['android:name'] === receiverName);
+      if (!exists) {
+        mainApplication.receiver.push({
+          $: {
+            'android:name': receiverName,
+            'android:exported': 'true',
+            'android:label': tw.label
+          },
+          'intent-filter': [
+            {
+              action: [
+                { $: { 'android:name': 'android.appwidget.action.APPWIDGET_UPDATE' } },
+                { $: { 'android:name': 'com.nothing.nosgallery.WIDGET_CLICK' } }
+              ]
+            }
+          ],
+          'meta-data': [
+            {
+              $: {
+                'android:name': 'android.appwidget.provider',
+                'android:resource': resourceName
+              }
+            }
+          ]
+        });
+      }
+    });
+    
+    // Add NosWidgetPinReceiver
+    const pinReceiverName = 'com.nothing.nosgallery.widget.NosWidgetPinReceiver';
+    const pinExists = mainApplication.receiver.some(r => r.$['android:name'] === pinReceiverName);
+    if (!pinExists) {
+      mainApplication.receiver.push({
+        $: {
+          'android:name': pinReceiverName,
+          'android:exported': 'false'
+        }
+      });
+    }
+    
+    return modConfig;
+  });
+
+  // 2. Write Kotlin files, XML provider configs, and default_widgets.json
   return withDangerousMod(config, [
     'android',
-    async (config) => {
-      const projectRoot = config.modRequest.projectRoot;
+    async (modConfig) => {
+      // 2a. Clean up legacy generated files in modules/expo-widget library module
+      const legacyWidgetJavaDir = path.join(projectRoot, 'modules', 'expo-widget', 'android', 'src', 'main', 'java', 'com', 'nothing', 'nosgallery', 'widget');
+      if (fs.existsSync(legacyWidgetJavaDir)) {
+        const files = fs.readdirSync(legacyWidgetJavaDir);
+        files.forEach((file) => {
+          if (file.startsWith('NOS') && file.endsWith('Widget.kt')) {
+            try {
+              fs.unlinkSync(path.join(legacyWidgetJavaDir, file));
+              console.log(`[withAndroidWidgets] Cleaned up legacy module Kotlin file: ${file}`);
+            } catch (err) {
+              console.warn(`[withAndroidWidgets] Failed to delete legacy Kotlin file ${file}:`, err.message);
+            }
+          }
+        });
+      }
 
-      // 1. Retrieve Git repo stats for git_info.json
+      const legacyWidgetXmlDir = path.join(projectRoot, 'modules', 'expo-widget', 'android', 'src', 'main', 'res', 'xml');
+      if (fs.existsSync(legacyWidgetXmlDir)) {
+        const files = fs.readdirSync(legacyWidgetXmlDir);
+        files.forEach((file) => {
+          if (file.startsWith('widgetprovider_') && file.endsWith('.xml')) {
+            try {
+              fs.unlinkSync(path.join(legacyWidgetXmlDir, file));
+              console.log(`[withAndroidWidgets] Cleaned up legacy module XML file: ${file}`);
+            } catch (err) {
+              console.warn(`[withAndroidWidgets] Failed to delete legacy XML file ${file}:`, err.message);
+            }
+          }
+        });
+      }
+
+      // 2b. Kotlin files: android/app/src/main/java/com/nothing/nosgallery/widget/
+      const widgetJavaDir = path.join(projectRoot, 'android', 'app', 'src', 'main', 'java', 'com', 'nothing', 'nosgallery', 'widget');
+      if (!fs.existsSync(widgetJavaDir)) {
+        fs.mkdirSync(widgetJavaDir, { recursive: true });
+      }
+      
+      templateWidgets.forEach((w) => {
+        const ktContent = `package com.nothing.nosgallery.widget
+
+class ${w.className} : NosBaseWidgetProvider() {
+    override val defaultTemplateId = "${w.id}"
+}
+`;
+        fs.writeFileSync(path.join(widgetJavaDir, `${w.className}.kt`), ktContent, 'utf8');
+      });
+
+      // 2c. XML provider configs: android/app/src/main/res/xml/
+      const widgetXmlDir = path.join(projectRoot, 'android', 'app', 'src', 'main', 'res', 'xml');
+      if (!fs.existsSync(widgetXmlDir)) {
+        fs.mkdirSync(widgetXmlDir, { recursive: true });
+      }
+      
+      templateWidgets.forEach((w) => {
+        const minWidth = w.w === 4 ? 330 : 160;
+        const minHeight = w.h === 4 ? 230 : 110;
+        const xmlContent = `<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="${minWidth}dp"
+    android:minHeight="${minHeight}dp"
+    android:targetCellWidth="${w.w}"
+    android:targetCellHeight="${w.h}"
+    android:resizeMode="horizontal|vertical"
+    android:initialLayout="@layout/nos_widget_layout"
+    android:previewLayout="@layout/nos_widget_layout"
+    android:previewImage="@drawable/${w.preview}"
+    android:updatePeriodMillis="1800000"
+    android:widgetCategory="home_screen">
+</appwidget-provider>
+`;
+        fs.writeFileSync(path.join(widgetXmlDir, `widgetprovider_${w.id.toLowerCase()}.xml`), xmlContent, 'utf8');
+      });
+
+      // Retrieve Git repo stats for git_info.json
       let gitBranch = 'main';
       let gitCommit = 'a1b2c3d4';
       let gitAuthor = 'Shubh';
@@ -76,13 +213,13 @@ function withAndroidWidgets(config) {
         'utf8'
       );
 
-      // 2. Generate default_widgets.json and save it in modules/expo-widget/android/src/main/assets/
+      // Generate default_widgets.json and save it in modules/expo-widget/android/src/main/assets/
       const targetAssets = path.join(projectRoot, 'modules', 'expo-widget', 'android', 'src', 'main', 'assets');
       if (!fs.existsSync(targetAssets)) {
         fs.mkdirSync(targetAssets, { recursive: true });
       }
 
-      const defaultWidgets = generateDefaultWidgetsList(projectRoot);
+      const defaultWidgets = generateDefaultWidgetsList(templateWidgets);
       fs.writeFileSync(
         path.join(targetAssets, 'default_widgets.json'),
         JSON.stringify(defaultWidgets, null, 2),
@@ -90,108 +227,13 @@ function withAndroidWidgets(config) {
       );
 
       console.log('[withAndroidWidgets] Generated build assets and default_widgets.json successfully');
-      return config;
+      return modConfig;
     }
   ]);
 }
 
-// Helper to generate the default widgets JSON array with all 550 templates
-function generateDefaultWidgetsList(projectRoot) {
-  const mdPath = path.join(projectRoot, 'src', 'widget list.md');
-  if (!fs.existsSync(mdPath)) {
-    console.error('widget list.md not found at ' + mdPath);
-    return [];
-  }
-  const content = fs.readFileSync(mdPath, 'utf8');
-  const lines = content.split('\n');
-
-  const categoryMap = {
-    '1. Clock': 'clock',
-    '2. Calendar': 'calendar',
-    '3. Weather': 'weather',
-    '4. Productivity': 'productivity',
-    '5. Health': 'health',
-    '6. Finance': 'finance',
-    '7. Developer': 'developer',
-    '8. Social': 'social',
-    '9. Smart Home': 'smart_home',
-    '10. AI': 'ai'
-  };
-
-  const categories = [];
-  let currentCategory = null;
-
-  lines.forEach((line) => {
-    const trimmed = line.trim();
-    if (trimmed.startsWith('#') && !trimmed.startsWith('##') && !trimmed.startsWith('###')) {
-      const cleanHeader = trimmed.replace(/#/g, '').trim();
-      const matchedKey = Object.keys(categoryMap).find(cat => cleanHeader.includes(cat));
-      if (matchedKey) {
-        currentCategory = categoryMap[matchedKey];
-      } else {
-        currentCategory = null;
-      }
-    } else if (currentCategory && trimmed) {
-      const match = trimmed.match(/^\d+\.\s+(.+)$/);
-      if (match) {
-        categories.push({
-          category: currentCategory,
-          name: match[1].trim()
-        });
-      }
-    }
-  });
-
-  const CUSTOM_ID_MAPPING = {
-    "minimal digital": "clock_digital",
-    "nos dot clock": "clock_dot",
-    "classic analog": "clock_analog",
-    "flip clock": "clock_flip",
-    "stopwatch": "clock_stopwatch",
-    "month view": "calendar_monthly",
-    "agenda view": "calendar_agenda",
-    "year progress": "calendar_progress",
-    "current weather": "weather_current",
-    "aqi": "weather_aqi",
-    "moon phase": "weather_moon_phase",
-    "to-do": "productivity_todo",
-    "focus task": "productivity_focus",
-    "focus mode": "productivity_focus",
-    "calculator": "productivity_calculator",
-    "camera": "productivity_camera",
-    "music": "productivity_music",
-    "text input": "productivity_text_username",
-    "google search": "productivity_google_search",
-    "pomodoro": "productivity_pomodoro",
-    "folder": "productivity_folder",
-    "photo frame": "productivity_photo_frame",
-    "steps": "health_steps",
-    "water intake": "health_water",
-    "breathing exercise": "health_breath",
-    "crypto": "finance_crypto",
-    "github activity": "developer_git",
-    "ci/cd status": "developer_build",
-    "server cpu": "developer_cpu",
-    "quick controls": "developer_quick_controls",
-    "battery status": "developer_battery",
-    "notifications": "social_feed",
-    "fav contact": "social_contact",
-    "social direct": "social_shortcuts",
-    "lights": "smart_home_controls",
-    "torch": "smart_home_torch",
-    "bluetooth": "smart_home_bluetooth",
-    "sound control": "smart_home_sound_control",
-    "ai chat": "ai_chat",
-    "ai summary": "ai_summary",
-    "ai router": "ai_bar"
-  };
-
-  const sanitizeId = (category, name) => {
-    const mapped = CUSTOM_ID_MAPPING[name.toLowerCase()];
-    if (mapped) return mapped;
-    return `${category}_${name.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`;
-  };
-
+// Helper to generate the default widgets JSON array
+function generateDefaultWidgetsList(templateWidgets) {
   const baseTemplates = {
     clock_digital: { w: 2, h: 2, titleText: 'DIGITAL CLOCK', valueText: '10:42 PM', subValueText: 'TAP TO OPEN', footerText: 'NOS • CLOCK', iconName: 'Clock', desc: 'Modern digital clock display.', launchUri: '', intentAction: 'android.intent.action.SHOW_ALARMS' },
     clock_dot: { w: 4, h: 2, titleText: 'NOTHING CLOCK', valueText: '10:42 PM', subValueText: 'TAP TO OPEN', footerText: 'NOS • CLOCK', iconName: 'Clock', desc: 'Signature Nothing style dot-matrix clock.', intentAction: 'android.intent.action.SHOW_ALARMS' },
@@ -264,69 +306,17 @@ function generateDefaultWidgetsList(projectRoot) {
     ai_bar: { w: 4, h: 2, titleText: 'NOS AI', valueText: 'AI Active', subValueText: 'AI ASSISTANT • READY', footerText: 'NOS • AI ROUTER', iconName: 'Sparkles', desc: 'AI model selection bar.' }
   };
 
-
-  const categoryDefaults = {
-    clock: { value: '10:42 PM', icon: 'Clock', desc: 'timekeeping and stopwatch sessions' },
-    calendar: { value: 'Monthly Overview', icon: 'Calendar', desc: 'tracking events and year progress' },
-    weather: { value: '18°C Sunny', icon: 'CloudSun', desc: 'current and future forecasts' },
-    productivity: { value: '3 Pending', icon: 'CheckSquare', desc: 'notes, tasks and focus sessions' },
-    health: { value: '8,400 steps', icon: 'Heart', desc: 'activity and wellness stats' },
-    finance: { value: '$67,400', icon: 'Coins', desc: 'financial budgets and markets tracking' },
-    developer: { value: 'System active', icon: 'Terminal', desc: 'live builds and CPU status monitors' },
-    social: { value: 'Stats updated', icon: 'MessageSquare', desc: 'social media statistics and notifications' },
-    smart_home: { value: 'All devices ok', icon: 'Home', desc: 'smart toggles and scenes controller' },
-    ai: { value: 'Briefing ready', icon: 'Sparkles', desc: 'contextual AI queries and summaries' }
-  };
-
   const widgets = [];
   const registeredIds = new Set();
 
-  categories.forEach(({ category, name }) => {
-    const id = sanitizeId(category, name);
-    if (registeredIds.has(id)) return;
-    registeredIds.add(id);
+  templateWidgets.forEach((tw) => {
+    if (registeredIds.has(tw.id)) return;
+    registeredIds.add(tw.id);
 
-    const base = baseTemplates[id] || {};
-    const cDefault = categoryDefaults[category];
+    const base = baseTemplates[tw.id] || {};
+    const w = tw.w;
+    const h = tw.h;
 
-    let w = base.w || 2;
-    let h = base.h || 2;
-
-    const lowerName = name.toLowerCase();
-    if (
-      lowerName.includes('dot') ||
-      lowerName.includes('flip') ||
-      lowerName.includes('military') ||
-      lowerName.includes('world') ||
-      lowerName.includes('timezone') ||
-      lowerName.includes('agenda') ||
-      lowerName.includes('timeline') ||
-      lowerName.includes('forecast') ||
-      lowerName.includes('weekly') ||
-      lowerName.includes('grid') ||
-      lowerName.includes('checklist') ||
-      lowerName.includes('board') ||
-      lowerName.includes('kanban') ||
-      lowerName.includes('daily plan') ||
-      lowerName.includes('dashboard') ||
-      lowerName.includes('activity') ||
-      lowerName.includes('pipeline') ||
-      lowerName.includes('status') ||
-      lowerName.includes('feed') ||
-      lowerName.includes('assistant') ||
-      lowerName.includes('chat') ||
-      lowerName.includes('summary') ||
-      lowerName.includes('brief') ||
-      lowerName.includes('command')
-    ) {
-      w = 4;
-    }
-
-    if (lowerName.includes('assistant') || lowerName.includes('chat') || lowerName.includes('kanban')) {
-      h = 4;
-    }
-
-    // Build customizations with ALL native display fields
     const customizations = {
       fontId: 'inter',
       fontSize: w === 4 ? 20 : 14,
@@ -336,10 +326,10 @@ function generateDefaultWidgetsList(projectRoot) {
       transparency: 10,
       blur: 10,
       shadowType: 'soft',
-      titleText: base.titleText || name.toUpperCase(),
-      valueText: base.valueText || cDefault.value,
+      titleText: base.titleText || tw.defaultTitle || tw.name.toUpperCase(),
+      valueText: base.valueText || tw.defaultValue || '--',
       subValueText: base.subValueText || 'TAP TO OPEN',
-      footerText: base.footerText || `NOS • ${category.toUpperCase().replace('_', ' ')}`,
+      footerText: base.footerText || `NOS • ${tw.category.toUpperCase().replace('_', ' ')}`,
       accentColor: '#7C9EFF',
       themeOverride: 'none',
       showProgressBar: base.showProgressBar || false,
@@ -352,14 +342,13 @@ function generateDefaultWidgetsList(projectRoot) {
       btnRightAction: base.btnRightAction || '',
     };
 
-    // Add optional color overrides
     if (base.subValueColor) customizations.subValueColor = base.subValueColor;
     if (base.launchUri) customizations.launchUri = base.launchUri;
     if (base.intentAction) customizations.intentAction = base.intentAction;
 
     const widgetEntry = {
-      id: id,
-      templateId: id,
+      id: tw.id,
+      templateId: tw.id,
       x: 0,
       y: 0,
       w: w,
@@ -367,15 +356,14 @@ function generateDefaultWidgetsList(projectRoot) {
       customizations: customizations,
     };
 
-    // Add clickHandlers at the top level if defined
     if (base.clickHandlers) {
       widgetEntry.clickHandlers = base.clickHandlers;
     }
 
     widgets.push(widgetEntry);
-
   });
 
+  // Alias for developer_cicd
   if (!registeredIds.has('developer_cicd')) {
     widgets.push({
       id: 'developer_cicd',

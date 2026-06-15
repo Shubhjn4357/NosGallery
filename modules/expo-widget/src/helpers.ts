@@ -1,25 +1,20 @@
-import type { WidgetConfig, WidgetCustomizations, ClickHandler } from './ExpoWidget.types';
+import type { WidgetConfig, WidgetCustomizations, ClickHandler, WidgetTemplateJson } from './ExpoWidget.types';
+
+import widgetsJson from './widgets.json';
+
+const widgetsJsonTyped = widgetsJson as unknown as WidgetTemplateJson[];
 
 /**
- * Get the native Android widget provider class name based on widget size.
- * Maps grid dimensions to the 5 size-based provider classes.
+ * Get the native Android widget provider class name based on template ID.
  *
- * @param w - Width in grid cells
- * @param h - Height in grid cells
- * @returns Provider class name (e.g. "NOSWidget2x2")
+ * @param templateId - The template ID of the widget
+ * @returns Provider class name (e.g. "NOSClockDigitalWidget")
  */
-export function getWidgetProviderName(w: number, h: number): string {
-  // Clamp to supported sizes
-  const validSizes: Record<string, string> = {
-    '1x1': 'NOSWidget1x1',
-    '2x1': 'NOSWidget2x1',
-    '2x2': 'NOSWidget2x2',
-    '4x2': 'NOSWidget4x2',
-    '4x4': 'NOSWidget4x4',
-  };
-  const key = `${w}x${h}`;
-  return validSizes[key] || 'NOSWidget2x2';
+export function getWidgetProviderName(templateId: string): string {
+  const found = widgetsJsonTyped.find(w => w.id === templateId);
+  return found?.className || 'NOSClockDigitalWidget';
 }
+
 
 /**
  * Build a complete WidgetConfig with all native display fields populated.

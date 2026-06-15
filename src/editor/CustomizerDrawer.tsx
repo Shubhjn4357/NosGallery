@@ -26,14 +26,6 @@ interface CustomizerDrawerProps {
   triggerHaptic: (type: 'light' | 'medium' | 'selection' | 'success') => void;
 }
 
-const SUPPORTED_SIZES = [
-  { label: '1 × 1', w: 1, h: 1 },
-  { label: '2 × 1', w: 2, h: 1 },
-  { label: '1 × 2', w: 1, h: 2 },
-  { label: '2 × 2', w: 2, h: 2 },
-  { label: '4 × 2', w: 4, h: 2 },
-  { label: '2 × 4', w: 2, h: 4 },
-];
 
 export const CustomizerDrawer: React.FC<CustomizerDrawerProps> = ({
   visible,
@@ -47,6 +39,16 @@ export const CustomizerDrawer: React.FC<CustomizerDrawerProps> = ({
   const insets = useSafeAreaInsets();
 
   if (!pendingWidget) return null;
+
+  const template = widgetRegistry[pendingWidget.templateId];
+  const supportedSizes = template?.supportedSizes || [
+    { w: template?.defaultWidth ?? 2, h: template?.defaultHeight ?? 2 }
+  ];
+  const sizesToRender = supportedSizes.map((size) => ({
+    label: `${size.w} × ${size.h}`,
+    w: size.w,
+    h: size.h,
+  }));
 
   return (
     <Modal
@@ -103,7 +105,7 @@ export const CustomizerDrawer: React.FC<CustomizerDrawerProps> = ({
               <View style={styles.sizeSection}>
                 <Text style={styles.sizeSectionTitle}>CHOOSE WIDGET SIZE</Text>
                 <View style={styles.sizeGrid}>
-                  {SUPPORTED_SIZES.map((size) => {
+                  {sizesToRender.map((size) => {
                     const isSelected = pendingWidget.w === size.w && pendingWidget.h === size.h;
                     return (
                       <TouchableOpacity

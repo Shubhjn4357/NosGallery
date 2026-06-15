@@ -991,11 +991,11 @@
     "templateId": "developer_battery",
     "x": 0,
     "y": 0,
-    "w": 4,
+    "w": 2,
     "h": 2,
     "customizations": {
       "fontId": "inter",
-      "fontSize": 20,
+      "fontSize": 14,
       "backgroundType": "solid",
       "backgroundColor": "#0c0c0c",
       "borderRadius": 16,

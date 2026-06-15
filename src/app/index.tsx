@@ -18,11 +18,16 @@ import { useFeedback } from '../hooks/useFeedback';
 import { DotGridBackground } from '../components/DotGridBackground';
 import { LiquidGlassBackground } from '../components/LiquidGlassBackground';
 import { widgetRegistry, WidgetTemplate, WidgetCategory } from '../widgets/registry';
+import type { WidgetTemplateJson } from '../../modules/expo-widget/src/ExpoWidget.types';
+import widgetsJson from '../../modules/expo-widget/src/widgets.json';
 import { themes, ThemeId } from '../themes/themes';
 import { WidgetCard } from '../components/WidgetCard';
 import { CustomizerDrawer } from '@/editor/CustomizerDrawer';
 import { ExpoWidget } from '../../modules/expo-widget/src';
 import { startNativeWidgetSync } from '../services/nativeWidgetSync';
+
+const widgetsJsonTyped = widgetsJson as unknown as WidgetTemplateJson[];
+
 
 const LucideIcons = {
   Calendar,
@@ -154,11 +159,10 @@ export default function Index() {
     triggerHaptic('selection');
   };
 
+
   const getWidgetProviderName = (templateId: string) => {
-    const template = widgetRegistry[templateId];
-    const w = pendingWidget?.w ?? template?.defaultWidth ?? 2;
-    const h = pendingWidget?.h ?? template?.defaultHeight ?? 2;
-    return `NOSWidget${w}x${h}`;
+    const found = widgetsJsonTyped.find(w => w.id === templateId);
+    return found?.className || 'NOSClockDigitalWidget';
   };
 
   const getWidgetCategory = (templateId: string): string => {

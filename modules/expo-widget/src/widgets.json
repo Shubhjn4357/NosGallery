@@ -1,0 +1,683 @@
+[
+  {
+    "id": "clock_digital",
+    "name": "Minimal Digital",
+    "category": "clock",
+    "className": "NOSClockDigitalWidget",
+    "w": 2,
+    "h": 2,
+    "label": "NOS Digital Clock",
+    "preview": "nosclockwidget_preview",
+    "defaultTitle": "DIGITAL CLOCK",
+    "defaultValue": "10:42 PM",
+    "iconName": "Clock",
+    "description": "Modern digital clock display.",
+    "supportedSizes": [
+      { "w": 1, "h": 1 },
+      { "w": 2, "h": 2 }
+    ]
+  },
+  {
+    "id": "clock_dot",
+    "name": "NOS Dot Clock",
+    "category": "clock",
+    "className": "NOSClockDotWidget",
+    "w": 4,
+    "h": 2,
+    "label": "NOS Dot Clock",
+    "preview": "nosclockwidget_preview",
+    "defaultTitle": "NOTHING CLOCK",
+    "defaultValue": "10:42 PM",
+    "iconName": "Clock",
+    "description": "Signature Nothing style dot-matrix clock.",
+    "supportedSizes": [
+      { "w": 4, "h": 2 }
+    ]
+  },
+  {
+    "id": "clock_analog",
+    "name": "Classic Analog",
+    "category": "clock",
+    "className": "NOSClockAnalogWidget",
+    "w": 2,
+    "h": 2,
+    "label": "NOS Analog Clock",
+    "preview": "nosclockwidget_preview",
+    "defaultTitle": "ANALOG CLOCK",
+    "defaultValue": "Ticking",
+    "iconName": "Clock",
+    "description": "Minimal classic ticking analog clock.",
+    "supportedSizes": [
+      { "w": 2, "h": 2 }
+    ]
+  },
+  {
+    "id": "clock_flip",
+    "name": "Flip Clock",
+    "category": "clock",
+    "className": "NOSClockFlipWidget",
+    "w": 4,
+    "h": 2,
+    "label": "NOS Flip Clock",
+    "preview": "nosclockwidget_preview",
+    "defaultTitle": "FLIP CLOCK",
+    "defaultValue": "21:09",
+    "iconName": "Clock",
+    "description": "Retro animated flip clock.",
+    "supportedSizes": [
+      { "w": 4, "h": 2 }
+    ]
+  },
+  {
+    "id": "clock_stopwatch",
+    "name": "Stopwatch",
+    "category": "clock",
+    "className": "NOSClockStopwatchWidget",
+    "w": 2,
+    "h": 2,
+    "label": "NOS Stopwatch",
+    "preview": "nosclockwidget_preview",
+    "defaultTitle": "STOPWATCH",
+    "defaultValue": "00:00.0",
+    "iconName": "Timer",
+    "description": "Interactive stopwatch timer.",
+    "supportedSizes": [
+      { "w": 2, "h": 2 }
+    ]
+  },
+  {
+    "id": "calendar_monthly",
+    "name": "Month View",
+    "category": "calendar",
+    "className": "NOSCalendarMonthlyWidget",
+    "w": 2,
+    "h": 2,
+    "label": "NOS Month View",
+    "preview": "noscalendarwidget_preview",
+    "defaultTitle": "JUNE 2026",
+    "defaultValue": "Monthly Calendar",
+    "iconName": "Calendar",
+    "description": "Grid display of the current month.",
+    "supportedSizes": [
+      { "w": 2, "h": 2 }
+    ]
+  },
+  {
+    "id": "calendar_agenda",
+    "name": "Agenda View",
+    "category": "calendar",
+    "className": "NOSCalendarAgendaWidget",
+    "w": 4,
+    "h": 2,
+    "label": "NOS Agenda View",
+    "preview": "noscalendarwidget_preview",
+    "defaultTitle": "UPCOMING EVENTS",
+    "defaultValue": "Meeting, Work Sync",
+    "iconName": "Calendar",
+    "description": "Timeline view of upcoming events.",
+    "supportedSizes": [
+      { "w": 4, "h": 2 }
+    ]
+  },
+  {
+    "id": "calendar_progress",
+    "name": "Year Progress",
+    "category": "calendar",
+    "className": "NOSCalendarProgressWidget",
+    "w": 2,
+    "h": 2,
+    "label": "NOS Year Progress",
+    "preview": "noscalendarwidget_preview",
+    "defaultTitle": "YEAR PROGRESS",
+    "defaultValue": "43%",
+    "iconName": "Calendar",
+    "description": "Percentage visualizer of the current year.",
+    "supportedSizes": [
+      { "w": 2, "h": 2 }
+    ]
+  },
+  {
+    "id": "weather_current",
+    "name": "Current Weather",
+    "category": "weather",
+    "className": "NOSWeatherCurrentWidget",
+    "w": 2,
+    "h": 2,
+    "label": "NOS Current Weather",
+    "preview": "nosweatherwidget_preview",
+    "defaultTitle": "LONDON",
+    "defaultValue": "18°C Rain",
+    "iconName": "CloudSun",
+    "description": "Live climate and temperature stats.",
+    "supportedSizes": [
+      { "w": 2, "h": 2 }
+    ]
+  },
+  {
+    "id": "weather_aqi",
+    "name": "AQI",
+    "category": "weather",
+    "className": "NOSWeatherAqiWidget",
+    "w": 2,
+    "h": 2,
+    "label": "NOS Air Quality",
+    "preview": "nosweatherwidget_preview",
+    "defaultTitle": "LONDON AQI",
+    "defaultValue": "12 AQI",
+    "iconName": "CloudSun",
+    "description": "Circular gauge showing air quality status.",
+    "supportedSizes": [
+      { "w": 2, "h": 2 }
+    ]
+  },
+  {
+    "id": "weather_moon_phase",
+    "name": "Moon Phase",
+    "category": "weather",
+    "className": "NOSMoonPhaseWidget",
+    "w": 2,
+    "h": 2,
+    "label": "NOS Moon Phase",
+    "preview": "nosweatherwidget_preview",
+    "defaultTitle": "MOON PHASE",
+    "defaultValue": "Waxing Gibbous",
+    "iconName": "Moon",
+    "description": "Calculates lunar phase details.",
+    "supportedSizes": [
+      { "w": 2, "h": 2 }
+    ]
+  },
+  {
+    "id": "productivity_todo",
+    "name": "To-Do",
+    "category": "productivity",
+    "className": "NOSProductivityTodoWidget",
+    "w": 2,
+    "h": 2,
+    "label": "NOS To-Do List",
+    "preview": "nosproductivitywidget_preview",
+    "defaultTitle": "TODAY TASKS",
+    "defaultValue": "3 Remaining",
+    "iconName": "CheckSquare",
+    "description": "Simple task manager checklist.",
+    "supportedSizes": [
+      { "w": 2, "h": 2 }
+    ]
+  },
+  {
+    "id": "productivity_focus",
+    "name": "Focus Task",
+    "category": "productivity",
+    "className": "NOSProductivityFocusWidget",
+    "w": 2,
+    "h": 2,
+    "label": "NOS Focus Mode",
+    "preview": "nosproductivitywidget_preview",
+    "defaultTitle": "FOCUS MODE",
+    "defaultValue": "25:00",
+    "iconName": "CheckSquare",
+    "description": "Pomodoro focus countdown widget.",
+    "supportedSizes": [
+      { "w": 2, "h": 2 }
+    ]
+  },
+  {
+    "id": "productivity_calculator",
+    "name": "Calculator",
+    "category": "productivity",
+    "className": "NOSCalculatorWidget",
+    "w": 2,
+    "h": 2,
+    "label": "NOS Calculator",
+    "preview": "nosproductivitywidget_preview",
+    "defaultTitle": "CALCULATOR",
+    "defaultValue": "0",
+    "iconName": "Calculator",
+    "description": "Interactive pocket calculator.",
+    "supportedSizes": [
+      { "w": 2, "h": 2 }
+    ]
+  },
+  {
+    "id": "productivity_camera",
+    "name": "Camera",
+    "category": "productivity",
+    "className": "NOSCameraWidget",
+    "w": 2,
+    "h": 2,
+    "label": "NOS Camera Shortcut",
+    "preview": "nosproductivitywidget_preview",
+    "defaultTitle": "CAMERA",
+    "defaultValue": "Tap to open",
+    "iconName": "Camera",
+    "description": "Quick camera lens and capture.",
+    "supportedSizes": [
+      { "w": 2, "h": 2 }
+    ]
+  },
+  {
+    "id": "productivity_music",
+    "name": "Music",
+    "category": "productivity",
+    "className": "NOSMusicWidget",
+    "w": 4,
+    "h": 2,
+    "label": "NOS Music Player",
+    "preview": "nosproductivitywidget_preview",
+    "defaultTitle": "MUSIC PLAYER",
+    "defaultValue": "Nothing Beat - LoFi",
+    "iconName": "Music",
+    "description": "System music player panel.",
+    "supportedSizes": [
+      { "w": 4, "h": 2 }
+    ]
+  },
+  {
+    "id": "productivity_text_username",
+    "name": "Text Input",
+    "category": "productivity",
+    "className": "NOSTextUsernameWidget",
+    "w": 2,
+    "h": 2,
+    "label": "NOS Custom Username",
+    "preview": "nosproductivitywidget_preview",
+    "defaultTitle": "TEXT INPUT",
+    "defaultValue": "User Name",
+    "iconName": "Type",
+    "description": "Enter username for widgets.",
+    "supportedSizes": [
+      { "w": 2, "h": 2 }
+    ]
+  },
+  {
+    "id": "productivity_google_search",
+    "name": "Google Search",
+    "category": "productivity",
+    "className": "NOSGoogleSearchWidget",
+    "w": 4,
+    "h": 2,
+    "label": "NOS Google Search",
+    "preview": "nosproductivitywidget_preview",
+    "defaultTitle": "GOOGLE SEARCH",
+    "defaultValue": "Search the web",
+    "iconName": "Search",
+    "description": "Web search bar panel.",
+    "supportedSizes": [
+      { "w": 4, "h": 2 }
+    ]
+  },
+  {
+    "id": "productivity_pomodoro",
+    "name": "Pomodoro",
+    "category": "productivity",
+    "className": "NOSPomodoroWidget",
+    "w": 2,
+    "h": 2,
+    "label": "NOS Pomodoro Timer",
+    "preview": "nosproductivitywidget_preview",
+    "defaultTitle": "POMODORO",
+    "defaultValue": "25:00",
+    "iconName": "Hourglass",
+    "description": "Ticking pomodoro focus timer.",
+    "supportedSizes": [
+      { "w": 2, "h": 2 }
+    ]
+  },
+  {
+    "id": "productivity_folder",
+    "name": "Folder",
+    "category": "productivity",
+    "className": "NOSFolderWidget",
+    "w": 2,
+    "h": 2,
+    "label": "NOS Apps Folder",
+    "preview": "nosproductivitywidget_preview",
+    "defaultTitle": "APPS FOLDER",
+    "defaultValue": "4 Shortcuts",
+    "iconName": "Folder",
+    "description": "App drawer shortcut container.",
+    "supportedSizes": [
+      { "w": 2, "h": 2 }
+    ]
+  },
+  {
+    "id": "productivity_photo_frame",
+    "name": "Photo Frame",
+    "category": "productivity",
+    "className": "NOSPhotoFrameWidget",
+    "w": 2,
+    "h": 2,
+    "label": "NOS Photo Frame",
+    "preview": "nosproductivitywidget_preview",
+    "defaultTitle": "PHOTO FRAME",
+    "defaultValue": "Auto-Scrolling",
+    "iconName": "Image",
+    "description": "Slideshow frame of gallery.",
+    "supportedSizes": [
+      { "w": 2, "h": 2 }
+    ]
+  },
+  {
+    "id": "health_steps",
+    "name": "Steps",
+    "category": "health",
+    "className": "NOSHealthStepsWidget",
+    "w": 2,
+    "h": 2,
+    "label": "NOS Steps Tracker",
+    "preview": "noshealthwidget_preview",
+    "defaultTitle": "STEPS TODAY",
+    "defaultValue": "8,432",
+    "iconName": "Heart",
+    "description": "Daily step goal progress tracking.",
+    "supportedSizes": [
+      { "w": 2, "h": 2 }
+    ]
+  },
+  {
+    "id": "health_water",
+    "name": "Water Intake",
+    "category": "health",
+    "className": "NOSHealthWaterWidget",
+    "w": 2,
+    "h": 2,
+    "label": "NOS Water Tracker",
+    "preview": "noshealthwidget_preview",
+    "defaultTitle": "WATER INTAKE",
+    "defaultValue": "1,200 ml",
+    "iconName": "Heart",
+    "description": "Interactive water intake logger.",
+    "supportedSizes": [
+      { "w": 2, "h": 2 }
+    ]
+  },
+  {
+    "id": "health_breath",
+    "name": "Breathing Exercise",
+    "category": "health",
+    "className": "NOSHealthBreathWidget",
+    "w": 2,
+    "h": 2,
+    "label": "NOS Breathing Pacer",
+    "preview": "noshealthwidget_preview",
+    "defaultTitle": "BREATH WORK",
+    "defaultValue": "Ready",
+    "iconName": "Heart",
+    "description": "Animated breathing pacer.",
+    "supportedSizes": [
+      { "w": 2, "h": 2 }
+    ]
+  },
+  {
+    "id": "finance_crypto",
+    "name": "Crypto",
+    "category": "finance",
+    "className": "NOSFinanceCryptoWidget",
+    "w": 2,
+    "h": 2,
+    "label": "NOS Crypto Tracker",
+    "preview": "nosfinancewidget_preview",
+    "defaultTitle": "BTC / USD",
+    "defaultValue": "$67,490",
+    "iconName": "Coins",
+    "description": "Real-time stock/crypto trend tracker.",
+    "supportedSizes": [
+      { "w": 2, "h": 2 }
+    ]
+  },
+  {
+    "id": "developer_git",
+    "name": "GitHub Activity",
+    "category": "developer",
+    "className": "NOSDeveloperGitWidget",
+    "w": 4,
+    "h": 2,
+    "label": "NOS GitHub Grid",
+    "preview": "nosdeveloperwidget_preview",
+    "defaultTitle": "GITHUB ACTIVITY",
+    "defaultValue": "Commits",
+    "iconName": "Terminal",
+    "description": "Contribution commits grid display.",
+    "supportedSizes": [
+      { "w": 4, "h": 2 }
+    ]
+  },
+  {
+    "id": "developer_build",
+    "name": "CI/CD Status",
+    "category": "developer",
+    "className": "NOSDeveloperBuildWidget",
+    "w": 4,
+    "h": 2,
+    "label": "NOS CI/CD Pipeline",
+    "preview": "nosdeveloperwidget_preview",
+    "defaultTitle": "CI/CD PIPELINE",
+    "defaultValue": "Deploying",
+    "iconName": "Terminal",
+    "description": "Live build status deployment monitor.",
+    "supportedSizes": [
+      { "w": 4, "h": 2 }
+    ]
+  },
+  {
+    "id": "developer_cpu",
+    "name": "Server CPU",
+    "category": "developer",
+    "className": "NOSDeveloperCpuWidget",
+    "w": 2,
+    "h": 2,
+    "label": "NOS CPU Monitor",
+    "preview": "nosdeveloperwidget_preview",
+    "defaultTitle": "SYSTEM CPU",
+    "defaultValue": "28% usage",
+    "iconName": "Terminal",
+    "description": "Live system load gauge processor monitor.",
+    "supportedSizes": [
+      { "w": 2, "h": 2 }
+    ]
+  },
+  {
+    "id": "developer_quick_controls",
+    "name": "Quick Controls",
+    "category": "developer",
+    "className": "NOSQuickControlsWidget",
+    "w": 4,
+    "h": 2,
+    "label": "NOS Control Center",
+    "preview": "nosdeveloperwidget_preview",
+    "defaultTitle": "CONTROL CENTER",
+    "defaultValue": "WiFi • BT",
+    "iconName": "Sliders",
+    "description": "System quick control panel.",
+    "supportedSizes": [
+      { "w": 4, "h": 2 }
+    ]
+  },
+  {
+    "id": "developer_battery",
+    "name": "Battery Status",
+    "category": "developer",
+    "className": "NOSBatteryWidget",
+    "w": 2,
+    "h": 2,
+    "label": "NOS Battery Status",
+    "preview": "nosdeveloperwidget_preview",
+    "defaultTitle": "BATTERY STATUS",
+    "defaultValue": "80%",
+    "iconName": "BatteryCharging",
+    "description": "Device and wireless buds level.",
+    "supportedSizes": [
+      { "w": 2, "h": 2 }
+    ]
+  },
+  {
+    "id": "social_feed",
+    "name": "Notifications",
+    "category": "social",
+    "className": "NOSSocialFeedWidget",
+    "w": 4,
+    "h": 2,
+    "label": "NOS Social Feed",
+    "preview": "nossocialwidget_preview",
+    "defaultTitle": "SOCIAL NOTIFICATIONS",
+    "defaultValue": "New Mentions",
+    "iconName": "MessageSquare",
+    "description": "Aggregated social notifications stream.",
+    "supportedSizes": [
+      { "w": 4, "h": 2 }
+    ]
+  },
+  {
+    "id": "social_contact",
+    "name": "Fav Contact",
+    "category": "social",
+    "className": "NOSContactWidget",
+    "w": 2,
+    "h": 2,
+    "label": "NOS Fav Contact",
+    "preview": "nossocialwidget_preview",
+    "defaultTitle": "FAV CONTACT",
+    "defaultValue": "Shubh",
+    "iconName": "User",
+    "description": "Quick contact call and dialer.",
+    "supportedSizes": [
+      { "w": 2, "h": 2 }
+    ]
+  },
+  {
+    "id": "social_shortcuts",
+    "name": "Social Direct",
+    "category": "social",
+    "className": "NOSSocialShortcutsWidget",
+    "w": 2,
+    "h": 2,
+    "label": "NOS Social Direct",
+    "preview": "nossocialwidget_preview",
+    "defaultTitle": "SOCIAL DIRECT",
+    "defaultValue": "WhatsApp • Telegram",
+    "iconName": "Share2",
+    "description": "Direct shortcuts to WhatsApp, TG, Insta.",
+    "supportedSizes": [
+      { "w": 2, "h": 2 }
+    ]
+  },
+  {
+    "id": "smart_home_controls",
+    "name": "Lights",
+    "category": "smart_home",
+    "className": "NOSSmartHomeControlsWidget",
+    "w": 2,
+    "h": 2,
+    "label": "NOS Smart Room",
+    "preview": "nossmarthomewidget_preview",
+    "defaultTitle": "SMART ROOM",
+    "defaultValue": "Lights and Plugs",
+    "iconName": "Home",
+    "description": "Smart toggles for connected lights & appliances.",
+    "supportedSizes": [
+      { "w": 2, "h": 2 }
+    ]
+  },
+  {
+    "id": "smart_home_torch",
+    "name": "Torch",
+    "category": "smart_home",
+    "className": "NOSTorchWidget",
+    "w": 2,
+    "h": 2,
+    "label": "NOS Torch",
+    "preview": "nossmarthomewidget_preview",
+    "defaultTitle": "TORCH",
+    "defaultValue": "OFF",
+    "iconName": "Zap",
+    "description": "Toggle system flashlight.",
+    "supportedSizes": [
+      { "w": 2, "h": 2 }
+    ]
+  },
+  {
+    "id": "smart_home_bluetooth",
+    "name": "Bluetooth",
+    "category": "smart_home",
+    "className": "NOSBluetoothWidget",
+    "w": 2,
+    "h": 2,
+    "label": "NOS Bluetooth",
+    "preview": "nossmarthomewidget_preview",
+    "defaultTitle": "BLUETOOTH",
+    "defaultValue": "Nothing Ear Connected",
+    "iconName": "Bluetooth",
+    "description": "Bluetooth accessory panel.",
+    "supportedSizes": [
+      { "w": 2, "h": 2 }
+    ]
+  },
+  {
+    "id": "smart_home_sound_control",
+    "name": "Sound Control",
+    "category": "smart_home",
+    "className": "NOSSoundControlWidget",
+    "w": 2,
+    "h": 2,
+    "label": "NOS Sound Control",
+    "preview": "nossmarthomewidget_preview",
+    "defaultTitle": "SOUND CONTROL",
+    "defaultValue": "Vibrate",
+    "iconName": "VolumeX",
+    "description": "Sound profile sound/vibe/mute.",
+    "supportedSizes": [
+      { "w": 2, "h": 2 }
+    ]
+  },
+  {
+    "id": "ai_chat",
+    "name": "AI Chat",
+    "category": "ai",
+    "className": "NOSAiChatWidget",
+    "w": 4,
+    "h": 4,
+    "label": "NOS AI Chat",
+    "preview": "nosaiwidget_preview",
+    "defaultTitle": "AI ASSISTANT",
+    "defaultValue": "Ask anything",
+    "iconName": "Sparkles",
+    "description": "Personal assistant chat interface.",
+    "supportedSizes": [
+      { "w": 4, "h": 4 }
+    ]
+  },
+  {
+    "id": "ai_summary",
+    "name": "AI Summary",
+    "category": "ai",
+    "className": "NOSAiSummaryWidget",
+    "w": 4,
+    "h": 2,
+    "label": "NOS AI Summary",
+    "preview": "nosaiwidget_preview",
+    "defaultTitle": "AI METRICS BRIEF",
+    "defaultValue": "Weekly digest ready",
+    "iconName": "Sparkles",
+    "description": "Contextual summary of daily metrics.",
+    "supportedSizes": [
+      { "w": 4, "h": 2 }
+    ]
+  },
+  {
+    "id": "ai_bar",
+    "name": "AI Router",
+    "category": "ai",
+    "className": "NOSAiBarWidget",
+    "w": 4,
+    "h": 2,
+    "label": "NOS AI Router",
+    "preview": "nosaiwidget_preview",
+    "defaultTitle": "AI ROUTER",
+    "defaultValue": "Gemini • GPT",
+    "iconName": "Sparkles",
+    "description": "AI model selection bar.",
+    "supportedSizes": [
+      { "w": 4, "h": 2 }
+    ]
+  }
+]

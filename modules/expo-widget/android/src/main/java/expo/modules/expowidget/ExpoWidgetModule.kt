@@ -122,21 +122,22 @@ class ExpoWidgetModule : Module() {
   }
 
   private fun notifyAllWidgets(context: Context) {
-    val sizeWidgets = listOf("NOSWidget1x1", "NOSWidget2x1", "NOSWidget2x2", "NOSWidget4x2", "NOSWidget4x4")
-    for (widgetName in sizeWidgets) {
-      val className = getWidgetProviderClassName(context, widgetName) ?: continue
-      try {
-        val componentName = ComponentName(context.packageName, className)
-        val appWidgetManager = AppWidgetManager.getInstance(context)
-        val widgetIds = appWidgetManager.getAppWidgetIds(componentName)
-        if (widgetIds.isNotEmpty()) {
-          val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE)
-          intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, widgetIds)
-          intent.component = componentName
-          context.sendBroadcast(intent)
+    val appWidgetManager = AppWidgetManager.getInstance(context)
+    val installedProviders = appWidgetManager.installedProviders ?: return
+    for (providerInfo in installedProviders) {
+      if (providerInfo.provider.packageName == context.packageName) {
+        try {
+          val componentName = providerInfo.provider
+          val widgetIds = appWidgetManager.getAppWidgetIds(componentName)
+          if (widgetIds != null && widgetIds.isNotEmpty()) {
+            val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE)
+            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, widgetIds)
+            intent.component = componentName
+            context.sendBroadcast(intent)
+          }
+        } catch (e: Exception) {
+          // Non-fatal
         }
-      } catch (e: Exception) {
-        // Non-fatal
       }
     }
   }
