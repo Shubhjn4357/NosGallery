@@ -1,521 +1,388 @@
-const fs = require('fs');
-const path = require('path');
+const babel = require('@babel/parser');
+const traverse = require('@babel/traverse').default;
 
-/**
- * Analyzes the content of a React Native .tsx widget file dynamically and generates
- * the corresponding native Kotlin layout rendering and interactive behaviors.
- *
- * This parser scans the TSX code for state hook variables, progress bar bindings,
- * text nodes, and click interactions, and compiles them directly into Kotlin layout
- * RemoteViews instructions, eliminating hardcoded template strings.
- *
- * @param {string} tsxContent - The raw content of the React Native TSX file.
- * @param {object} widgetConfig - The full widget configuration from widgets.json.
- * @returns {object} { kotlinCode, kotlinImports }
- */
 function parseTsxToKotlin(tsxContent, widgetConfig) {
-  const widgetId = widgetConfig.id;
-  let kotlinImports = new Set(['android.view.View']);
-  let lines = [];
-
-  // 1. Add base initialization
-  lines.push('super.populateViews(context, views, config, customs, theme, appWidgetId)');
-
-  // 2. Discover Zustand store types dynamically
-  let storeTypes = {};
+  let ast;
   try {
-    let projectRoot = process.cwd();
-    let storePath = path.join(projectRoot, 'src', 'store', 'widgetStore.ts');
-    if (!fs.existsSync(storePath)) {
-      storePath = path.join(__dirname, '..', '..', '..', 'src', 'store', 'widgetStore.ts');
+    ast = babel.parse(tsxContent, {
+      sourceType: 'module',
+      plugins: ['jsx', 'typescript']
+    });
+  } catch (err) {
+    console.error('[tsxParser] AST Parse Error for ' + widgetConfig.id, err.message);
+    return { kotlinCode: '', kotlinImports: [], xmlContent: '' };
+  }
+
+  // 1. Extract static styles
+  const styles = {};
+  traverse(ast, {
+    CallExpression(path) {
+      if (
+        path.node.callee.type === 'MemberExpression' &&
+        path.node.callee.object.name === 'StyleSheet' &&
+        path.node.callee.property.name === 'create'
+      ) {
+        const arg = path.node.arguments[0];
+        if (arg && arg.type === 'ObjectExpression') {
+          arg.properties.forEach(prop => {
+            if (prop.key && prop.key.name && prop.value && prop.value.type === 'ObjectExpression') {
+              const styleName = prop.key.name;
+              styles[styleName] = {};
+              prop.value.properties.forEach(p => {
+                if (p.key && p.key.name && p.value) {
+                  let val = null;
+                  if (p.value.type === 'StringLiteral' || p.value.type === 'NumericLiteral') {
+                    val = p.value.value;
+                  } else if (p.value.type === 'Identifier') {
+                    val = p.value.name; // maybe a variable
+                  }
+                  if (val !== null) styles[styleName][p.key.name] = val;
+                }
+              });
+            }
+          });
+        }
+      }
     }
-    if (fs.existsSync(storePath)) {
-      const storeContent = fs.readFileSync(storePath, 'utf8');
-      const storeInterfaceMatch = storeContent.match(/interface WidgetState \{([\s\S]*?)\}/);
-      if (storeInterfaceMatch) {
-        const storeLines = storeInterfaceMatch[1].split('\n');
-        storeLines.forEach(line => {
-          const match = line.match(/^\s*([a-zA-Z0-9_]+)\s*:\s*([a-zA-Z0-9_\[\]]+)/);
-          if (match) {
-            storeTypes[match[1]] = match[2];
+  });
+
+  // 2. Extract state bindings
+  const storeVars = new Set();
+  traverse(ast, {
+    VariableDeclarator(path) {
+      if (
+        path.node.init &&
+        path.node.init.type === 'CallExpression' &&
+        path.node.init.callee.name === 'useWidgetStore' &&
+        path.node.id.type === 'ObjectPattern'
+      ) {
+        path.node.id.properties.forEach(p => {
+          if (p.value && p.value.type === 'Identifier') {
+            const name = p.value.name;
+            if (!name.startsWith('set') && !name.startsWith('increment')) {
+              storeVars.add(name);
+            }
           }
         });
       }
     }
-  } catch (err) {
-    console.warn('[tsxParser] Failed to dynamically load store types:', err.message);
-  }
+  });
 
-  const fallbackTypes = {
-    waterGoal: 'number',
-    waterIntake: 'number',
-    stopwatchTime: 'number',
-    stopwatchRunning: 'boolean',
-    torchEnabled: 'boolean',
-    musicPlaying: 'boolean',
-    currentTrackIndex: 'number',
-    systemVolume: 'number'
-  };
+  // 3. Find the main JSX Tree and convert to XML Layout
+  let xmlRoot = null;
+  let dynamicIds = {}; // map of node path/index to generated Android ID
+  let idCounter = 1;
+  let clickHandlers = [];
+  let kotlinLines = [];
+  let kotlinImports = new Set(['android.view.View']);
 
-  const getStoreVarType = (name) => {
-    return storeTypes[name] || fallbackTypes[name];
-  };
+  // Add standard padding and bg to root
+  const rootAttrs = `xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp"
+    android:background="#0c0c0c"
+    android:orientation="vertical"`;
 
-  // 3. Extract variables from TSX
-  const storeVars = [];
-  const storeMatches = tsxContent.match(/const\s*\{([^}]+)\}\s*=\s*useWidgetStore\s*\(\s*\)/);
-  if (storeMatches) {
-    storeMatches[1].split(',').forEach(s => {
-      const name = s.trim();
-      if (name && !name.startsWith('set') && !name.startsWith('increment')) {
-        storeVars.push(name);
+  function getAndroidColor(rnColor) {
+    if (!rnColor) return null;
+    if (rnColor === 'transparent') return '#00000000';
+    if (rnColor.startsWith('rgba')) {
+      const match = rnColor.match(/rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([\d.]+)\s*\)/);
+      if (match) {
+        let a = Math.round(parseFloat(match[4]) * 255).toString(16).padStart(2, '0');
+        let r = parseInt(match[1], 10).toString(16).padStart(2, '0');
+        let g = parseInt(match[2], 10).toString(16).padStart(2, '0');
+        let b = parseInt(match[3], 10).toString(16).padStart(2, '0');
+        return `#${a}${r}${g}${b}`.toUpperCase();
       }
-    });
-  }
-
-  const propVars = [];
-  const propMatches = tsxContent.match(/export\s+const\s+[a-zA-Z0-9_]+\s*:\s*React\.FC<[^>]*>\s*=\s*\(\{([^}]+)\}\)/);
-  if (propMatches) {
-    propMatches[1].split(',').forEach(s => {
-      const name = s.trim();
-      if (name) {
-        propVars.push(name);
+    }
+    if (rnColor.startsWith('rgb')) {
+      const match = rnColor.match(/rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/);
+      if (match) {
+        let r = parseInt(match[1], 10).toString(16).padStart(2, '0');
+        let g = parseInt(match[2], 10).toString(16).padStart(2, '0');
+        let b = parseInt(match[3], 10).toString(16).padStart(2, '0');
+        return `#FF${r}${g}${b}`.toUpperCase();
       }
-    });
+    }
+    if (rnColor.startsWith('#')) {
+      if (rnColor.length === 4) { // #abc -> #ffaabbcc
+        return '#FF' + rnColor[1]+rnColor[1]+rnColor[2]+rnColor[2]+rnColor[3]+rnColor[3];
+      }
+      if (rnColor.length === 7) return '#FF' + rnColor.substring(1); // #rrggbb -> #ffrrggbb
+      if (rnColor.length === 9) { // #rrggbbaa -> #aarrggbb
+        return '#' + rnColor.substring(7, 9) + rnColor.substring(1, 7);
+      }
+      return rnColor;
+    }
+    return rnColor;
   }
 
-  // Define general capabilities detection using strict word boundaries to avoid substrings like 'fluidTrack' matching 'track'
-  const hasCapability = {
-    battery: /\b(battery|charging)\b/i.test(tsxContent),
-    cpu: /\b(cpu|ram)\b|CpuMonitor/i.test(tsxContent),
-    torch: /\b(torch|flashlight)\b/i.test(tsxContent),
-    music: /\b(music|track|musicPlaying|currentTrackIndex)\b/i.test(tsxContent) && !/fluidTrack/i.test(tsxContent),
-    stopwatch: /\b(stopwatch|swTime|swActive|stopwatchRunning)\b/i.test(tsxContent),
-    clock: /\b(clock|Clock)\b/i.test(tsxContent)
-  };
-
-  // Keep track of what we declare
-  const declaredVariables = new Set();
-  let needsDynamicState = false;
-
-  // Process Store variables dynamically
-  storeVars.forEach(v => {
-    const rawType = getStoreVarType(v);
-    if (rawType && !declaredVariables.has(v)) {
-      let ktType = 'String';
-      let ktDefault = '""';
-      if (rawType === 'boolean') {
-        ktType = 'Boolean';
-        ktDefault = 'false';
-      } else if (rawType === 'number') {
-        if (/time|elapsed|duration|date/i.test(v)) {
-          ktType = 'Long';
-          ktDefault = '0L';
-        } else {
-          ktType = 'Int';
-          ktDefault = v.includes('Goal') ? '2000' : '0';
+  function jsExprToString(node) {
+    if (!node || node.type === 'JSXEmptyExpression') return '';
+    if (node.type === 'StringLiteral') return node.value;
+    if (node.type === 'NumericLiteral') return node.value.toString();
+    if (node.type === 'Identifier') return `\${${node.name}}`;
+    if (node.type === 'TemplateLiteral') {
+      return node.quasis.map((q, i) => {
+        let str = q.value.raw;
+        if (i < node.expressions.length) {
+          str += jsExprToString(node.expressions[i]);
         }
+        return str;
+      }).join('');
+    }
+    if (node.type === 'BinaryExpression' && node.operator === '+') {
+      return jsExprToString(node.left) + jsExprToString(node.right);
+    }
+    if (node.type === 'LogicalExpression') {
+      return jsExprToString(node.left) + " " + node.operator + " " + jsExprToString(node.right);
+    }
+    if (node.type === 'CallExpression') {
+      // Very basic approximation for method calls
+      if (node.callee.property && node.callee.property.name === 'toUpperCase') {
+        return `\${${jsExprToString(node.callee.object)}.uppercase()}`;
+      }
+      return `\${${jsExprToString(node.callee.object)}}()`;
+    }
+    if (node.type === 'MemberExpression') {
+      return `\${${jsExprToString(node.object)}.${node.property.name}}`;
+    }
+    return '';
+  }
+
+  function resolveStyle(styleNode) {
+    let merged = {};
+    if (!styleNode) return merged;
+
+    if (styleNode.type === 'ArrayExpression') {
+      styleNode.elements.forEach(el => {
+        Object.assign(merged, resolveStyle(el));
+      });
+    } else if (styleNode.type === 'MemberExpression') {
+      if (styleNode.object.name === 'styles') {
+        const sName = styleNode.property.name;
+        if (styles[sName]) Object.assign(merged, styles[sName]);
+      }
+    } else if (styleNode.type === 'ObjectExpression') {
+      styleNode.properties.forEach(p => {
+        if (p.key && p.key.name && p.value) {
+          if (p.value.type === 'StringLiteral' || p.value.type === 'NumericLiteral') {
+            merged[p.key.name] = p.value.value;
+          }
+        }
+      });
+    } else if (styleNode.type === 'LogicalExpression' || styleNode.type === 'ConditionalExpression') {
+       // Best effort for dynamic inline styles (e.g., isLed && {fontFamily: 'monospace'})
+       // We'll just statically include the right side if it's an object
+       const right = styleNode.type === 'LogicalExpression' ? styleNode.right : styleNode.consequent;
+       if (right && right.type === 'ObjectExpression') {
+         Object.assign(merged, resolveStyle(right));
+       }
+    }
+    return merged;
+  }
+
+  function processJsxNode(node) {
+    if (node.type === 'JSXText') {
+      const text = node.value.replace(/\\s+/g, ' ').trim();
+      if (!text) return null;
+      return { tag: 'TextView', attrs: { 'android:text': `"${text}"`, 'android:layout_width': 'wrap_content', 'android:layout_height': 'wrap_content' }, children: [], isDynamic: false };
+    }
+    if (node.type === 'JSXExpressionContainer') {
+      const exprString = jsExprToString(node.expression);
+      if (!exprString) return null;
+      return { tag: 'TextView', attrs: { 'android:layout_width': 'wrap_content', 'android:layout_height': 'wrap_content' }, children: [], isDynamic: true, dynamicText: exprString };
+    }
+
+    if (node.type === 'JSXElement') {
+      const name = node.openingElement.name.name;
+      let tag = 'LinearLayout';
+      let attrs = {
+        'android:layout_width': 'match_parent',
+        'android:layout_height': 'wrap_content',
+        'android:orientation': 'vertical' // React Native default
+      };
+
+      if (name === 'Text') {
+        tag = 'TextView';
+        attrs['android:layout_width'] = 'wrap_content';
+      } else if (name === 'Image') {
+        tag = 'ImageView';
+      } else if (name === 'TouchableOpacity' || name === 'TouchableWithoutFeedback') {
+        tag = 'LinearLayout';
       }
 
-      // Map special default JSON keys or fallbacks if present in customizations
-      let configFallback = `config?.opt${ktType}("${v}") ?: customs?.opt${ktType}("${v}") ?: ${ktDefault}`;
-      lines.push(`val ${v} = dynamicState.opt${ktType}("${v}", ${configFallback})`);
-      declaredVariables.add(v);
-      needsDynamicState = true;
+      let isDynamic = false;
+      let dynamicText = '';
+      let onPressAction = '';
+
+      node.openingElement.attributes.forEach(attr => {
+        if (attr.type === 'JSXAttribute') {
+          if (attr.name.name === 'style') {
+            const resolved = resolveStyle(attr.value.expression);
+            
+            // Map React Native Flexbox to Android LinearLayout
+            if (resolved.flexDirection === 'row') attrs['android:orientation'] = 'horizontal';
+            if (resolved.flexDirection === 'column') attrs['android:orientation'] = 'vertical';
+            
+            if (resolved.flex) {
+              attrs['android:layout_weight'] = resolved.flex;
+              attrs['android:layout_width'] = resolved.flexDirection === 'row' ? '0dp' : 'match_parent';
+              attrs['android:layout_height'] = resolved.flexDirection === 'column' ? '0dp' : 'match_parent';
+            }
+
+            if (resolved.justifyContent) {
+              if (resolved.justifyContent === 'center') attrs['android:gravity'] = 'center';
+              if (resolved.justifyContent === 'flex-end') attrs['android:gravity'] = 'end';
+              if (resolved.justifyContent === 'space-between') attrs['android:gravity'] = 'center_vertical'; // Approximation
+            }
+            if (resolved.alignItems) {
+              if (resolved.alignItems === 'center') attrs['android:gravity'] = (attrs['android:gravity'] ? attrs['android:gravity'] + '|' : '') + 'center';
+            }
+
+            if (resolved.backgroundColor) {
+              const hex = getAndroidColor(resolved.backgroundColor);
+              if (hex) attrs['android:background'] = hex;
+            }
+            if (resolved.color && tag === 'TextView') {
+              const hex = getAndroidColor(resolved.color);
+              if (hex) attrs['android:textColor'] = hex;
+            }
+            if (resolved.fontSize && tag === 'TextView') {
+              attrs['android:textSize'] = `${resolved.fontSize}sp`;
+            }
+            if (resolved.fontWeight && tag === 'TextView') {
+              if (resolved.fontWeight === 'bold' || resolved.fontWeight > '500') attrs['android:textStyle'] = 'bold';
+            }
+            if (resolved.marginTop) attrs['android:layout_marginTop'] = `${resolved.marginTop}dp`;
+            if (resolved.marginLeft) attrs['android:layout_marginLeft'] = `${resolved.marginLeft}dp`;
+            if (resolved.padding) attrs['android:padding'] = `${resolved.padding}dp`;
+          } else if (attr.name.name === 'onPress') {
+            if (attr.value.type === 'JSXExpressionContainer' && attr.value.expression.type === 'Identifier') {
+              onPressAction = attr.value.expression.name;
+              isDynamic = true;
+            }
+          }
+        }
+      });
+
+      // Special Text children extraction
+      let children = [];
+      if (tag === 'TextView') {
+        node.children.forEach(c => {
+          if (c.type === 'JSXText') {
+            dynamicText += c.value.replace(/\\s+/g, ' ').trim();
+          } else if (c.type === 'JSXExpressionContainer') {
+            dynamicText += jsExprToString(c.expression);
+            isDynamic = true;
+          }
+        });
+        if (dynamicText) {
+          if (!isDynamic) {
+             attrs['android:text'] = `"${dynamicText}"`;
+          }
+        }
+      } else {
+        node.children.forEach(c => {
+          const processed = processJsxNode(c);
+          if (processed) children.push(processed);
+        });
+      }
+
+      if (isDynamic) {
+        attrs['android:id'] = `@+id/dynamic_node_${idCounter++}`;
+      }
+
+      return { tag, attrs, children, isDynamic, dynamicText, onPressAction };
+    }
+    return null;
+  }
+
+  // Find the return statement of the component
+  let rootJsx = null;
+  traverse(ast, {
+    ReturnStatement(path) {
+      if (!rootJsx && path.node.argument && path.node.argument.type === 'JSXElement') {
+        rootJsx = path.node.argument;
+      }
     }
   });
 
-  // Process Props
-  const propMappings = {
-    swTime: { name: 'stopwatchTime', type: 'Long', default: '0L' },
-    swActive: { name: 'stopwatchRunning', type: 'Boolean', default: 'false' }
-  };
-  propVars.forEach(p => {
-    const mapping = propMappings[p];
-    if (mapping) {
-      if (!declaredVariables.has(mapping.name)) {
-        lines.push(`val ${mapping.name} = dynamicState.opt${mapping.type}("${mapping.name}", ${mapping.default})`);
-        declaredVariables.add(mapping.name);
-        needsDynamicState = true;
-      }
-      lines.push(`val ${p} = ${mapping.name}`);
-      declaredVariables.add(p);
-    }
-  });
-
-  // Process Capabilities dynamically
-  if (hasCapability.battery) {
-    if (!declaredVariables.has('batteryLevel')) {
-      lines.push('val batteryManager = context.getSystemService(Context.BATTERY_SERVICE) as android.os.BatteryManager');
-      lines.push('val batteryLevel = batteryManager.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY)');
-      lines.push('val phoneBattery = batteryLevel');
-      lines.push('val isCharging = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) batteryManager.isCharging else false');
-      kotlinImports.add('android.content.Context');
-      declaredVariables.add('batteryLevel');
-      declaredVariables.add('phoneBattery');
-      declaredVariables.add('isCharging');
-    }
-  }
-
-  if (hasCapability.cpu) {
-    if (!declaredVariables.has('cpuUsage')) {
-      lines.push('val cpuUsage = (15..35).random()');
-      lines.push('val ramUsage = (45..65).random()');
-      lines.push('val value = cpuUsage.toDouble()');
-      declaredVariables.add('cpuUsage');
-      declaredVariables.add('ramUsage');
-      declaredVariables.add('value');
-    }
-  }
-
-  if (hasCapability.music) {
-    if (!declaredVariables.has('currentTrackIndex')) {
-      lines.push('val currentTrackIndex = dynamicState.optInt("currentTrackIndex", 0)');
-      declaredVariables.add('currentTrackIndex');
-      needsDynamicState = true;
-    }
-    if (!declaredVariables.has('trackName')) {
-      lines.push('val tracks = arrayOf("Nothing Beat", "Antigravity Chill", "Glyph Ambient")');
-      lines.push('val trackName = tracks.getOrElse(currentTrackIndex % tracks.size) { "Nothing Beat" }');
-      declaredVariables.add('trackName');
-    }
-    if (!declaredVariables.has('elapsed')) {
-      lines.push('val elapsed = dynamicState.optLong("musicElapsed", 38L)');
-      declaredVariables.add('elapsed');
-      needsDynamicState = true;
-    }
-    if (!declaredVariables.has('musicPlaying')) {
-      lines.push('val musicPlaying = dynamicState.optBoolean("musicPlaying", false)');
-      lines.push('val systemVolume = dynamicState.optInt("systemVolume", 50)');
-      declaredVariables.add('musicPlaying');
-      needsDynamicState = true;
-    }
-  }
-
-  if (hasCapability.stopwatch) {
-    if (!declaredVariables.has('stopwatchRunning')) {
-      lines.push('val stopwatchRunning = dynamicState.optBoolean("stopwatchRunning", false)');
-      declaredVariables.add('stopwatchRunning');
-      needsDynamicState = true;
-    }
-    if (!declaredVariables.has('stopwatchTime')) {
-      lines.push('val stopwatchTime = dynamicState.optLong("stopwatchTime", 0L)');
-      declaredVariables.add('stopwatchTime');
-      needsDynamicState = true;
-    }
-    if (!declaredVariables.has('swActive')) {
-      lines.push('val swActive = stopwatchRunning');
-      declaredVariables.add('swActive');
-    }
-    if (!declaredVariables.has('swTime')) {
-      lines.push('val swTime = stopwatchTime');
-      declaredVariables.add('swTime');
-    }
-  }
-
-  // Text color / Accent color declarations
-  if (tsxContent.includes('textColor') || hasCapability.clock || hasCapability.stopwatch) {
-    if (!declaredVariables.has('textColor')) {
-      lines.push('val textColor = parseColorOr(customs?.optString("textColor"), themeText(theme))');
-      declaredVariables.add('textColor');
-    }
-  }
-  if (tsxContent.includes('accentColor') || tsxContent.includes('progress') || tsxContent.includes('Fill') || tsxContent.includes('Track')) {
-    if (!declaredVariables.has('accentColor')) {
-      lines.push('val accentColor = parseColorOr(customs?.optString("accentColor"), themeAccent(theme))');
-      declaredVariables.add('accentColor');
-    }
-  }
-
-  // Prepend dynamicState JSON fetching if required
-  if (needsDynamicState) {
-    lines.splice(1, 0, 'val dynamicState = NosWidgetPreferences.getDynamicStateJson(context)');
-    kotlinImports.add('com.nothing.nosgallery.widget.NosWidgetPreferences');
-  }
-
-  // Render Clocks
-  if (tsxContent.includes('AnalogClock')) {
-    lines.push('views.setViewVisibility(R.id.nos_widget_clock_value, View.VISIBLE)');
-    lines.push('views.setViewVisibility(R.id.nos_widget_value, View.GONE)');
-    lines.push('views.setCharSequence(R.id.nos_widget_clock_value, "setFormat12Hour", "h:mm:ss a")');
-    lines.push('views.setCharSequence(R.id.nos_widget_clock_value, "setFormat24Hour", "HH:mm:ss")');
-    if (declaredVariables.has('textColor')) {
-      lines.push('views.setTextColor(R.id.nos_widget_clock_value, textColor)');
-    }
-  } else if (tsxContent.includes('FlipClock') || tsxContent.includes('DigitalClock') || tsxContent.includes('radialClockContainer')) {
-    lines.push('views.setViewVisibility(R.id.nos_widget_clock_value, View.VISIBLE)');
-    lines.push('views.setViewVisibility(R.id.nos_widget_value, View.GONE)');
-    lines.push('views.setCharSequence(R.id.nos_widget_clock_value, "setFormat12Hour", "h:mm a")');
-    lines.push('views.setCharSequence(R.id.nos_widget_clock_value, "setFormat24Hour", "HH:mm")');
-    if (declaredVariables.has('textColor')) {
-      lines.push('views.setTextColor(R.id.nos_widget_clock_value, textColor)');
-    }
-  }
-
-  // Render Stopwatch
-  if (hasCapability.stopwatch) {
-    lines.push(`if (stopwatchRunning) {
-    views.setViewVisibility(R.id.nos_widget_chronometer, View.VISIBLE)
-    views.setViewVisibility(R.id.nos_widget_value, View.GONE)
-    val baseTime = android.os.SystemClock.elapsedRealtime() - (stopwatchTime * 100)
-    views.setChronometer(R.id.nos_widget_chronometer, baseTime, null, true)
-    views.setTextColor(R.id.nos_widget_chronometer, textColor)
-} else {
-    views.setViewVisibility(R.id.nos_widget_value, View.VISIBLE)
-    views.setViewVisibility(R.id.nos_widget_chronometer, View.GONE)
-    val mins = stopwatchTime / 600
-    val secs = (stopwatchTime % 600) / 10
-    val deci = stopwatchTime % 10
-    val formatted = String.format("%02d:%02d.%d", mins, secs, deci)
-    views.setTextViewText(R.id.nos_widget_value, formatted)
-}`);
+  if (rootJsx) {
+    xmlRoot = processJsxNode(rootJsx);
   } else {
-    // General Dynamic Text Node extraction and rendering
-    const textNodes = parseTextNodes(tsxContent);
-    const valueNode = textNodes.find(n => /value|pct|percent|readout|timeText|cupsText|batteryPct|cpuPercentage|trackName/i.test(n.styleName)) ||
-                      textNodes.find(n => /waterIntake|phoneBattery|cpuUsage|trackName/i.test(n.content));
-    const subValueNode = textNodes.find(n => /subValue|subtext|charging|status|footer|artist|cpuSubtext/i.test(n.styleName)) ||
-                         textNodes.find(n => /waterGoal|isCharging|ramUsage|musicPlaying|torchEnabled/i.test(n.content));
-
-    if (valueNode) {
-      lines.push(`views.setTextViewText(R.id.nos_widget_value, ${translateJsExpression(valueNode.content)})`);
-    } else if (declaredVariables.has('waterIntake')) {
-      lines.push('views.setTextViewText(R.id.nos_widget_value, "${waterIntake} ML")');
-    } else if (declaredVariables.has('phoneBattery')) {
-      lines.push('views.setTextViewText(R.id.nos_widget_value, "${batteryLevel}%")');
-    } else if (declaredVariables.has('cpuUsage')) {
-      lines.push('views.setTextViewText(R.id.nos_widget_value, "CPU: ${cpuUsage}%")');
-    } else if (declaredVariables.has('torchEnabled')) {
-      lines.push('views.setTextViewText(R.id.nos_widget_value, if (torchEnabled) "ON" else "OFF")');
-    } else if (declaredVariables.has('trackName')) {
-      lines.push('views.setTextViewText(R.id.nos_widget_value, trackName)');
-    }
-
-    if (subValueNode) {
-      lines.push(`views.setTextViewText(R.id.nos_widget_sub_value, ${translateJsExpression(subValueNode.content)})`);
-    } else if (declaredVariables.has('waterGoal')) {
-      lines.push('views.setTextViewText(R.id.nos_widget_sub_value, "HYDRATION • GOAL ${waterGoal} ML")');
-    } else if (declaredVariables.has('isCharging')) {
-      lines.push('views.setTextViewText(R.id.nos_widget_sub_value, if (isCharging) "CHARGING • PLUGGED IN" else "DISCHARGING • ON BATTERY")');
-    } else if (declaredVariables.has('ramUsage')) {
-      lines.push('views.setTextViewText(R.id.nos_widget_sub_value, "RAM ${ramUsage}% • SYSTEM COOL")');
-    } else if (declaredVariables.has('torchEnabled')) {
-      lines.push('views.setTextViewText(R.id.nos_widget_sub_value, "SYSTEM FLASHLIGHT")');
-    } else if (declaredVariables.has('musicPlaying')) {
-      lines.push('views.setTextViewText(R.id.nos_widget_sub_value, if (musicPlaying) "PLAYING • VOLUME \${systemVolume}%" else "PAUSED")');
-    }
+    // fallback
+    xmlRoot = { tag: 'LinearLayout', attrs: { 'android:layout_width': 'match_parent', 'android:layout_height': 'match_parent' }, children: [] };
   }
 
-  // Render Progress Indicator dynamically
-  const hasProgress = /fluidFill|batteryFill|sliderFill|ProgressBar|fillPct|progressPct|barHeights/i.test(tsxContent);
-  if (hasProgress) {
-    lines.push('views.setViewVisibility(R.id.nos_widget_progress, View.VISIBLE)');
-    if (declaredVariables.has('waterIntake')) {
-      lines.push('views.setProgressBar(R.id.nos_widget_progress, waterGoal, waterIntake, false)');
-    } else if (declaredVariables.has('phoneBattery')) {
-      lines.push('views.setProgressBar(R.id.nos_widget_progress, 100, batteryLevel, false)');
-    } else if (declaredVariables.has('cpuUsage')) {
-      lines.push('views.setProgressBar(R.id.nos_widget_progress, 100, cpuUsage, false)');
-    } else if (declaredVariables.has('elapsed')) {
-      lines.push('views.setProgressBar(R.id.nos_widget_progress, 100, ((elapsed * 100) / 180).toInt(), false)');
-    } else {
-      lines.push('views.setProgressBar(R.id.nos_widget_progress, 100, 50, false)');
-    }
-
-    if (declaredVariables.has('accentColor')) {
-      lines.push(`if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-    views.setColorStateList(
-        R.id.nos_widget_progress,
-        "setProgressTintList",
-        android.content.res.ColorStateList.valueOf(accentColor)
-    )
-}`);
-    }
-  }
-
-  // Render Buttons / Click handlers dynamically
-  const touchableRegex = /<TouchableOpacity[^>]*onPress=\{([a-zA-Z0-9_]+)\}[^>]*>([\s\S]*?)<\/TouchableOpacity>/g;
-  const rawButtons = [];
-  let btnMatch;
-  while ((btnMatch = touchableRegex.exec(tsxContent)) !== null) {
-    const handler = btnMatch[1];
-    const inner = btnMatch[2];
-    rawButtons.push({ handler, inner });
-  }
-
-  // Get actions from widgetConfig
-  const actions = [];
-  if (widgetConfig.clickHandlers) {
-    actions.push(...Object.keys(widgetConfig.clickHandlers));
-  }
-  if (widgetConfig.customizations) {
-    if (widgetConfig.customizations.btnLeftAction) actions.push(widgetConfig.customizations.btnLeftAction);
-    if (widgetConfig.customizations.btnRightAction) actions.push(widgetConfig.customizations.btnRightAction);
-  }
-  const uniqueActions = Array.from(new Set(actions)).filter(a => a && a !== 'none');
-
-  if (rawButtons.length > 0 && uniqueActions.length > 0) {
-    const leftAction = widgetConfig.customizations?.btnLeftAction || uniqueActions[0];
-    const rightAction = widgetConfig.customizations?.btnRightAction || (uniqueActions.length >= 2 ? uniqueActions[1] : null);
-
-    // Match TSX touchable to Left action
-    const leftBtn = rawButtons.find(btn => getActionFromHandler(btn.handler, uniqueActions) === leftAction) || rawButtons[0];
-    const leftTextNode = leftBtn.inner.match(/<Text[^>]*>([\s\S]*?)<\/Text>/);
-    let leftLabel = leftTextNode ? translateJsExpression(leftTextNode[1]) : `"${widgetConfig.customizations?.btnLeftText || 'ACTION'}"`;
+  function generateXmlString(node, indent = '') {
+    if (!node) return '';
+    let attrsStr = Object.entries(node.attrs).map(([k, v]) => `\n${indent}    ${k}="${String(v).replace(/"/g, '')}"`).join('');
     
-    lines.push('views.setViewVisibility(R.id.nos_widget_buttons_row, View.VISIBLE)');
-    lines.push('views.setViewVisibility(R.id.nos_widget_btn_left, View.VISIBLE)');
-    lines.push(`views.setTextViewText(R.id.nos_widget_btn_left, ${leftLabel})`);
-    lines.push(`views.setOnClickPendingIntent(R.id.nos_widget_btn_left, getClickPendingIntent(context, appWidgetId, "${leftAction}"))`);
+    if (node.children.length === 0) {
+      return `${indent}<${node.tag}${attrsStr} />`;
+    }
+    
+    const childrenStr = node.children.map(c => generateXmlString(c, indent + '    ')).join('\n');
+    return `${indent}<${node.tag}${attrsStr}>\n${childrenStr}\n${indent}</${node.tag}>`;
+  }
 
-    // Match TSX touchable to Right action
-    if (rightAction) {
-      const rightBtn = rawButtons.find(btn => getActionFromHandler(btn.handler, uniqueActions) === rightAction) || 
-                       rawButtons.find(btn => btn !== leftBtn) || 
-                       rawButtons[rawButtons.length - 1];
-                       
-      if (rightBtn && rightBtn !== leftBtn) {
-        const rightTextNode = rightBtn.inner.match(/<Text[^>]*>([\s\S]*?)<\/Text>/);
-        let rightLabel = rightTextNode ? translateJsExpression(rightTextNode[1]) : `"${widgetConfig.customizations?.btnRightText || 'RESET'}"`;
+  // Add the root xmlns
+  xmlRoot.attrs['xmlns:android'] = 'http://schemas.android.com/apk/res/android';
+  const xmlContent = `<?xml version="1.0" encoding="utf-8"?>\n` + generateXmlString(xmlRoot);
 
-        lines.push('views.setViewVisibility(R.id.nos_widget_btn_right, View.VISIBLE)');
-        lines.push(`views.setTextViewText(R.id.nos_widget_btn_right, ${rightLabel})`);
-        lines.push(`views.setOnClickPendingIntent(R.id.nos_widget_btn_right, getClickPendingIntent(context, appWidgetId, "${rightAction}"))`);
-        lines.push('views.setViewVisibility(R.id.nos_widget_btn_divider, View.VISIBLE)');
+  // Kotlin Code Generation
+  kotlinLines.push('super.populateViews(context, views, config, customs, theme, appWidgetId)');
+  kotlinLines.push('val dynamicState = NosWidgetPreferences.getDynamicStateJson(context)');
+  kotlinImports.add('com.nothing.nosgallery.widget.NosWidgetPreferences');
+
+  // Emit basic data types for any Store Variables found
+  storeVars.forEach(v => {
+    let ktType = 'String'; let ktDefault = '""';
+    if (v.toLowerCase().includes('time') || v.toLowerCase().includes('elapsed')) { ktType = 'Long'; ktDefault = '0L'; }
+    else if (v.toLowerCase().includes('running') || v.toLowerCase().includes('is') || v.toLowerCase().includes('active')) { ktType = 'Boolean'; ktDefault = 'false'; }
+    else if (v.toLowerCase().includes('count') || v.toLowerCase().includes('index') || v.toLowerCase().includes('level') || v.toLowerCase().includes('usage') || v.toLowerCase().includes('goal') || v.toLowerCase().includes('intake')) { ktType = 'Int'; ktDefault = '0'; }
+    
+    let configFallback = `config?.opt${ktType}("${v}") ?: customs?.opt${ktType}("${v}") ?: ${ktDefault}`;
+    kotlinLines.push(`val ${v} = dynamicState.opt${ktType}("${v}", ${configFallback})`);
+  });
+
+  // Track Kotlin node bindings
+  function bindDynamicNodes(node) {
+    if (node.isDynamic && node.attrs['android:id']) {
+      const idName = node.attrs['android:id'].replace('@+id/', '');
+      
+      if (node.dynamicText) {
+        // String replace to kotlin string template syntax
+        let ktText = node.dynamicText.replace(/\$\{/g, '$').replace(/\}/g, '');
+        // Hack for common js properties
+        ktText = ktText.replace(/\.toUpperCase\(\)/g, '.uppercase()');
+        ktText = ktText.replace(/Math\.round\(([^)]+)\)/g, '$1'); // simplify
+
+        kotlinLines.push(`views.setTextViewText(R.id.${idName}, "${ktText}")`);
+      }
+      
+      if (node.onPressAction) {
+        // Auto convert JS camelCase handler (e.g., handleMusicPlay) to snake_case action name
+        let actionName = node.onPressAction.replace(/^handle/, '');
+        actionName = actionName.replace(/([A-Z])/g, '_$1').toLowerCase();
+        if (actionName.startsWith('_')) actionName = actionName.substring(1);
+        
+        kotlinLines.push(`views.setOnClickPendingIntent(R.id.${idName}, getClickPendingIntent(context, appWidgetId, "${actionName}"))`);
       }
     }
+    node.children.forEach(bindDynamicNodes);
   }
+  bindDynamicNodes(xmlRoot);
 
   return {
-    kotlinCode: lines.join('\n'),
-    kotlinImports: Array.from(kotlinImports)
+    kotlinCode: kotlinLines.join('\\n'),
+    kotlinImports: Array.from(kotlinImports),
+    xmlContent: xmlContent
   };
-}
-
-/**
- * Extracts and maps React text nodes styles and expressions
- */
-function parseTextNodes(tsxContent) {
-  const textNodes = [];
-  const textRegex = /<Text\b([^>]*)>([\s\S]*?)<\/Text>/g;
-  let match;
-  while ((match = textRegex.exec(tsxContent)) !== null) {
-    const attrs = match[1];
-    let content = match[2].trim();
-    
-    // Strip nested JSX tags from text node content
-    content = content.replace(/<[^>]+>/g, '').trim();
-    content = content.replace(/\s+/g, ' ').trim();
-    
-    const styleMatch = attrs.match(/style\s*=\s*\{([^}]+)\}/);
-    let styleName = '';
-    if (styleMatch) {
-      const styleExpr = styleMatch[1];
-      const parts = styleExpr.match(/styles\.([a-zA-Z0-9_]+)/g);
-      if (parts) {
-        styleName = parts[parts.length - 1].replace('styles.', '');
-      }
-    }
-    
-    textNodes.push({ styleName, content });
-  }
-  return textNodes;
-}
-
-/**
- * Translates React JSX/JS expression to Kotlin string template or conditional
- */
-function translateJsExpression(expr) {
-  expr = expr.trim();
-  
-  if (expr.startsWith('{') && expr.endsWith('}') && !expr.substring(1, expr.length - 1).includes('{')) {
-    const inner = expr.substring(1, expr.length - 1).trim();
-    return translateSingleJsExpression(inner);
-  }
-  
-  const result = expr.replace(/\{([^}]+)\}/g, (match, p1) => {
-    const translated = translateSingleJsExpression(p1.trim());
-    if (translated.startsWith('"') && translated.endsWith('"')) {
-      return translated.substring(1, translated.length - 1);
-    }
-    return `\${${translated}}`;
-  });
-  
-  return `"${result}"`;
-}
-
-function translateSingleJsExpression(inner) {
-  inner = inner.trim();
-  const ternaryMatch = inner.match(/^([^?]+)\?([^:]+):([\s\S]+)$/);
-  if (ternaryMatch) {
-    const cond = translateSingleJsExpression(ternaryMatch[1]);
-    const valTrue = translateSingleJsExpression(ternaryMatch[2]);
-    const valFalse = translateSingleJsExpression(ternaryMatch[3]);
-    return `if (${cond}) ${valTrue} else ${valFalse}`;
-  }
-
-  let clean = inner;
-  clean = clean.replace(/\bswActive\b/g, 'stopwatchRunning');
-  clean = clean.replace(/\bswTime\b/g, 'stopwatchTime');
-  clean = clean.replace(/\bphoneBattery\b/g, 'batteryLevel');
-  clean = clean.replace(/Math\.round\(value\)/g, 'cpuUsage');
-  clean = clean.replace(/\bvalue\b/g, 'cpuUsage');
-  clean = clean.replace(/track\.title\.toUpperCase\(\)/g, 'trackName.uppercase()');
-  clean = clean.replace(/\btrack\.title\b/g, 'trackName');
-  clean = clean.replace(/\btrack\.artist\b/g, '"London Studio"');
-  clean = clean.replace(/\.toUpperCase\(\)/g, '.uppercase()');
-  clean = clean.replace(/\.toLowerCase\(\)/g, '.lowercase()');
-  
-  if ((clean.startsWith("'") && clean.endsWith("'")) || (clean.startsWith('"') && clean.endsWith('"'))) {
-    return `"${clean.substring(1, clean.length - 1)}"`;
-  }
-
-  if (clean === 'true' || clean === 'false' || /^[0-9.]+$/.test(clean)) {
-    return clean;
-  }
-
-  return clean;
-}
-
-function convertHandlerToSnakeCase(handlerName) {
-  let name = handlerName.replace(/^handle/, '');
-  name = name.replace(/([A-Z])/g, '_$1').toLowerCase();
-  if (name.startsWith('_')) {
-    name = name.substring(1);
-  }
-  return name;
-}
-
-/**
- * Fuzzy matches handler function name to JSON action actionName
- */
-function getActionFromHandler(handlerName, uniqueActions) {
-  const snake = convertHandlerToSnakeCase(handlerName);
-  
-  // 1. Direct match
-  if (uniqueActions.includes(snake)) return snake;
-  
-  // 2. Fuzzy verb match
-  for (const action of uniqueActions) {
-    const act = action.toLowerCase();
-    if (snake.includes('reset') && act.includes('reset')) return action;
-    if ((snake.includes('play') || snake.includes('pause')) && act.includes('play')) return action;
-    if (snake.includes('skip') && act.includes('skip')) return action;
-    if (snake.includes('back') && act.includes('back')) return action;
-    if ((snake.includes('add') || snake.includes('log') || snake.includes('increment')) && act.includes('add')) return action;
-    if ((snake.includes('torch') || snake.includes('flash')) && act.includes('torch')) return action;
-  }
-  
-  // 3. Fallback: match by word intersection
-  const snakeWords = snake.split('_');
-  for (const action of uniqueActions) {
-    const act = action.toLowerCase();
-    if (snakeWords.some(w => w.length > 2 && act.includes(w))) {
-      return action;
-    }
-  }
-  
-  return uniqueActions[0];
 }
 
 module.exports = { parseTsxToKotlin };
