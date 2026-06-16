@@ -127,7 +127,8 @@ function withAndroidWidgets(config) {
         let customMethods = '';
         let extraImports = '';
         
-        const relPath = tsxMapping[w.id];
+        const isStandardClock = ['clock_digital', 'clock_dot', 'clock_analog', 'clock_flip'].includes(w.id);
+        const relPath = isStandardClock ? null : tsxMapping[w.id];
         if (relPath) {
           const tsxFilePath = path.join(projectRoot, relPath);
           if (fs.existsSync(tsxFilePath)) {
@@ -135,7 +136,17 @@ function withAndroidWidgets(config) {
             const { kotlinCode, kotlinImports } = parseTsxToKotlin(tsxContent, w);
             
             if (kotlinCode) {
-              extraImports = '\n' + kotlinImports.map(imp => `import ${imp}`).join('\n');
+              const defaultImports = [
+                'android.appwidget.AppWidgetManager',
+                'android.content.Context',
+                'android.widget.RemoteViews',
+                'org.json.JSONObject',
+                'expo.modules.expowidget.R'
+              ];
+              const filteredImports = kotlinImports.filter(imp => !defaultImports.includes(imp));
+              if (filteredImports.length > 0) {
+                extraImports = '\n' + filteredImports.map(imp => `import ${imp}`).join('\n');
+              }
               const indentedCode = kotlinCode.split('\n').map(line => `        ${line}`).join('\n');
               
               customMethods = `

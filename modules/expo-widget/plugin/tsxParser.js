@@ -458,10 +458,13 @@ function translateSingleJsExpression(inner) {
   clean = clean.replace(/\bswActive\b/g, 'stopwatchRunning');
   clean = clean.replace(/\bswTime\b/g, 'stopwatchTime');
   clean = clean.replace(/\bphoneBattery\b/g, 'batteryLevel');
-  clean = clean.replace(/\bMath\.round\(value\)\b/g, 'cpuUsage');
+  clean = clean.replace(/Math\.round\(value\)/g, 'cpuUsage');
   clean = clean.replace(/\bvalue\b/g, 'cpuUsage');
-  clean = clean.replace(/\btrack\.title(\.toUpperCase\(\))?\b/g, 'trackName');
+  clean = clean.replace(/track\.title\.toUpperCase\(\)/g, 'trackName.uppercase()');
+  clean = clean.replace(/\btrack\.title\b/g, 'trackName');
   clean = clean.replace(/\btrack\.artist\b/g, '"London Studio"');
+  clean = clean.replace(/\.toUpperCase\(\)/g, '.uppercase()');
+  clean = clean.replace(/\.toLowerCase\(\)/g, '.lowercase()');
   
   if ((clean.startsWith("'") && clean.endsWith("'")) || (clean.startsWith('"') && clean.endsWith('"'))) {
     return `"${clean.substring(1, clean.length - 1)}"`;
