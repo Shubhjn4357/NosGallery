@@ -379,7 +379,7 @@ function parseTsxToKotlin(tsxContent, widgetConfig) {
   bindDynamicNodes(xmlRoot);
 
   return {
-    kotlinCode: kotlinLines.join('\\n'),
+    kotlinCode: kotlinLines.join('\n'),
     kotlinImports: Array.from(kotlinImports),
     xmlContent: xmlContent
   };
