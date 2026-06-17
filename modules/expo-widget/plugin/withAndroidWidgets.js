@@ -15,37 +15,73 @@ function withAndroidWidgets(config) {
 
   // Dynamic mapping helper to find the corresponding TSX file for a widget
   function findTsxFilePath(w, projectRoot) {
-    const categoryDir = path.join(projectRoot, 'src', 'widgets', w.category);
-    if (!fs.existsSync(categoryDir)) return null;
-    
-    const files = fs.readdirSync(categoryDir).filter(f => f.endsWith('.tsx'));
-    
+    const overrides = {
+      'clock_dot': 'src/widgets/clock/DigitalClock.tsx',
+    };
+    if (overrides[w.id]) {
+      return overrides[w.id];
+    }
+
+    const widgetsDir = path.join(projectRoot, 'src', 'widgets');
+    if (!fs.existsSync(widgetsDir)) return null;
+
+    // Find all subdirectories
+    const categories = fs.readdirSync(widgetsDir).filter(f => fs.statSync(path.join(widgetsDir, f)).isDirectory());
+
     const coreName = w.className.replace(/^NOS/, '').replace(/Widget$/, '').toLowerCase();
     const idParts = w.id.split('_').filter(p => p !== w.category);
-    
-    for (const file of files) {
-      const fileName = file.replace('.tsx', '').toLowerCase();
-      // Match by core class name or reversed parts (e.g., ClockDigital vs DigitalClock)
-      if (coreName.includes(fileName) || fileName.includes(coreName)) return path.join('src', 'widgets', w.category, file);
-    }
-    
-    // Match by ID fragments
-    for (const file of files) {
-      const fileName = file.toLowerCase();
-      if (idParts.length > 0 && idParts.every(p => fileName.includes(p))) {
-        return path.join('src', 'widgets', w.category, file);
+
+    const sortedCategories = [w.category, ...categories.filter(c => c !== w.category)];
+
+    // 1. Match by class name across all folders
+    for (const cat of sortedCategories) {
+      const catDir = path.join(widgetsDir, cat);
+      if (!fs.existsSync(catDir)) continue;
+
+      const files = fs.readdirSync(catDir).filter(f => f.endsWith('.tsx'));
+      for (const file of files) {
+        const fileName = file.replace('.tsx', '').toLowerCase();
+        if (coreName.includes(fileName) || fileName.includes(coreName)) {
+          return path.join('src', 'widgets', cat, file);
+        }
       }
     }
-    
-    // Fallback: match any ID fragment
-    for (const file of files) {
-      const fileName = file.toLowerCase();
-      if (idParts.length > 0 && idParts.some(p => fileName.includes(p))) {
-        return path.join('src', 'widgets', w.category, file);
+
+    // 2. Match by ID fragments across all folders
+    for (const cat of sortedCategories) {
+      const catDir = path.join(widgetsDir, cat);
+      if (!fs.existsSync(catDir)) continue;
+
+      const files = fs.readdirSync(catDir).filter(f => f.endsWith('.tsx'));
+      for (const file of files) {
+        const fileName = file.toLowerCase();
+        if (idParts.length > 0 && idParts.every(p => fileName.includes(p))) {
+          return path.join('src', 'widgets', cat, file);
+        }
       }
     }
-    
-    if (files.length > 0) return path.join('src', 'widgets', w.category, files[0]);
+
+    // 3. Fallback: match any ID fragment across all folders
+    for (const cat of sortedCategories) {
+      const catDir = path.join(widgetsDir, cat);
+      if (!fs.existsSync(catDir)) continue;
+
+      const files = fs.readdirSync(catDir).filter(f => f.endsWith('.tsx'));
+      for (const file of files) {
+        const fileName = file.toLowerCase();
+        if (idParts.length > 0 && idParts.some(p => fileName.includes(p))) {
+          return path.join('src', 'widgets', cat, file);
+        }
+      }
+    }
+
+    // 4. Ultimate fallback: first file in w.category
+    const firstCatDir = path.join(widgetsDir, w.category);
+    if (fs.existsSync(firstCatDir)) {
+      const files = fs.readdirSync(firstCatDir).filter(f => f.endsWith('.tsx'));
+      if (files.length > 0) return path.join('src', 'widgets', w.category, files[0]);
+    }
+
     return null;
   }
 
@@ -173,7 +209,8 @@ function withAndroidWidgets(config) {
                 'android.content.Context',
                 'android.widget.RemoteViews',
                 'org.json.JSONObject',
-                'expo.modules.expowidget.R'
+                'org.json.JSONArray',
+                'com.nothing.nosgallery.R'
               ];
               const filteredImports = kotlinImports.filter(imp => !defaultImports.includes(imp));
               if (filteredImports.length > 0) {
@@ -204,7 +241,8 @@ import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.widget.RemoteViews
 import org.json.JSONObject
-import expo.modules.expowidget.R${extraImports}
+import org.json.JSONArray
+import com.nothing.nosgallery.R${extraImports}
 
 class ${w.className} : NosBaseWidgetProvider() {
     override val defaultTemplateId = "${w.id}"${customMethods}

@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { ExpoWidget } from '../../modules/expo-widget/src';
 import { useWidgetStore } from '../store/widgetStore';
+import { themes, ThemeId } from '../themes/themes';
 
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 const isAndroid = Platform.OS === 'android';
@@ -13,7 +14,7 @@ let unsubscribe: (() => void) | null = null;
 export function startNativeWidgetSync() {
   if (!isAndroid || isExpoGo) return;
 
-  const syncToNative = async (state: any) => {
+  const syncToNative = async (state: ReturnType<typeof useWidgetStore.getState>) => {
     try {
       const dynamicState = {
         githubUsername: state.githubUsername,
@@ -29,11 +30,13 @@ export function startNativeWidgetSync() {
         musicPlaying: state.musicPlaying,
         currentTrackIndex: state.currentTrackIndex,
         systemVolume: state.systemVolume,
+        googleUser: state.googleUser,
       };
 
+      const activeThemeConfig = themes[state.activeTheme] || themes.nos;
       await ExpoWidget.saveWidgetsStore(
         JSON.stringify(state.widgets),
-        state.activeTheme,
+        JSON.stringify(activeThemeConfig),
         JSON.stringify(dynamicState)
       );
     } catch (err) {
