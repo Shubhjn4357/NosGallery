@@ -220,6 +220,7 @@ function withAndroidWidgets(config) {
               
               customMethods = `
 
+    @Suppress("UNUSED_VARIABLE")
     override fun populateViews(
         context: Context,
         views: RemoteViews,

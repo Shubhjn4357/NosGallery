@@ -147,37 +147,120 @@ function parseTsxToKotlin(tsxContent, widgetConfig) {
       }
       case 'BinaryExpression':
         if (node.operator === '+') {
-          return `${translateToKotlinExpr(node.left)} + ${translateToKotlinExpr(node.right)}`;
+          const leftExpr = translateToKotlinExpr(node.left);
+          const rightExpr = translateToKotlinExpr(node.right);
+          // If right side is a string literal (e.g. + "33"), ensure left is stringified
+          // to handle Any? types like map lookups
+          if (node.right.type === 'StringLiteral') {
+            return `${leftExpr}.toString() + ${rightExpr}`;
+          }
+          return `${leftExpr} + ${rightExpr}`;
         }
         if (node.operator === '/') {
           return `(${translateToKotlinExpr(node.left)}).toDouble() / (${translateToKotlinExpr(node.right)})`;
         }
-        return `${translateToKotlinExpr(node.left)} ${node.operator} ${translateToKotlinExpr(node.right)}`;
-      case 'LogicalExpression':
-        if (node.operator === '||') {
-          const leftExpr = translateToKotlinExpr(node.left);
-          const rightExpr = translateToKotlinExpr(node.right);
-          const isLeftBoolean = node.left.type === 'BooleanLiteral' ||
-                                (node.left.type === 'Identifier' && (
-                                  node.left.name.toLowerCase().includes('running') || 
-                                  node.left.name.toLowerCase().includes('is') || 
-                                  node.left.name.toLowerCase().includes('active') || 
-                                  node.left.name.toLowerCase().includes('enabled') || 
-                                  node.left.name.toLowerCase().includes('playing') || 
-                                  node.left.name.toLowerCase().includes('connected') || 
-                                  node.left.name.toLowerCase().includes('lighton') || 
-                                  node.left.name.toLowerCase().includes('editing')
-                                ));
-          if (!isLeftBoolean) {
-            return `if (${leftExpr}.isNotEmpty()) ${leftExpr} else ${rightExpr}`;
+        // Map JS strict equality to Kotlin value equality
+        { const op = node.operator === '===' ? '==' : node.operator === '!==' ? '!=' : node.operator;
+          return `${translateToKotlinExpr(node.left)} ${op} ${translateToKotlinExpr(node.right)}`; }
+      case 'LogicalExpression': {
+        const leftExpr = translateToKotlinExpr(node.left);
+        const rightExpr = translateToKotlinExpr(node.right);
+        
+        // Helper to detect if a node produces a boolean result
+        function isBooleanNode(n) {
+          if (!n) return false;
+          if (n.type === 'BooleanLiteral') return true;
+          if (n.type === 'UnaryExpression' && n.operator === '!') return true;
+          if (n.type === 'BinaryExpression' && ['===', '!==', '==', '!=', '<', '>', '<=', '>='].includes(n.operator)) return true;
+          if (n.type === 'LogicalExpression' && (n.operator === '&&' || n.operator === '||')) return true;
+          // .contains(), .includes() return Boolean
+          if ((n.type === 'CallExpression' || n.type === 'OptionalCallExpression') &&
+              (n.callee.type === 'MemberExpression' || n.callee.type === 'OptionalMemberExpression') &&
+              ['contains', 'includes', 'startsWith', 'endsWith', 'matches'].includes(n.callee.property && n.callee.property.name)) {
+            return true;
           }
+          // Identifier names that suggest boolean type
+          if (n.type === 'Identifier') {
+            const lname = n.name.toLowerCase();
+            if (lname.startsWith('is') || lname.startsWith('has') || lname.startsWith('can') ||
+                lname.startsWith('should') || lname.includes('running') || lname.includes('active') ||
+                lname.includes('enabled') || lname.includes('playing') || lname.includes('connected') ||
+                lname.includes('lighton') || lname.includes('editing') || lname.includes('visible') ||
+                lname.includes('show') || lname.includes('done') || lname.includes('loading')) {
+              return true;
+            }
+          }
+          return false;
         }
-        return `${translateToKotlinExpr(node.left)} ${node.operator} ${translateToKotlinExpr(node.right)}`;
+        
+        if (node.operator === '&&') {
+          // && is almost always boolean in JSX (conditional rendering or boolean logic)
+          return `${leftExpr} && ${rightExpr}`;
+        }
+        
+        if (node.operator === '||') {
+          // If either side looks like boolean, emit boolean ||
+          if (isBooleanNode(node.left) || isBooleanNode(node.right)) {
+            return `${leftExpr} || ${rightExpr}`;
+          }
+          // If the left is a computed map/array access or optional chain, use ?.toString() ?:
+          // for safe null-coalescing that preserves String type
+          const isNullableLeft = node.left.type === 'OptionalMemberExpression' ||
+                                 node.left.type === 'OptionalCallExpression' ||
+                                 (node.left.computed === true) ||
+                                 (node.left.type === 'MemberExpression' && node.left.computed);
+          if (isNullableLeft) {
+            return `(${leftExpr}?.toString() ?: ${rightExpr})`;
+          }
+          // Otherwise it's a nullish/value coalescing pattern (e.g. value || "default")
+          // Use Kotlin's ?: operator  
+          return `(${leftExpr}).takeIf { it.toString().isNotEmpty() } ?: ${rightExpr}`;
+        }
+        
+        return `${leftExpr} ${node.operator} ${rightExpr}`;
+      }
+      case 'UnaryExpression':
+        if (node.operator === '!') {
+          return `!${translateToKotlinExpr(node.argument)}`;
+        }
+        if (node.operator === '-') {
+          return `-${translateToKotlinExpr(node.argument)}`;
+        }
+        return translateToKotlinExpr(node.argument);
+      case 'NullLiteral':
+        return 'null';
+      case 'ArrayExpression': {
+        const elements = node.elements.filter(Boolean).map(translateToKotlinExpr);
+        if (elements.length === 0) return 'listOf<Any>()';
+        return `listOf(${elements.join(', ')})`;
+      }
+      case 'ParenthesizedExpression':
+        return `(${translateToKotlinExpr(node.expression)})`;
       case 'ConditionalExpression':
         return `if (${translateToKotlinExpr(node.test)}) ${translateToKotlinExpr(node.consequent)} else ${translateToKotlinExpr(node.alternate)}`;
+      case 'ObjectExpression': {
+        const pairs = node.properties.map(p => {
+          if (p.type === 'ObjectProperty') {
+            const k = p.key.type === 'Identifier' ? `"${p.key.name}"` : translateToKotlinExpr(p.key);
+            const v = translateToKotlinExpr(p.value);
+            return `${k} to ${v}`;
+          }
+          return '';
+        }).filter(Boolean);
+        return `mapOf(${pairs.join(', ')})`;
+      }
+      case 'OptionalMemberExpression':
       case 'MemberExpression': {
         const obj = translateToKotlinExpr(node.object);
         if (obj === 'styles') return '""';
+        if (obj === 'textStyle' && node.property.name === 'color') return 'textColor';
+        if (obj === 'subtextStyle' && node.property.name === 'color') return 'subtextColor';
+        if (obj === 'themeConfig') {
+          if (node.property.name === 'textColor') return 'textColor';
+          if (node.property.name === 'subtextColor') return 'subtextColor';
+          if (node.property.name === 'backgroundColor') return 'themeBackground(theme)';
+          if (node.property.name === 'accentColor') return 'accentColor';
+        }
         
         const prop = node.property.name;
         if (obj === 'customizations') {
@@ -196,12 +279,12 @@ function parseTsxToKotlin(tsxContent, widgetConfig) {
         }
         
         // If it's a known JSONObject, use optString/optDouble/optInt
-        const jsonObjects = ['ticker', 'moon', 'track', 'details', 'item', 'googleUser'];
+        const jsonObjects = ['ticker', 'moon', 'track', 'details', 'item', 'googleUser', 'weather'];
         if (jsonObjects.includes(obj)) {
-          if (prop === 'price' || prop === 'change' || prop === 'age') {
+          if (prop === 'price' || prop === 'change' || prop === 'age' || prop === 'temp' || prop === 'windSpeed' || prop === 'uvIndex') {
             return `${obj}.optDouble("${prop}", 0.0)`;
           }
-          if (prop === 'volume' || prop === 'duration' || prop === 'position' || prop === 'waterIntake' || prop === 'waterGoal' || prop === 'steps' || prop === 'kcal' || prop === 'id') {
+          if (prop === 'volume' || prop === 'duration' || prop === 'position' || prop === 'waterIntake' || prop === 'waterGoal' || prop === 'steps' || prop === 'kcal' || prop === 'id' || prop === 'aqi' || prop === 'humidity') {
             return `${obj}.optInt("${prop}", 0)`;
           }
           return `${obj}.optString("${prop}", "")`;
@@ -209,11 +292,17 @@ function parseTsxToKotlin(tsxContent, widgetConfig) {
         
         // Computed array/member indexing like array[index]
         if (node.computed) {
-          return `${obj}.getOrNull(${translateToKotlinExpr(node.property)}) ?: ""`;
+          const propExpr = translateToKotlinExpr(node.property);
+          // For local map variables, use direct get with ?: null-coalesce
+          if (obj === 'PHASE_COLORS' || obj.toLowerCase().includes('color') || obj.toLowerCase().includes('icon') || obj.toLowerCase().includes('map')) {
+            return `${obj}[${propExpr}]`;
+          }
+          return `${obj}.getOrNull((${propExpr}).toInt()) ?: ""`;
         }
         
         return `${obj}.${prop}`;
       }
+      case 'OptionalCallExpression':
       case 'CallExpression': {
         if (node.callee.name === 'parseFloat') {
           return `(${translateToKotlinExpr(node.arguments[0])}).toDouble()`;
@@ -225,11 +314,12 @@ function parseTsxToKotlin(tsxContent, widgetConfig) {
         // Handle Math calls
         if (node.callee.type === 'MemberExpression' && node.callee.object.name === 'Math') {
           const method = node.callee.property.name;
-          const args = node.arguments.map(translateToKotlinExpr).join(', ');
           if (method === 'floor') {
+            const args = node.arguments.map(translateToKotlinExpr).join(', ');
             return `java.lang.Math.floor(${args}.toDouble()).toInt()`;
           }
           if (method === 'round') {
+            const args = node.arguments.map(translateToKotlinExpr).join(', ');
             return `java.lang.Math.round(${args}.toDouble()).toInt()`;
           }
           if (method === 'min' || method === 'max') {
@@ -244,15 +334,29 @@ function parseTsxToKotlin(tsxContent, widgetConfig) {
                 return `(${arrayExpr}.minOrNull() ?: 0)`;
               }
             }
-            return `java.lang.Math.${method}(${args})`;
+            const doubleArgs = node.arguments.map(arg => `(${translateToKotlinExpr(arg)}).toDouble()`).join(', ');
+            return `java.lang.Math.${method}(${doubleArgs})`;
           }
+          const args = node.arguments.map(translateToKotlinExpr).join(', ');
           return `java.lang.Math.${method}(${args})`;
         }
         
         // Handle methods like toLocaleString
-        if (node.callee.type === 'MemberExpression') {
+        if (node.callee.type === 'MemberExpression' || node.callee.type === 'OptionalMemberExpression') {
           const method = node.callee.property.name;
           const obj = translateToKotlinExpr(node.callee.object);
+          if (method === 'interpolate') {
+            return '0.0';
+          }
+          if (method === 'includes') {
+            const arg = node.arguments[0] ? translateToKotlinExpr(node.arguments[0]) : '""';
+            return `${obj}.contains(${arg})`;
+          }
+          if (method === 'padStart' || method === 'padEnd') {
+            const len = translateToKotlinExpr(node.arguments[0]);
+            const padStr = node.arguments[1] ? translateToKotlinExpr(node.arguments[1]) : '" "';
+            return `${obj}.${method}(${len}, (${padStr})[0])`;
+          }
           if (method === 'toLocaleString') {
             return `String.format(java.util.Locale.US, "%,.2f", ${obj})`;
           }
@@ -300,15 +404,17 @@ function parseTsxToKotlin(tsxContent, widgetConfig) {
       if (path.node.id.type === 'Identifier' && path.node.init) {
         const name = path.node.id.name;
         const init = path.node.init;
+        if (init.type === 'ArrowFunctionExpression' || init.type === 'FunctionExpression') {
+          return;
+        }
         if (init.type === 'CallExpression') {
-          const calleeName = init.callee.name;
-          if (
-            calleeName === 'useState' ||
-            calleeName === 'useRef' ||
-            calleeName === 'useEffect' ||
-            calleeName === 'useWidgetStyle' ||
-            calleeName === 'useWidgetStore'
-          ) {
+          let calleeName = '';
+          if (init.callee.type === 'Identifier') {
+            calleeName = init.callee.name;
+          } else if (init.callee.type === 'MemberExpression' && init.callee.object.type === 'Identifier') {
+            calleeName = init.callee.object.name;
+          }
+          if (calleeName.startsWith('use') || calleeName === 'triggerHaptic') {
             return;
           }
         }
@@ -421,6 +527,46 @@ function parseTsxToKotlin(tsxContent, widgetConfig) {
     }
   }
 
+  function unwrapParenthesis(node) {
+    while (node && node.type === 'ParenthesizedExpression') {
+      node = node.expression;
+    }
+    return node;
+  }
+
+  function extractDynamicColors(styleNode) {
+    let colors = {};
+    if (!styleNode) return colors;
+
+    if (styleNode.type === 'ArrayExpression') {
+      styleNode.elements.forEach(el => {
+        Object.assign(colors, extractDynamicColors(el));
+      });
+    } else if (styleNode.type === 'Identifier') {
+      if (styleNode.name === 'textStyle') {
+        colors['color'] = 'textColor';
+      } else if (styleNode.name === 'subtextStyle') {
+        colors['color'] = 'subtextColor';
+      }
+    } else if (styleNode.type === 'ObjectExpression') {
+      styleNode.properties.forEach(p => {
+        if (p.key && p.key.name && p.value) {
+          const propName = p.key.name;
+          if (propName === 'color' || propName === 'backgroundColor') {
+            const val = p.value;
+            if (val.type !== 'StringLiteral' && val.type !== 'NumericLiteral') {
+              const ktExpr = translateToKotlinExpr(val);
+              if (ktExpr) {
+                colors[propName] = ktExpr;
+              }
+            }
+          }
+        }
+      });
+    }
+    return colors;
+  }
+
   function processJsxNode(node) {
     if (node.type === 'JSXText') {
       const text = node.value.replace(/\s+/g, ' ').trim();
@@ -429,22 +575,28 @@ function parseTsxToKotlin(tsxContent, widgetConfig) {
     }
     if (node.type === 'JSXExpressionContainer') {
       const expr = node.expression;
+      if (expr.type === 'JSXEmptyExpression') {
+        return null;
+      }
       if (expr.type === 'CallExpression' && expr.callee.property && expr.callee.property.name === 'map') {
         return null; // Ignore array map
       }
       // If it's a logical expression like interactive && <JSXElement>
       if (expr.type === 'LogicalExpression' && expr.operator === '&&') {
-        if (expr.right.type === 'JSXElement') {
-          return processJsxNode(expr.right);
+        const rightNode = unwrapParenthesis(expr.right);
+        if (rightNode.type === 'JSXElement') {
+          return processJsxNode(rightNode);
         }
       }
       // If it's a conditional expression like show ? <JSXElement> : null
       if (expr.type === 'ConditionalExpression') {
-        if (expr.consequent.type === 'JSXElement') {
-          return processJsxNode(expr.consequent);
+        const consequentNode = unwrapParenthesis(expr.consequent);
+        if (consequentNode.type === 'JSXElement') {
+          return processJsxNode(consequentNode);
         }
-        if (expr.alternate && expr.alternate.type === 'JSXElement') {
-          return processJsxNode(expr.alternate);
+        const alternateNode = unwrapParenthesis(expr.alternate);
+        if (alternateNode && alternateNode.type === 'JSXElement') {
+          return processJsxNode(alternateNode);
         }
       }
 
@@ -489,27 +641,86 @@ function parseTsxToKotlin(tsxContent, widgetConfig) {
 
       node.openingElement.attributes.forEach(attr => {
         if (attr.type === 'JSXAttribute') {
+          if (attr.value && attr.value.type === 'JSXExpressionContainer') {
+            collectIdentifiers(attr.value.expression);
+          }
           if (attr.name.name === 'style') {
             const resolved = resolveStyle(attr.value.expression);
             
+            // 1. Orientation
             if (resolved.flexDirection === 'row') attrs['android:orientation'] = 'horizontal';
             if (resolved.flexDirection === 'column') attrs['android:orientation'] = 'vertical';
             
-            if (resolved.flex) {
+            // 2. Sizing
+            const translateDimension = (val) => {
+              if (typeof val === 'number') return `${val}dp`;
+              const str = String(val).trim();
+              if (str.endsWith('%')) return 'match_parent';
+              return str;
+            };
+
+            if (resolved.width !== undefined) {
+              attrs['android:layout_width'] = translateDimension(resolved.width);
+            }
+            if (resolved.height !== undefined) {
+              attrs['android:layout_height'] = translateDimension(resolved.height);
+            }
+            
+            // 3. Flex Weight & Dimensions
+            const isRow = attrs['android:orientation'] === 'horizontal';
+            if (resolved.flex !== undefined) {
               attrs['android:layout_weight'] = resolved.flex;
-              attrs['android:layout_width'] = resolved.flexDirection === 'row' ? '0dp' : 'match_parent';
-              attrs['android:layout_height'] = resolved.flexDirection === 'column' ? '0dp' : 'match_parent';
+              // If weight is set, the main dimension should be 0dp for correct layout calculations
+              if (resolved.width === undefined) {
+                attrs['android:layout_width'] = isRow ? '0dp' : 'match_parent';
+              }
+              if (resolved.height === undefined) {
+                attrs['android:layout_height'] = isRow ? 'match_parent' : '0dp';
+              }
             }
 
+            // 4. Alignments (Gravity)
+            let gravityParts = [];
             if (resolved.justifyContent) {
-              if (resolved.justifyContent === 'center') attrs['android:gravity'] = 'center';
-              if (resolved.justifyContent === 'flex-end') attrs['android:gravity'] = 'end';
-              if (resolved.justifyContent === 'space-between') attrs['android:gravity'] = 'center_vertical';
+              if (resolved.justifyContent === 'center') {
+                gravityParts.push(isRow ? 'center_horizontal' : 'center_vertical');
+              } else if (resolved.justifyContent === 'flex-end') {
+                gravityParts.push(isRow ? 'right' : 'bottom');
+              } else if (resolved.justifyContent === 'flex-start') {
+                gravityParts.push(isRow ? 'left' : 'top');
+              } else if (resolved.justifyContent === 'space-between' || resolved.justifyContent === 'space-around') {
+                gravityParts.push(isRow ? 'center_horizontal' : 'center_vertical');
+              }
             }
             if (resolved.alignItems) {
-              if (resolved.alignItems === 'center') attrs['android:gravity'] = (attrs['android:gravity'] ? attrs['android:gravity'] + '|' : '') + 'center';
+              if (resolved.alignItems === 'center') {
+                gravityParts.push(isRow ? 'center_vertical' : 'center_horizontal');
+              } else if (resolved.alignItems === 'flex-end') {
+                gravityParts.push(isRow ? 'bottom' : 'right');
+              } else if (resolved.alignItems === 'flex-start') {
+                gravityParts.push(isRow ? 'top' : 'left');
+              }
+            }
+            if (gravityParts.length > 0) {
+              if (gravityParts.includes('center_horizontal') && gravityParts.includes('center_vertical')) {
+                attrs['android:gravity'] = 'center';
+              } else {
+                attrs['android:gravity'] = gravityParts.join('|');
+              }
             }
 
+            // 5. Layout Gravity (alignSelf)
+            if (resolved.alignSelf) {
+              if (resolved.alignSelf === 'center') {
+                attrs['android:layout_gravity'] = 'center';
+              } else if (resolved.alignSelf === 'flex-end') {
+                attrs['android:layout_gravity'] = 'end';
+              } else if (resolved.alignSelf === 'flex-start') {
+                attrs['android:layout_gravity'] = 'start';
+              }
+            }
+
+            // 6. Colors
             if (resolved.backgroundColor) {
               const hex = getAndroidColor(resolved.backgroundColor);
               if (hex) attrs['android:background'] = hex;
@@ -524,9 +735,35 @@ function parseTsxToKotlin(tsxContent, widgetConfig) {
             if (resolved.fontWeight && tag === 'TextView') {
               if (resolved.fontWeight === 'bold' || resolved.fontWeight > '500') attrs['android:textStyle'] = 'bold';
             }
-            if (resolved.marginTop) attrs['android:layout_marginTop'] = `${resolved.marginTop}dp`;
-            if (resolved.marginLeft) attrs['android:layout_marginLeft'] = `${resolved.marginLeft}dp`;
-            if (resolved.padding) attrs['android:padding'] = `${resolved.padding}dp`;
+
+            // 7. Spacing (Paddings and Margins)
+            if (resolved.padding !== undefined) attrs['android:padding'] = `${resolved.padding}dp`;
+            if (resolved.paddingHorizontal !== undefined) {
+              attrs['android:paddingLeft'] = `${resolved.paddingHorizontal}dp`;
+              attrs['android:paddingRight'] = `${resolved.paddingHorizontal}dp`;
+            }
+            if (resolved.paddingVertical !== undefined) {
+              attrs['android:paddingTop'] = `${resolved.paddingVertical}dp`;
+              attrs['android:paddingBottom'] = `${resolved.paddingVertical}dp`;
+            }
+            if (resolved.paddingLeft !== undefined) attrs['android:paddingLeft'] = `${resolved.paddingLeft}dp`;
+            if (resolved.paddingRight !== undefined) attrs['android:paddingRight'] = `${resolved.paddingRight}dp`;
+            if (resolved.paddingTop !== undefined) attrs['android:paddingTop'] = `${resolved.paddingTop}dp`;
+            if (resolved.paddingBottom !== undefined) attrs['android:paddingBottom'] = `${resolved.paddingBottom}dp`;
+
+            if (resolved.margin !== undefined) attrs['android:layout_margin'] = `${resolved.margin}dp`;
+            if (resolved.marginHorizontal !== undefined) {
+              attrs['android:layout_marginLeft'] = `${resolved.marginHorizontal}dp`;
+              attrs['android:layout_marginRight'] = `${resolved.marginHorizontal}dp`;
+            }
+            if (resolved.marginVertical !== undefined) {
+              attrs['android:layout_marginTop'] = `${resolved.marginVertical}dp`;
+              attrs['android:layout_marginBottom'] = `${resolved.marginVertical}dp`;
+            }
+            if (resolved.marginLeft !== undefined) attrs['android:layout_marginLeft'] = `${resolved.marginLeft}dp`;
+            if (resolved.marginRight !== undefined) attrs['android:layout_marginRight'] = `${resolved.marginRight}dp`;
+            if (resolved.marginTop !== undefined) attrs['android:layout_marginTop'] = `${resolved.marginTop}dp`;
+            if (resolved.marginBottom !== undefined) attrs['android:layout_marginBottom'] = `${resolved.marginBottom}dp`;
           } else if (attr.name.name === 'onPress') {
             if (attr.value.type === 'JSXExpressionContainer') {
               const expr = attr.value.expression;
@@ -587,24 +824,134 @@ function parseTsxToKotlin(tsxContent, widgetConfig) {
         });
       }
 
+      let styleAttr = node.openingElement.attributes.find(attr => attr.type === 'JSXAttribute' && attr.name.name === 'style');
+      const dynamicColors = extractDynamicColors(styleAttr ? styleAttr.value.expression : null);
+      if (Object.keys(dynamicColors).length > 0) {
+        isDynamic = true;
+      }
+
       if (isDynamic) {
         attrs['android:id'] = `@+id/dynamic_node_${idCounter++}`;
       }
 
-      return { tag, attrs, children, isDynamic, dynamicText, onPressAction };
+      return { 
+        tag, 
+        attrs, 
+        children, 
+        isDynamic, 
+        dynamicText, 
+        onPressAction,
+        colorBindings: Object.keys(dynamicColors).length > 0 ? dynamicColors : null 
+      };
     }
     return null;
   }
 
   // Find the return statement of the component
   let rootJsx = null;
+
+  // 1. Helper to get the function name enclosing a path
+  function getFunctionName(returnPath) {
+    const funcPath = returnPath.getFunctionParent();
+    if (!funcPath) return null;
+    const funcNode = funcPath.node;
+    if (funcNode.type === 'FunctionDeclaration' && funcNode.id) {
+      return funcNode.id.name;
+    }
+    if (funcPath.parent && funcPath.parent.type === 'VariableDeclarator' && funcPath.parent.id.type === 'Identifier') {
+      return funcPath.parent.id.name;
+    }
+    return null;
+  }
+
+  // 2. Collect exported names
+  const exportedNames = new Set();
   traverse(ast, {
-    ReturnStatement(path) {
-      if (!rootJsx && path.node.argument && path.node.argument.type === 'JSXElement') {
-        rootJsx = path.node.argument;
+    ExportNamedDeclaration(path) {
+      if (path.node.declaration) {
+        if (path.node.declaration.type === 'VariableDeclaration') {
+          path.node.declaration.declarations.forEach(decl => {
+            if (decl.id.type === 'Identifier') {
+              exportedNames.add(decl.id.name);
+            }
+          });
+        } else if (path.node.declaration.type === 'FunctionDeclaration') {
+          if (path.node.declaration.id && path.node.declaration.id.type === 'Identifier') {
+            exportedNames.add(path.node.declaration.id.name);
+          }
+        }
+      }
+    },
+    ExportDefaultDeclaration(path) {
+      if (path.node.declaration) {
+        if (path.node.declaration.type === 'Identifier') {
+          exportedNames.add(path.node.declaration.name);
+        } else if (path.node.declaration.type === 'FunctionDeclaration') {
+          if (path.node.declaration.id && path.node.declaration.id.type === 'Identifier') {
+            exportedNames.add(path.node.declaration.id.name);
+          }
+        }
       }
     }
   });
+
+  // 3. Collect return statement candidates
+  const candidates = [];
+  traverse(ast, {
+    ReturnStatement(path) {
+      if (path.node.argument && path.node.argument.type === 'JSXElement') {
+        const funcName = getFunctionName(path);
+        if (funcName) {
+          candidates.push({ path, funcName });
+        }
+      }
+    }
+  });
+
+  // 4. Select the best candidate
+  const coreClassName = widgetConfig.className ? widgetConfig.className.replace(/^NOS/, '').replace(/Widget$/, '').toLowerCase() : '';
+  let bestCandidate = null;
+
+  // Prioritize exported functions that match the component name/className
+  for (const cand of candidates) {
+    if (exportedNames.has(cand.funcName)) {
+      const lowerFunc = cand.funcName.toLowerCase();
+      if (coreClassName && (lowerFunc.includes(coreClassName) || coreClassName.includes(lowerFunc))) {
+        bestCandidate = cand;
+        break;
+      }
+    }
+  }
+
+  // Fallback to any exported function
+  if (!bestCandidate) {
+    for (const cand of candidates) {
+      if (exportedNames.has(cand.funcName)) {
+        bestCandidate = cand;
+        break;
+      }
+    }
+  }
+
+  // Fallback to any function matching className
+  if (!bestCandidate && coreClassName) {
+    for (const cand of candidates) {
+      const lowerFunc = cand.funcName.toLowerCase();
+      if (lowerFunc.includes(coreClassName) || coreClassName.includes(lowerFunc)) {
+        bestCandidate = cand;
+        break;
+      }
+    }
+  }
+
+  // Ultimate fallback to first JSX return statement
+  if (!bestCandidate && candidates.length > 0) {
+    bestCandidate = candidates[0];
+  }
+
+  if (bestCandidate) {
+    rootJsx = bestCandidate.path.node.argument;
+  }
 
   if (rootJsx) {
     xmlRoot = processJsxNode(rootJsx);
@@ -632,15 +979,24 @@ function parseTsxToKotlin(tsxContent, widgetConfig) {
   // Kotlin Code Generation
   kotlinLines.push('super.populateViews(context, views, config, customs, theme, appWidgetId)');
   kotlinLines.push('val dynamicState = NosWidgetPreferences.getDynamicStateJson(context)');
+  kotlinLines.push('val accentColor = parseColorOr(customs?.optString("accentColor"), themeAccent(theme))');
+  kotlinLines.push('val textColor = parseColorOr(customs?.optString("textColor"), themeText(theme))');
+  kotlinLines.push('val subtextColor = parseColorOr(customs?.optString("subValueColor"), themeSubtext(theme))');
+  kotlinLines.push('val isLight = textColor == android.graphics.Color.parseColor("#FF111111") || textColor == android.graphics.Color.parseColor("#FF000000") || textColor == android.graphics.Color.BLACK');
+  kotlinLines.push('val dimColor = if (isLight) "#888888" else "#666666"');
+  kotlinLines.push('val successColor = when { theme.contains("nos") -> android.graphics.Color.parseColor("#FFFFFFFF"); theme.contains("luxury") -> android.graphics.Color.parseColor("#FFDFBA6B"); theme.contains("cyberpunk") || theme.contains("amoled") -> android.graphics.Color.parseColor("#FF39FF14"); theme.contains("glassmorphism") -> android.graphics.Color.parseColor("#CC34C759"); else -> android.graphics.Color.parseColor("#FF34C759") }');
+  kotlinLines.push('val errorColor = when { theme.contains("nos") -> android.graphics.Color.parseColor("#FF7C9EFF"); theme.contains("luxury") -> android.graphics.Color.parseColor("#FFCF352E"); theme.contains("cyberpunk") || theme.contains("amoled") -> android.graphics.Color.parseColor("#FFFF0055"); theme.contains("glassmorphism") -> android.graphics.Color.parseColor("#CCFF3B30"); else -> android.graphics.Color.parseColor("#FF7C9EFF") }');
+  kotlinLines.push('val warningColor = when { theme.contains("nos") -> android.graphics.Color.parseColor("#FF888888"); theme.contains("luxury") -> android.graphics.Color.parseColor("#FFDF8D4F"); theme.contains("cyberpunk") || theme.contains("amoled") -> android.graphics.Color.parseColor("#FFF1F100"); theme.contains("glassmorphism") -> android.graphics.Color.parseColor("#CCFF9500"); else -> android.graphics.Color.parseColor("#FFFF9500") }');
   kotlinImports.add('com.nothing.nosgallery.widget.NosWidgetPreferences');
 
   const excludedVars = new Set([
-    'React', 'styles', 'accentColor', 'textStyle', 'subtextStyle', 'successColor', 'errorColor',
+    'React', 'styles', 'accentColor', 'textStyle', 'subtextStyle', 'successColor', 'errorColor', 'warningColor',
     'dimColor', 'textColor', 'isLight', 'customizations', 'globalTheme',
     'true', 'false', 'null', 'undefined', 'Math', 'i', 'itemRow', 'todo', 'cells',
     'WEEK_DAYS', 't', 'interval', '_', '__', 'val', 'var', 'fun', 'class', 'object', 'interface',
     'in', 'is', 'as', 'this', 'super', 'return', 'typeof', 'parseFloat', 'parseInt',
-    'formatTime', 'formatStopwatchTime'
+    'formatTime', 'formatStopwatchTime', 'StyleSheet', 'useState', 'useRef', 'useEffect',
+    'useCallback', 'useMemo', 'useFeedback', 'useWidgetStyle', 'useWidgetStore'
   ]);
 
   const knownVariables = {
@@ -676,6 +1032,13 @@ function parseTsxToKotlin(tsxContent, widgetConfig) {
     labelSuffix: 'val labelSuffix = if (title.lowercase().contains("tokyo") || title.lowercase().contains("japan")) "TKY" else if (title.lowercase().contains("london") || title.lowercase().contains("uk")) "LDN" else if (title.lowercase().contains("new york") || title.lowercase().contains("nyc") || title.lowercase().contains("us")) "NYC" else if (title.lowercase().contains("utc") || title.lowercase().contains("gmt")) "UTC" else ""',
     SPARK_DATA: 'val SPARK_DATA = intArrayOf(62, 68, 65, 72, 69, 75, 71, 78, 73, 80, 77, 84)',
     googleUser: 'val googleUserStr = dynamicState.optString("googleUser", "{}")\n        val googleUser = try { org.json.JSONObject(googleUserStr) } catch(e: Exception) { org.json.JSONObject() }',
+    weather: 'val weatherStr = customs?.optString("valueText") ?: config?.optString("valueText") ?: "{\\\"temp\\\":72.0,\\\"condition\\\":\\\"Sunny\\\",\\\"windSpeed\\\":14.0,\\\"humidity\\\":62.0,\\\"uvIndex\\\":5.0,\\\"aqi\\\":42.0}"\n        val weather = try { org.json.JSONObject(weatherStr) } catch(e: Exception) { org.json.JSONObject() }',
+    loading: 'val loading = false',
+    aqiInfo: 'val aqiInfo = org.json.JSONObject().apply {\n        val a = weather.optInt("aqi", 42)\n        if (a <= 35) {\n            put("label", "GOOD"); put("color", "#39ff14"); put("grade", "A")\n        } else if (a <= 75) {\n            put("label", "MODERATE"); put("color", "#ffcc00"); put("grade", "B")\n        } else if (a <= 115) {\n            put("label", "UNHEALTHY"); put("color", "#ff9500"); put("grade", "C")\n        } else {\n            put("label", "HAZARDOUS"); put("color", "#7C9EFF"); put("grade", "D")\n        }\n    }',
+    condStyle: 'val condStyle = org.json.JSONObject().apply {\n        val cond = weather.optString("condition", "sunny").lowercase()\n        when {\n            cond.contains("sunny") || cond.contains("clear") -> {\n                put("icon", "Sun"); put("color", "#ffcc00")\n            }\n            cond.contains("cloud") -> {\n                put("icon", "Cloud"); put("color", "#8e8e93")\n            }\n            cond.contains("rain") -> {\n                put("icon", "CloudRain"); put("color", "#007aff")\n            }\n            cond.contains("drizzle") -> {\n                put("icon", "CloudDrizzle"); put("color", "#007aff")\n            }\n            cond.contains("snow") -> {\n                put("icon", "Snowflake"); put("color", "#a8d8ea")\n            }\n            cond.contains("thunder") -> {\n                put("icon", "CloudLightning"); put("color", "#ff9500")\n            }\n            else -> {\n                put("icon", "CloudSun"); put("color", customs?.optString("accentColor") ?: "#7C9EFF")\n            }\n        }\n    }',
+    PHASE_COLORS: `val PHASE_COLORS = mapOf("INHALE" to (customs?.optString("accentColor") ?: "#7C9EFF"), "HOLD" to "#ffcc00", "EXHALE" to "#007aff")`,
+    TOTAL: 'val TOTAL = (25 * 60).toLong()',
+    POMODORO_DURATION: 'val POMODORO_DURATION = (25 * 60).toLong()',
   };
 
   // Transitively find all dependencies of local declarations that are referenced
@@ -693,7 +1056,7 @@ function parseTsxToKotlin(tsxContent, widgetConfig) {
           if (init.type === 'ArrowFunctionExpression' || init.type === 'FunctionExpression') {
              return;
           }
-          if (referencedVars.has(name)) {
+          if (referencedVars.has(name) && !excludedVars.has(name)) {
             path.traverse({
               Identifier(idPath) {
                 if (idPath.parent.type === 'MemberExpression' && idPath.parent.property === idPath.node && !idPath.parent.computed) {
@@ -714,7 +1077,7 @@ function parseTsxToKotlin(tsxContent, widgetConfig) {
 
   const varsToDeclare = new Set();
   referencedVars.forEach(v => {
-    if (localConsts[v] === undefined && !excludedVars.has(v)) {
+    if (localConsts[v] === undefined && !excludedVars.has(v) && !v.startsWith('handle') && !v.startsWith('use')) {
       varsToDeclare.add(v);
     }
   });
@@ -830,6 +1193,15 @@ function parseTsxToKotlin(tsxContent, widgetConfig) {
         cleanText = cleanText.replace(/\r?\n\s*$/, '');
         cleanText = cleanText.replace(/\r?\n/g, '\\n');
         kotlinLines.push(`views.setTextViewText(R.id.${idName}, "${cleanText}")`);
+      }
+      
+      if (node.colorBindings) {
+        if (node.colorBindings.color) {
+          kotlinLines.push(`views.setTextColor(R.id.${idName}, parseColorOr(${node.colorBindings.color}, textColor))`);
+        }
+        if (node.colorBindings.backgroundColor) {
+          kotlinLines.push(`views.setInt(R.id.${idName}, "setBackgroundColor", parseColorOr(${node.colorBindings.backgroundColor}, themeBackground(theme)))`);
+        }
       }
       
       if (node.tag === 'TextClock') {

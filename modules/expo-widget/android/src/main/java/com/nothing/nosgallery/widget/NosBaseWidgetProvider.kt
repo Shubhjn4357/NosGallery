@@ -566,10 +566,22 @@ open class NosBaseWidgetProvider : AppWidgetProvider() {
 
     // ── Color helpers ─────────────────────────────────────────────────────────────
 
-    fun parseColorOr(hex: String?, default: Int): Int {
-        if (hex.isNullOrBlank()) return default
+    fun parseColorOr(obj: Any?, default: Int): Int {
+        if (obj == null) return default
+        if (obj is Int) return obj
+        if (obj is Number) return obj.toInt()
+        var str = obj.toString().trim()
+        if (str.isBlank()) return default
         return try {
-            Color.parseColor(hex)
+            if (str.startsWith("#")) {
+                if (str.length == 4) { // #fff -> #ffffff
+                    str = "#" + str[1] + str[1] + str[2] + str[2] + str[3] + str[3]
+                }
+                if (str.length == 7) { // #ffffff -> #ffffffff
+                    str = "#FF" + str.substring(1)
+                }
+            }
+            Color.parseColor(str)
         } catch (_: Exception) {
             default
         }
