@@ -1,3 +1,4 @@
+// @widget productivity_folder
 import { Folder, Clock, Calendar, CloudSun, Sliders } from 'lucide-react-native';
 import React from 'react';
 import { StyleSheet } from 'react-native';

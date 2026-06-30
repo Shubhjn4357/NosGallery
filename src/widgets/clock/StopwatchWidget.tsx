@@ -1,3 +1,4 @@
+// @widget clock_stopwatch
 import { RotateCcw, Play, Pause, Flag } from 'lucide-react-native';
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React, { useState } from 'react';

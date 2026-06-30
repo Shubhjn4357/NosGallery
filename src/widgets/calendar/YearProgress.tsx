@@ -1,3 +1,4 @@
+// @widget calendar_progress
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React from 'react';
 import { StyleSheet } from 'react-native';

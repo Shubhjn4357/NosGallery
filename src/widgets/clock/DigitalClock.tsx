@@ -1,3 +1,5 @@
+// @widget clock_digital
+// @widget clock_dot
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React from 'react';
 import { StyleSheet } from 'react-native';

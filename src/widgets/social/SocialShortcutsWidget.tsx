@@ -1,3 +1,4 @@
+// @widget social_shortcuts
 import { Share2, MessageSquare, Send, Compass } from 'lucide-react-native';
 import React from 'react';
 import { StyleSheet, Linking } from 'react-native';

@@ -1,7 +1,9 @@
+// @widget productivity_photo_frame
 import { Image as ImageIcon, RefreshCw } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Animated } from 'react-native';
-import { View, Text, TouchableOpacity } from '../../../modules/expo-widget/src';
+import { StyleSheet } from 'react-native';
+
+import { View, Text, TouchableOpacity, Animated } from '../../../modules/expo-widget/src';
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';
 import { useFeedback } from '../../hooks/useFeedback';

@@ -1,3 +1,4 @@
+// @widget developer_battery
 import { BatteryCharging, Battery } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet } from 'react-native';

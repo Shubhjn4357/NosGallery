@@ -12,77 +12,7 @@ function withAndroidWidgets(config) {
     console.error('[withAndroidWidgets] Failed to load widgets.json from ' + widgetsJsonPath, e);
   }
 
-  // Dynamic mapping helper to find the corresponding TSX file for a widget
-  function findTsxFilePath(w, projectRoot) {
-    const overrides = {
-      'clock_dot': 'src/widgets/clock/DigitalClock.tsx',
-    };
-    if (overrides[w.id]) {
-      return overrides[w.id];
-    }
 
-    const widgetsDir = path.join(projectRoot, 'src', 'widgets');
-    if (!fs.existsSync(widgetsDir)) return null;
-
-    // Find all subdirectories
-    const categories = fs.readdirSync(widgetsDir).filter(f => fs.statSync(path.join(widgetsDir, f)).isDirectory());
-
-    const coreName = w.className.replace(/^NOS/, '').replace(/Widget$/, '').toLowerCase();
-    const idParts = w.id.split('_').filter(p => p !== w.category);
-
-    const sortedCategories = [w.category, ...categories.filter(c => c !== w.category)];
-
-    // 1. Match by class name across all folders
-    for (const cat of sortedCategories) {
-      const catDir = path.join(widgetsDir, cat);
-      if (!fs.existsSync(catDir)) continue;
-
-      const files = fs.readdirSync(catDir).filter(f => f.endsWith('.tsx'));
-      for (const file of files) {
-        const fileName = file.replace('.tsx', '').toLowerCase();
-        if (coreName.includes(fileName) || fileName.includes(coreName)) {
-          return path.join('src', 'widgets', cat, file);
-        }
-      }
-    }
-
-    // 2. Match by ID fragments across all folders
-    for (const cat of sortedCategories) {
-      const catDir = path.join(widgetsDir, cat);
-      if (!fs.existsSync(catDir)) continue;
-
-      const files = fs.readdirSync(catDir).filter(f => f.endsWith('.tsx'));
-      for (const file of files) {
-        const fileName = file.toLowerCase();
-        if (idParts.length > 0 && idParts.every(p => fileName.includes(p))) {
-          return path.join('src', 'widgets', cat, file);
-        }
-      }
-    }
-
-    // 3. Fallback: match any ID fragment across all folders
-    for (const cat of sortedCategories) {
-      const catDir = path.join(widgetsDir, cat);
-      if (!fs.existsSync(catDir)) continue;
-
-      const files = fs.readdirSync(catDir).filter(f => f.endsWith('.tsx'));
-      for (const file of files) {
-        const fileName = file.toLowerCase();
-        if (idParts.length > 0 && idParts.some(p => fileName.includes(p))) {
-          return path.join('src', 'widgets', cat, file);
-        }
-      }
-    }
-
-    // 4. Ultimate fallback: first file in w.category
-    const firstCatDir = path.join(widgetsDir, w.category);
-    if (fs.existsSync(firstCatDir)) {
-      const files = fs.readdirSync(firstCatDir).filter(f => f.endsWith('.tsx'));
-      if (files.length > 0) return path.join('src', 'widgets', w.category, files[0]);
-    }
-
-    return null;
-  }
 
 
   // 1. Add receivers to AndroidManifest.xml dynamically
@@ -309,12 +239,27 @@ class ${w.className} : NosBaseWidgetProvider() {
         fs.mkdirSync(targetAssets, { recursive: true });
       }
 
-      const defaultWidgets = generateDefaultWidgetsList(templateWidgets);
-      fs.writeFileSync(
-        path.join(targetAssets, 'default_widgets.json'),
-        JSON.stringify(defaultWidgets, null, 2),
-        'utf8'
-      );
+      // 1. Generate widgetRegistry.gen.ts dynamically from @widget directives
+      try {
+        const { execSync } = require('child_process');
+        execSync('node scripts/generate-widget-registry.js', { cwd: projectRoot, stdio: 'inherit' });
+      } catch (err) {
+        console.error('[withAndroidWidgets] Failed to generate widget registry: ', err.message);
+      }
+
+      // 2. Compile and generate default_widgets.json with layoutJSON fields
+      try {
+        const { execSync } = require('child_process');
+        execSync('node scripts/compile-default-layouts.js', { cwd: projectRoot, stdio: 'inherit' });
+      } catch (err) {
+        console.error('[withAndroidWidgets] Failed to pre-compile layouts: ', err.message);
+        const defaultWidgets = generateDefaultWidgetsList(templateWidgets);
+        fs.writeFileSync(
+          path.join(targetAssets, 'default_widgets.json'),
+          JSON.stringify(defaultWidgets, null, 2),
+          'utf8'
+        );
+      }
 
       console.log('[withAndroidWidgets] Generated build assets and default_widgets.json successfully');
       return modConfig;

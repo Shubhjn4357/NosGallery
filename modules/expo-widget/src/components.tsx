@@ -37,13 +37,36 @@ function extractStyles(style: StyleProp<any>): Record<string, string | number | 
   return extracted;
 }
 
+// Helper to flatten text of children recursively
+function resolveTextChildren(children: React.ReactNode): string {
+  if (children === null || children === undefined) return '';
+  if (typeof children === 'string' || typeof children === 'number') {
+    return String(children);
+  }
+  if (Array.isArray(children)) {
+    return children.map(resolveTextChildren).join('');
+  }
+  const reactElement = children as React.ReactElement<any>;
+  if (reactElement && reactElement.props) {
+    if (reactElement.props.children !== undefined) {
+      return resolveTextChildren(reactElement.props.children);
+    }
+  }
+  return '';
+}
+
 // 1. View Wrapper
-export const View: React.FC<ViewProps> = ({ children, style, ...props }) => {
+interface CustomViewProps extends ViewProps {
+  action?: string;
+}
+
+export const View: React.FC<CustomViewProps> = ({ children, style, action, ...props }) => {
   const parentContext = useContext(WidgetLayoutContext);
   
   const myNode: LayoutNode = {
     type: 'view',
     style: extractStyles(style),
+    action: action,
     children: []
   };
 
@@ -71,9 +94,7 @@ export const View: React.FC<ViewProps> = ({ children, style, ...props }) => {
 export const Text: React.FC<TextProps> = ({ children, style, ...props }) => {
   const parentContext = useContext(WidgetLayoutContext);
 
-  const textContent = typeof children === 'string' || typeof children === 'number'
-    ? String(children)
-    : '';
+  const textContent = resolveTextChildren(children);
 
   const myNode: LayoutNode = {
     type: 'text',
@@ -86,9 +107,11 @@ export const Text: React.FC<TextProps> = ({ children, style, ...props }) => {
   }
 
   return (
-    <RNText style={style} {...props}>
-      {children}
-    </RNText>
+    <WidgetLayoutContext.Provider value={null}>
+      <RNText style={style} {...props}>
+        {children}
+      </RNText>
+    </WidgetLayoutContext.Provider>
   );
 };
 
@@ -103,26 +126,68 @@ interface CustomPressableProps extends PressableProps {
 export const Pressable: React.FC<CustomPressableProps> = ({ children, style, action, ...props }) => {
   const parentContext = useContext(WidgetLayoutContext);
 
+  const btnText = typeof children === 'function' ? '' : resolveTextChildren(children);
+
+  // Dynamic action resolution during build-time compilation
+  let resolvedAction = action;
+  if (!resolvedAction && (globalThis as any).__WIDGET_COMPILING__) {
+    const customs = (globalThis as any).__WIDGET_COMPILING_CUSTOMS__ || {};
+    
+    // 1. Check if the button has explicit text matching btnLeftText or btnRightText
+    const cleanText = btnText.trim().toUpperCase();
+    const leftText = (customs.btnLeftText || '').trim().toUpperCase();
+    const rightText = (customs.btnRightText || '').trim().toUpperCase();
+    
+    if (cleanText && leftText && (cleanText === leftText || (leftText === 'START' && cleanText === 'PAUSE') || (leftText === 'PLAY' && cleanText === 'PAUSE') || (leftText === 'TOGGLE' && cleanText === 'ACTIVE'))) {
+      resolvedAction = customs.btnLeftAction;
+    } else if (cleanText && rightText && cleanText === rightText) {
+      resolvedAction = customs.btnRightAction;
+    }
+    
+    // 2. Check the onPress function signature name or string content as fallback
+    if (!resolvedAction && props.onPress) {
+      const fnStr = props.onPress.toString().toLowerCase();
+      if (fnStr.includes('torch') || fnStr.includes('flashlight')) {
+        resolvedAction = customs.btnLeftAction || customs.btnRightAction || 'toggle_torch';
+      } else if (fnStr.includes('stopwatchreset') || fnStr.includes('resetstopwatch') || fnStr.includes('handlestopwatchreset')) {
+        resolvedAction = 'reset_stopwatch';
+      } else if (fnStr.includes('stopwatch') || fnStr.includes('handlestopwatch') || fnStr.includes('swactive')) {
+        resolvedAction = 'toggle_stopwatch';
+      } else if (fnStr.includes('reset_water') || fnStr.includes('resetwater') || fnStr.includes('handlereset')) {
+        resolvedAction = 'reset_water';
+      } else if (fnStr.includes('logwater') || fnStr.includes('addwater') || fnStr.includes('incrementwater')) {
+        resolvedAction = 'add_water';
+      } else if (fnStr.includes('cycletarget')) {
+        resolvedAction = customs.btnRightAction || 'cycle_target';
+      } else if (fnStr.includes('play') || fnStr.includes('pause')) {
+        resolvedAction = customs.btnLeftAction || 'music_play';
+      } else if (fnStr.includes('skip') || fnStr.includes('next')) {
+        resolvedAction = customs.btnRightAction || 'music_skip';
+      } else if (fnStr.includes('bluetooth') || fnStr.includes('togglebluetooth')) {
+        resolvedAction = 'toggle_bluetooth';
+      } else if (fnStr.includes('sound') || fnStr.includes('volume') || fnStr.includes('profile')) {
+        resolvedAction = 'cycle_sound';
+      } else if (fnStr.includes('pomodorostart') || fnStr.includes('pomodoropause') || fnStr.includes('pomodorotoggle') || fnStr.includes('toggletimer')) {
+        resolvedAction = 'toggle_pomodoro';
+      } else if (fnStr.includes('pomodoreset') || fnStr.includes('pomodororeset') || fnStr.includes('resettimer')) {
+        resolvedAction = 'reset_pomodoro';
+      }
+    }
+  }
+
   const myNode: LayoutNode = {
     type: 'button',
     style: extractStyles(style),
-    action: action || 'click',
-    children: []
+    action: resolvedAction || 'click',
+    text: btnText
   };
 
   if (parentContext) {
     parentContext.addChild(myNode);
   }
 
-  const childContextValue = {
-    addChild: (node: LayoutNode) => {
-      myNode.children = myNode.children || [];
-      myNode.children.push(node);
-    }
-  };
-
   return (
-    <WidgetLayoutContext.Provider value={childContextValue}>
+    <WidgetLayoutContext.Provider value={null}>
       <RNPressable style={style} {...props}>
         {children}
       </RNPressable>
@@ -277,3 +342,46 @@ export const ScrollView: React.FC<ScrollViewProps> = ({ children, style, ...prop
 };
 
 export const SafeAreaView = View;
+
+import { ActivityIndicator as RNActivityIndicator, ActivityIndicatorProps } from 'react-native';
+export const ActivityIndicator: React.FC<ActivityIndicatorProps> = ({ style, ...props }) => {
+  const parentContext = useContext(WidgetLayoutContext);
+
+  if (parentContext) {
+    parentContext.addChild({
+      type: 'text',
+      style: extractStyles(style),
+      text: '...'
+    });
+  }
+
+  return <RNActivityIndicator style={style} {...props} />;
+};
+
+import { TextInput as RNTextInput, TextInputProps } from 'react-native';
+export const TextInput: React.FC<TextInputProps> = ({ style, placeholder, value, ...props }) => {
+  const parentContext = useContext(WidgetLayoutContext);
+
+  if (parentContext) {
+    parentContext.addChild({
+      type: 'text',
+      style: extractStyles(style),
+      text: value || placeholder || 'Type...'
+    });
+  }
+
+  return <RNTextInput style={style} value={value} placeholder={placeholder} {...props} />;
+};
+
+import { Animated as RNAnimated } from 'react-native';
+export const Animated = {
+  ...RNAnimated,
+  View: View,
+  Text: Text,
+  Image: Image
+};
+
+export namespace Animated {
+  export type Value = RNAnimated.Value;
+  export type CompositeAnimation = RNAnimated.CompositeAnimation;
+}

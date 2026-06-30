@@ -43,7 +43,10 @@ export {
   TouchableWithoutFeedback,
   TouchableHighlight,
   ScrollView,
-  SafeAreaView
+  SafeAreaView,
+  ActivityIndicator,
+  TextInput,
+  Animated
 } from './components';
 
 // SDK Hooks

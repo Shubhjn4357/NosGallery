@@ -1,3 +1,4 @@
+// @widget health_steps
 import { Beef, Droplet, Flame, Footprints, Wheat } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet } from 'react-native';

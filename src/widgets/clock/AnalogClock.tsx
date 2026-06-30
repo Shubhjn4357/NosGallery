@@ -1,3 +1,4 @@
+// @widget clock_analog
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React from 'react';
 import { StyleSheet } from 'react-native';

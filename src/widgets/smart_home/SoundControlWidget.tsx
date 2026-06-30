@@ -1,3 +1,4 @@
+// @widget smart_home_sound_control
 import { Volume2, Volume1, VolumeX } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { StyleSheet } from 'react-native';

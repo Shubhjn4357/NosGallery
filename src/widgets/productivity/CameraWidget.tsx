@@ -1,3 +1,4 @@
+// @widget productivity_camera
 import { Camera, Image as ImageIcon } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { StyleSheet } from 'react-native';

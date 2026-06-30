@@ -1,3 +1,4 @@
+// @widget productivity_music
 import { Play, Pause, SkipForward, SkipBack, Music } from 'lucide-react-native';
 import React, { useEffect, useState, useCallback } from 'react';
 import { StyleSheet } from 'react-native';

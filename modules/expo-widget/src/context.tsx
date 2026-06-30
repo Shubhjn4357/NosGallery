@@ -40,6 +40,11 @@ export const WidgetLayoutProvider: React.FC<WidgetLayoutProviderProps> = ({
     }
   });
 
+  // Expose root node for synchronous build-time compiler
+  if (typeof globalThis !== 'undefined' && (globalThis as any).__WIDGET_COMPILING__) {
+    (globalThis as any).__WIDGET_COMPILED_ROOT__ = rootNodeRef.current;
+  }
+
   useEffect(() => {
     onLayoutCollected(rootNodeRef.current);
   });

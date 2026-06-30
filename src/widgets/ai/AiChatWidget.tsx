@@ -1,7 +1,9 @@
+// @widget ai_chat
 import { Send, User } from 'lucide-react-native';
 import React from 'react';
-import { TextInput, ActivityIndicator, StyleSheet } from 'react-native';
-import { View, Text, ScrollView, TouchableOpacity } from '../../../modules/expo-widget/src';
+import { StyleSheet } from 'react-native';
+
+import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from '../../../modules/expo-widget/src';
 
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';

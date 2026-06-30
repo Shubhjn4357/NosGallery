@@ -1,47 +1,8 @@
 import React from 'react';
 import widgetsJson from '../../../src/widgets/widgets.json';
-import { WidgetLayoutProvider, LayoutNode } from './context';
+import { WidgetLayoutProvider, WidgetLayoutContext, LayoutNode } from './context';
 
-// Import All Widget Components
-import { DigitalClock } from '../../../src/widgets/clock/DigitalClock';
-import { AnalogClock } from '../../../src/widgets/clock/AnalogClock';
-import { StopwatchWidget } from '../../../src/widgets/clock/StopwatchWidget';
-import { FlipClock } from '../../../src/widgets/clock/FlipClock';
-import { CalendarMonthly } from '../../../src/widgets/calendar/CalendarMonthly';
-import { AgendaWidget } from '../../../src/widgets/calendar/AgendaWidget';
-import { YearProgress } from '../../../src/widgets/calendar/YearProgress';
-import { WeatherCurrent } from '../../../src/widgets/weather/WeatherCurrent';
-import { WeatherAqi } from '../../../src/widgets/weather/WeatherAqi';
-import { MoonPhaseWidget } from '../../../src/widgets/weather/MoonPhaseWidget';
-import { TodoWidget } from '../../../src/widgets/productivity/TodoWidget';
-import { FocusWidget } from '../../../src/widgets/productivity/FocusWidget';
-import { CalculatorWidget } from '../../../src/widgets/productivity/CalculatorWidget';
-import { CameraWidget } from '../../../src/widgets/productivity/CameraWidget';
-import { MusicWidget } from '../../../src/widgets/productivity/MusicWidget';
-import { TextUsernameWidget } from '../../../src/widgets/productivity/TextUsernameWidget';
-import { GoogleSearchWidget } from '../../../src/widgets/productivity/GoogleSearchWidget';
-import { PomodoroWidget } from '../../../src/widgets/productivity/PomodoroWidget';
-import { FolderWidget } from '../../../src/widgets/productivity/FolderWidget';
-import { PhotoFrameWidget } from '../../../src/widgets/productivity/PhotoFrameWidget';
-import { WaterWidget } from '../../../src/widgets/health/WaterWidget';
-import { BreathingWidget } from '../../../src/widgets/health/BreathingWidget';
-import { StepsWidget } from '../../../src/widgets/health/StepsWidget';
-import { FinanceStockCrypto } from '../../../src/widgets/finance/FinanceStockCrypto';
-import { GithubGrid } from '../../../src/widgets/developer/GithubGrid';
-import { CicdPipeline } from '../../../src/widgets/developer/CicdPipeline';
-import { CpuMonitor } from '../../../src/widgets/developer/CpuMonitor';
-import { QuickControlsWidget } from '../../../src/widgets/smart_home/QuickControlsWidget';
-import { BatteryWidget } from '../../../src/widgets/smart_home/BatteryWidget';
-import { SocialFeed } from '../../../src/widgets/social/SocialFeed';
-import { ContactWidget } from '../../../src/widgets/social/ContactWidget';
-import { SocialShortcutsWidget } from '../../../src/widgets/social/SocialShortcutsWidget';
-import { SmartHomeControls } from '../../../src/widgets/smart_home/SmartHomeControls';
-import { TorchWidget } from '../../../src/widgets/smart_home/TorchWidget';
-import { BluetoothWidget } from '../../../src/widgets/smart_home/BluetoothWidget';
-import { SoundControlWidget } from '../../../src/widgets/smart_home/SoundControlWidget';
-import { AiChatWidget } from '../../../src/widgets/ai/AiChatWidget';
-import { AiSummaryWidget } from '../../../src/widgets/ai/AiSummaryWidget';
-import { AiBarWidget } from '../../../src/widgets/ai/AiBarWidget';
+import { getWidgetComponent } from './widgetRegistry.gen';
 
 interface WidgetData {
   id: string;
@@ -51,69 +12,7 @@ interface WidgetData {
   customizations?: Record<string, string | number | boolean | undefined>;
 }
 
-// Get the corresponding React component for a template ID
-function getWidgetComponent(templateId: string): React.ComponentType<any> {
-  if (templateId.startsWith('clock_')) {
-    if (templateId.includes('stopwatch')) return StopwatchWidget;
-    if (templateId.includes('analog')) return AnalogClock;
-    if (templateId.includes('flip')) return FlipClock;
-    return DigitalClock;
-  }
-  if (templateId.startsWith('calendar_')) {
-    if (templateId.includes('progress')) return YearProgress;
-    if (templateId.includes('agenda')) return AgendaWidget;
-    return CalendarMonthly;
-  }
-  if (templateId.startsWith('weather_')) {
-    if (templateId.includes('aqi')) return WeatherAqi;
-    if (templateId.includes('moon')) return MoonPhaseWidget;
-    return WeatherCurrent;
-  }
-  if (templateId.startsWith('productivity_')) {
-    if (templateId.includes('todo')) return TodoWidget;
-    if (templateId.includes('calculator')) return CalculatorWidget;
-    if (templateId.includes('camera')) return CameraWidget;
-    if (templateId.includes('music')) return MusicWidget;
-    if (templateId.includes('text') || templateId.includes('username')) return TextUsernameWidget;
-    if (templateId.includes('search')) return GoogleSearchWidget;
-    if (templateId.includes('pomodoro')) return PomodoroWidget;
-    if (templateId.includes('folder')) return FolderWidget;
-    if (templateId.includes('photo')) return PhotoFrameWidget;
-    return FocusWidget;
-  }
-  if (templateId.startsWith('health_')) {
-    if (templateId.includes('water')) return WaterWidget;
-    if (templateId.includes('breath')) return BreathingWidget;
-    return StepsWidget;
-  }
-  if (templateId.startsWith('finance_')) {
-    return FinanceStockCrypto;
-  }
-  if (templateId.startsWith('developer_')) {
-    if (templateId.includes('git')) return GithubGrid;
-    if (templateId.includes('build') || templateId.includes('cicd')) return CicdPipeline;
-    if (templateId.includes('controls')) return QuickControlsWidget;
-    if (templateId.includes('battery')) return BatteryWidget;
-    return CpuMonitor;
-  }
-  if (templateId.startsWith('social_')) {
-    if (templateId.includes('contact')) return ContactWidget;
-    if (templateId.includes('shortcuts')) return SocialShortcutsWidget;
-    return SocialFeed;
-  }
-  if (templateId.startsWith('smart_home_')) {
-    if (templateId.includes('torch')) return TorchWidget;
-    if (templateId.includes('bluetooth')) return BluetoothWidget;
-    if (templateId.includes('sound')) return SoundControlWidget;
-    return SmartHomeControls;
-  }
-  if (templateId.startsWith('ai_')) {
-    if (templateId.includes('chat')) return AiChatWidget;
-    if (templateId.includes('bar') || templateId.includes('router')) return AiBarWidget;
-    return AiSummaryWidget;
-  }
-  return AiSummaryWidget;
-}
+
 
 // Build props for the widget based on template expectations
 function buildWidgetProps(templateId: string, customizations: Record<string, string | number | boolean | undefined>, state: Record<string, any>): Record<string, unknown> {
@@ -179,6 +78,9 @@ function buildWidgetProps(templateId: string, customizations: Record<string, str
   return commonProps;
 }
 
+// Module level context stack to support nested context rendering
+const contextStack: any[] = (globalThis as any).__CONTEXT_STACK__ || [];
+
 // Recursively traverse and evaluate the React Element tree
 function resolveElementTree(element: React.ReactNode): void {
   if (!element) return;
@@ -188,6 +90,23 @@ function resolveElementTree(element: React.ReactNode): void {
   }
 
   const reactElement = element as React.ReactElement<any>;
+  let isProvider = false;
+
+  const type = reactElement.type;
+  const isProviderNode = 
+    type === WidgetLayoutContext.Provider || 
+    type === WidgetLayoutContext ||
+    (type && typeof type === 'object' && (
+      (type as any).$$typeof === Symbol.for('react.provider') || 
+      (type as any)._context === WidgetLayoutContext ||
+      (type as any).type === WidgetLayoutContext.Provider
+    ));
+
+  if (isProviderNode) {
+    isProvider = true;
+    contextStack.push(reactElement.props.value);
+  }
+
   if (typeof reactElement.type === 'function') {
     try {
       const Component = reactElement.type as any;
@@ -198,8 +117,8 @@ function resolveElementTree(element: React.ReactNode): void {
         const rendered = Component(reactElement.props);
         resolveElementTree(rendered);
       }
-    } catch (e) {
-      // Catch exceptions gracefully
+    } catch (e: any) {
+      console.error('[resolveElementTree] Error resolving component:', (reactElement.type as any)?.name || reactElement.type, e);
     }
   } else if (reactElement.props && reactElement.props.children) {
     const children = reactElement.props.children;
@@ -208,6 +127,10 @@ function resolveElementTree(element: React.ReactNode): void {
     } else {
       resolveElementTree(children);
     }
+  }
+
+  if (isProvider) {
+    contextStack.pop();
   }
 }
 
@@ -227,7 +150,7 @@ export function compileWidgetToLayout(widget: WidgetData, state: Record<string, 
     children: []
   };
 
-  // Mock standard React Hooks temporarily to run functional component evaluation
+  // Mock standard React Hooks and internal dispatcher temporarily to run functional component evaluation
   const originalUseMemo = React.useMemo;
   const originalUseState = React.useState;
   const originalUseEffect = React.useEffect;
@@ -236,15 +159,47 @@ export function compileWidgetToLayout(widget: WidgetData, state: Record<string, 
   const originalContext = React.useContext;
 
   const ReactAny = React as any;
-  ReactAny.useMemo = (factory: () => unknown) => factory();
-  ReactAny.useState = (initialValue: unknown) => [
-    typeof initialValue === 'function' ? (initialValue as Function)() : initialValue,
-    () => {}
-  ];
-  ReactAny.useEffect = () => {};
-  ReactAny.useRef = (initialValue: unknown) => ({ current: initialValue });
-  ReactAny.useCallback = (callback: unknown) => callback;
-  ReactAny.useContext = () => ({});
+  const dispatcher = {
+    useMemo: (factory: () => unknown) => factory(),
+    useState: (initialValue: unknown) => [
+      typeof initialValue === 'function' ? (initialValue as Function)() : initialValue,
+      () => {}
+    ],
+    useEffect: () => {},
+    useRef: (initialValue: unknown) => ({ current: initialValue }),
+    useCallback: (callback: unknown) => callback,
+    useContext: (contextType: any) => {
+      if (contextType === WidgetLayoutContext) {
+        return contextStack[contextStack.length - 1] || null;
+      }
+      return null;
+    },
+    useLayoutEffect: () => {},
+    useDebugValue: () => {},
+    useTransition: () => [false, () => {}],
+    useDeferredValue: (value: any) => value,
+    useId: () => 'id',
+    useImperativeHandle: () => {},
+    useInsertionEffect: () => {},
+    useSyncExternalStore: (subscribe: any, getSnapshot: any) => getSnapshot(),
+  };
+
+  const originalDispatcher = ReactAny.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED?.ReactCurrentDispatcher?.current;
+  if (ReactAny.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED?.ReactCurrentDispatcher) {
+    ReactAny.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher.current = dispatcher;
+  }
+
+  const originalDispatcher19 = ReactAny.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE?.H;
+  if (ReactAny.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE) {
+    ReactAny.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE.H = dispatcher;
+  }
+
+  ReactAny.useMemo = dispatcher.useMemo;
+  ReactAny.useState = dispatcher.useState;
+  ReactAny.useEffect = dispatcher.useEffect;
+  ReactAny.useRef = dispatcher.useRef;
+  ReactAny.useCallback = dispatcher.useCallback;
+  ReactAny.useContext = dispatcher.useContext;
 
   // Enable compilation flags globally
   const globalObj = globalThis as any;
@@ -261,9 +216,21 @@ export function compileWidgetToLayout(widget: WidgetData, state: Record<string, 
     });
 
     resolveElementTree(layoutProvider);
+    
+    if (globalObj.__WIDGET_COMPILED_ROOT__) {
+      compiledLayout = globalObj.__WIDGET_COMPILED_ROOT__;
+    }
   } catch (err) {
     console.error('[LayoutCompiler] Dynamic compilation failed for template:', templateId, err);
   } finally {
+    // Restore React dispatcher
+    if (ReactAny.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED?.ReactCurrentDispatcher) {
+      ReactAny.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher.current = originalDispatcher;
+    }
+    if (ReactAny.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE) {
+      ReactAny.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE.H = originalDispatcher19;
+    }
+
     // Restore React hooks
     ReactAny.useMemo = originalUseMemo;
     ReactAny.useState = originalUseState;
@@ -272,10 +239,12 @@ export function compileWidgetToLayout(widget: WidgetData, state: Record<string, 
     ReactAny.useCallback = originalUseCallback;
     ReactAny.useContext = originalContext;
 
-    // Clear flags
+    // Clear context stack and flags
+    contextStack.length = 0;
     delete globalObj.__WIDGET_COMPILING__;
     delete globalObj.__WIDGET_COMPILING_STATE__;
     delete globalObj.__WIDGET_COMPILING_CUSTOMS__;
+    delete globalObj.__WIDGET_COMPILED_ROOT__;
   }
 
   // Ensure children contains root wrappers if root collected children

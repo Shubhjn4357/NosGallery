@@ -1,3 +1,4 @@
+// @widget productivity_todo
 import { Check, CheckSquare } from 'lucide-react-native';
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React, { useState } from 'react';

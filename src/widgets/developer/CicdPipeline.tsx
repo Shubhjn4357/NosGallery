@@ -1,3 +1,4 @@
+// @widget developer_build
 import { Plane } from 'lucide-react-native';
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React from 'react';

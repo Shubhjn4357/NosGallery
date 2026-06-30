@@ -55,7 +55,6 @@
     "lint": "expo lint",
     "doctor": "npx expo-doctor",
     "typecheck": "tsc --noEmit",
-    "validate-widgets": "node scripts/validate_widgets.js",
     "eas:android": "eas build -p android --profile preview",
     "eas:ios": "eas build -p ios --profile preview",
     "eas:all": "eas build -p all --profile preview"

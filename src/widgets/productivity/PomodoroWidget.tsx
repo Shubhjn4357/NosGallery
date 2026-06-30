@@ -1,3 +1,4 @@
+// @widget productivity_pomodoro
 import { Hourglass, Play, Pause, RotateCcw } from 'lucide-react-native';
 import React, { useState, useEffect, useCallback } from 'react';
 import { StyleSheet } from 'react-native';

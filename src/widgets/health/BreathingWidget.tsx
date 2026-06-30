@@ -1,8 +1,10 @@
+// @widget health_breath
 import { Wind } from 'lucide-react-native';
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React, { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Animated } from 'react-native';
-import { View, Text } from '../../../modules/expo-widget/src';
+import { StyleSheet } from 'react-native';
+
+import { View, Text, Animated } from '../../../modules/expo-widget/src';
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';
 

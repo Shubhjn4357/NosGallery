@@ -1,3 +1,4 @@
+// @widget calendar_monthly
 import { Calendar } from 'lucide-react-native';
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React from 'react';

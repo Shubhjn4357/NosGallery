@@ -1,3 +1,4 @@
+// @widget ai_summary
 import { Sparkles } from 'lucide-react-native';
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React from 'react';

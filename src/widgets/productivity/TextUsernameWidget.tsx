@@ -1,7 +1,9 @@
+// @widget productivity_text_username
 import { Type, Check } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { TextInput, StyleSheet } from 'react-native';
-import { View, Text, TouchableOpacity } from '../../../modules/expo-widget/src';
+import { StyleSheet } from 'react-native';
+
+import { View, Text, TouchableOpacity, TextInput } from '../../../modules/expo-widget/src';
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';
 import { useWidgetStore } from '../../store/widgetStore';

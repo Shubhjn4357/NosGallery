@@ -1,3 +1,4 @@
+// @widget developer_cpu
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React, { useState, useEffect } from 'react';
 import { StyleSheet } from 'react-native';

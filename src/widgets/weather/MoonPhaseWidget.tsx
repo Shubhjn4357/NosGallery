@@ -1,3 +1,4 @@
+// @widget weather_moon_phase
 import { Moon, Eye } from 'lucide-react-native';
 import React from 'react';
 import { StyleSheet } from 'react-native';

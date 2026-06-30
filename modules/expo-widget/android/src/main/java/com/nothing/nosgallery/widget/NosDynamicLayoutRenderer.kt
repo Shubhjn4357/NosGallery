@@ -66,7 +66,7 @@ object NosDynamicLayoutRenderer {
         }
 
         // Apply Styles
-        applyStylesToView(context, views, viewId, style)
+        applyStylesToView(context, views, viewId, style, type)
 
         // Apply specific properties based on type
         when (type) {
@@ -101,7 +101,7 @@ object NosDynamicLayoutRenderer {
                     val secs = (timeVal % 600) / 10
                     val deci = timeVal % 10
                     val textStr = String.format("%02d:%02d.%d", mins, secs, deci)
-                    views.setCharSequence(viewId, "setFormat", textStr)
+                    views.setCharSequence(viewId, "setText", textStr)
                 }
             }
             "progress" -> {
@@ -134,8 +134,10 @@ object NosDynamicLayoutRenderer {
                         if (!tintColorStr.isNullOrBlank()) {
                             try {
                                 val color = Color.parseColor(tintColorStr)
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                                    views.setInt(viewId, "setImageTintList", Color.parseColor(tintColorStr))
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                    views.setColorStateList(viewId, "setImageTintList", ColorStateList.valueOf(color))
+                                } else {
+                                    views.setInt(viewId, "setColorFilter", color)
                                 }
                             } catch (_: Exception) {}
                         }
@@ -153,7 +155,7 @@ object NosDynamicLayoutRenderer {
 
         // Render and add children
         val children = node.optJSONArray("children")
-        if (children != null && children.length() > 0) {
+        if (children != null && children.length() > 0 && type != "text" && type != "button" && type != "image" && type != "clock" && type != "chronometer" && type != "progress") {
             val gap = style.optDouble("gap", 0.0)
             val flexDir = style.optString("flexDirection", "column")
             
@@ -225,7 +227,8 @@ object NosDynamicLayoutRenderer {
         context: Context,
         views: RemoteViews,
         viewId: Int,
-        style: JSONObject
+        style: JSONObject,
+        type: String
     ) {
         val scale = context.resources.displayMetrics.density
 
@@ -322,12 +325,14 @@ object NosDynamicLayoutRenderer {
             views.setTextViewTextSize(viewId, TypedValue.COMPLEX_UNIT_SP, fontSize.toFloat())
         }
 
-        val textAlign = style.optString("textAlign", "left")
-        val textGravity = when (textAlign) {
-            "center" -> Gravity.CENTER
-            "right" -> Gravity.RIGHT
-            else -> Gravity.LEFT
+        if (type == "text" || type == "button" || type == "clock" || type == "chronometer") {
+            val textAlign = style.optString("textAlign", "left")
+            val textGravity = when (textAlign) {
+                "center" -> Gravity.CENTER
+                "right" -> Gravity.RIGHT
+                else -> Gravity.LEFT
+            }
+            views.setInt(viewId, "setGravity", textGravity)
         }
-        views.setInt(viewId, "setGravity", textGravity)
     }
 }

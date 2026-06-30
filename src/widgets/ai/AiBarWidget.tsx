@@ -1,3 +1,4 @@
+// @widget ai_bar
 import { Sparkles, Brain } from 'lucide-react-native';
 import React from 'react';
 import { StyleSheet } from 'react-native';

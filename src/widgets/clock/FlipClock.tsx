@@ -1,3 +1,4 @@
+// @widget clock_flip
 import React, { useState } from 'react';
 import { StyleSheet, ColorValue } from 'react-native';
 import { View, Text } from '../../../modules/expo-widget/src';

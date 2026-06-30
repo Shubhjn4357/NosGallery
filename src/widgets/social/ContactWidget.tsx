@@ -1,3 +1,4 @@
+// @widget social_contact
 import { User, Phone, MessageSquare } from 'lucide-react-native';
 import React from 'react';
 import { StyleSheet, Linking } from 'react-native';
