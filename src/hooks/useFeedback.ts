@@ -1,10 +1,14 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import * as Haptics from 'expo-haptics';
-import { createAudioPlayer } from 'expo-audio';
+import { createAudioPlayer, AudioPlayer } from 'expo-audio';
 import { useWidgetStore } from '../store/widgetStore';
 
 export const useFeedback = () => {
   const { settings } = useWidgetStore();
+
+  // Keep a ref to the last created player so we can release it before creating a new one,
+  // preventing memory buildup from rapid successive sounds.
+  const activePlayerRef = useRef<AudioPlayer | null>(null);
 
   const triggerHaptic = useCallback(
     async (type: 'selection' | 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error') => {
@@ -35,7 +39,6 @@ export const useFeedback = () => {
         }
       } catch {
         // Fallback for environments without haptics (web/simulators)
-        console.log(`[Haptic Fallback] ${type}`);
       }
     },
     [settings.hapticsEnabled]
@@ -48,33 +51,41 @@ export const useFeedback = () => {
         let soundUrl = '';
         switch (soundType) {
           case 'click':
-            // Fast sharp tap
             soundUrl = 'https://assets.mixkit.co/active_storage/sfx/2568/2568-84.wav';
             break;
           case 'apply':
-            // High slide chime
             soundUrl = 'https://assets.mixkit.co/active_storage/sfx/2019/2019-84.wav';
             break;
           case 'success':
-            // Upward notes
             soundUrl = 'https://assets.mixkit.co/active_storage/sfx/2018/2018-84.wav';
             break;
           case 'error':
-            // Low buzz
             soundUrl = 'https://assets.mixkit.co/active_storage/sfx/2573/2573-84.wav';
             break;
         }
 
         if (soundUrl) {
+          // Release the previous player before creating a new one
+          if (activePlayerRef.current) {
+            try {
+              activePlayerRef.current.release();
+            } catch (_) {}
+            activePlayerRef.current = null;
+          }
+
           const player = createAudioPlayer(soundUrl);
+          activePlayerRef.current = player;
           player.play();
+
+          // Schedule cleanup after the sound has had time to finish
           setTimeout(() => {
             try {
-              player.release();
-            } catch (err) {
-              console.log('[Audio release failed]:', err);
-            }
-          }, 3000);
+              if (activePlayerRef.current === player) {
+                player.release();
+                activePlayerRef.current = null;
+              }
+            } catch (_) {}
+          }, 4000);
         }
       } catch (err) {
         console.log(`[Sound Fallback] ${soundType} playback failed:`, err);

@@ -41,7 +41,9 @@ export const FloatingBottomTab: React.FC = () => {
 
   const handleTabPress = (tab: TabId) => {
     triggerHaptic('selection');
-    setActiveTab(tab);
+    // Only 'editor' and 'settings' are active tabs in the current app version
+    const supportedTab = (tab === 'editor' || tab === 'settings') ? tab : 'editor';
+    setActiveTab(supportedTab);
   };
 
   const tabs: { id: TabId; label: string; icon: string }[] = [

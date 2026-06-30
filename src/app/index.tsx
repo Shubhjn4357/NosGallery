@@ -25,6 +25,7 @@ import { WidgetCard } from '../components/WidgetCard';
 import { CustomizerDrawer } from '@/editor/CustomizerDrawer';
 import { ExpoWidget, compileWidgetToLayout } from '../../modules/expo-widget/src';
 import { startNativeWidgetSync } from '../services/nativeWidgetSync';
+import { Sonner } from '../components/Sonner';
 
 const widgetsJsonTyped = widgetsJson as unknown as WidgetTemplateJson[];
 
@@ -341,6 +342,9 @@ export default function Index() {
         handleAddToHomeScreen={handleAddToHomeScreen}
         triggerHaptic={triggerHaptic}
       />
+
+      {/* ── TOAST NOTIFICATIONS ── */}
+      <Sonner />
     </View>
   );
 }

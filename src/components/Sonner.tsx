@@ -15,9 +15,11 @@ const TOAST_TIMEOUT = 3000;
 
 export const Sonner: React.FC = () => {
   const { toastMessage, toastType, hideToast } = useWidgetStore();
-  const [slideAnim] = useState(() => new Animated.Value(100)); // starts off-screen bottom
+  const [slideAnim] = useState(() => new Animated.Value(100));
   const [opacityAnim] = useState(() => new Animated.Value(0));
-  const [progressAnim] = useState(() => new Animated.Value(1)); // 1 to 0 progress timeline
+  const [progressAnim] = useState(() => new Animated.Value(1));
+  // Keep visible during exit animation so it can slide out before unmounting
+  const [mounted, setMounted] = useState(false);
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -35,11 +37,13 @@ export const Sonner: React.FC = () => {
       }),
     ]).start(() => {
       hideToast();
+      setMounted(false);
     });
   }, [slideAnim, opacityAnim, hideToast]);
 
   useEffect(() => {
     if (toastMessage) {
+      setMounted(true);
       // Clear previous timer
       if (timerRef.current) clearTimeout(timerRef.current);
 
@@ -62,7 +66,7 @@ export const Sonner: React.FC = () => {
         Animated.timing(progressAnim, {
           toValue: 0,
           duration: TOAST_TIMEOUT,
-          useNativeDriver: false, // width can't use native driver
+          useNativeDriver: false,
         }),
       ]).start();
 
@@ -70,7 +74,8 @@ export const Sonner: React.FC = () => {
       timerRef.current = setTimeout(() => {
         dismissToast();
       }, TOAST_TIMEOUT);
-    } else {
+    } else if (mounted) {
+      // toastMessage cleared externally — play exit animation
       dismissToast();
     }
 
@@ -79,7 +84,7 @@ export const Sonner: React.FC = () => {
     };
   }, [toastMessage, slideAnim, opacityAnim, progressAnim, dismissToast]);
 
-  if (!toastMessage) return null;
+  if (!mounted && !toastMessage) return null;
 
   // Type configuration
   let bgColor = '#1c1c1e';
@@ -95,7 +100,7 @@ export const Sonner: React.FC = () => {
   } else if (toastType === 'error') {
     bgColor = '#220f10';
     borderColor = '#441d20';
-    accentColor = '#7C9EFF';
+    accentColor = '#ff2d55';
     IconComponent = LucideIcons.AlertOctagon;
   } else if (toastType === 'warning') {
     bgColor = '#261b0c';

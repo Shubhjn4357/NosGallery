@@ -18,8 +18,10 @@ export const WidgetCard: React.FC<WidgetCardProps> = ({
   onPress,
 }) => {
   const PREVIEW_W = (SW - 48) / 2;
-  const widgetW = template.defaultWidth * 80;
-  const widgetH = template.defaultHeight * 80;
+  // Match WidgetRenderer's sizing: CELL_W = (SW - 32 - 12) / 4
+  const CELL_W = (SW - 32 - 12) / 4;
+  const widgetW = template.defaultWidth * CELL_W;
+  const widgetH = template.defaultHeight * CELL_W; // square cells
   const scale = Math.min((PREVIEW_W - 16) / widgetW, 104 / widgetH);
 
   const mockWidget: ActiveWidget = {

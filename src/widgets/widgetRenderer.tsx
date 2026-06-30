@@ -1,12 +1,13 @@
 import { Calendar, CheckSquare, Clock, CloudSun, Coins, Heart, Home, Layout, MessageSquare, Sparkles, Terminal, Timer } from 'lucide-react-native';
-import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 
 import { useWidgetStore, ActiveWidget } from '../store/widgetStore';
 import { ThemeId } from '../themes/themes';
 import { useWidgetStyle } from '../hooks/useWidgetStyle';
 import { useFeedback } from '../hooks/useFeedback';
 import { widgetRegistry } from './registry';
+import widgetsJson from './widgets.json';
 
 // Modular Component Imports
 import { DigitalClock } from './clock/DigitalClock';
@@ -172,7 +173,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
   };
 
   // AI chat response
-  const triggerAIChat = () => {
+  const triggerAIChat = useCallback(() => {
     if (!aiInput.trim()) return;
     triggerHaptic('selection');
     setAiThinking(true);
@@ -191,9 +192,17 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
         setAiThinking(false);
         setAiResponse(`Error: ${err.message}`);
       });
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aiInput, triggerHaptic]);
 
-  const customizations = {};
+  // Pull actual stored widget customizations (merged with template defaults)
+  const templateDefaults = (() => {
+    try {
+      const found = (widgetsJson as any[]).find((w: any) => w.id === widget.templateId);
+      return (found?.customizations || {}) as Record<string, any>;
+    } catch { return {}; }
+  })();
+  const customizations = { ...templateDefaults, ...(widget as any).customizations };
   const { containerStyle, accentColor, textStyle } = useWidgetStyle(customizations, globalTheme);
 
   // Selector for modular rendering
@@ -582,8 +591,12 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({
     );
   };
 
-  const widgetWidth = widget.w * 80;
-  const widgetHeight = widget.h * 80;
+  const { width: SCREEN_WIDTH } = Dimensions.get('window');
+  // Each grid column is 1/4 of (screen - 32px padding - 12px gap)
+  const CELL_W = (SCREEN_WIDTH - 32 - 12) / 4;
+  const CELL_H = CELL_W; // square cells
+  const widgetWidth = widget.w * CELL_W + (widget.w - 1) * 0;
+  const widgetHeight = widget.h * CELL_H;
   const isLiquidGlass = globalTheme === 'liquidglass';
   const borderRadius = (containerStyle.borderRadius as number) || 16;
 

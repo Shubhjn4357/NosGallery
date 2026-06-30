@@ -91,12 +91,12 @@ export const useWidgetStyle = (customizations: any, globalTheme?: ThemeId) => {
 
     // Resolve theme-specific semantic colors
     let successColor = '#34c759';
-    let errorColor = '#7C9EFF';
+    let errorColor = '#ff2d55';
     let warningColor = '#ff9500';
 
     if (activeThemeId === 'nos') {
       successColor = '#ffffff';
-      errorColor = '#7C9EFF';
+      errorColor = '#ff2d55';
       warningColor = '#888888';
     } else if (activeThemeId === 'luxury') {
       successColor = '#dfba6b';

@@ -1,7 +1,6 @@
 import React from 'react';
 import widgetsJson from '../../../src/widgets/widgets.json';
 import { WidgetLayoutProvider, WidgetLayoutContext, LayoutNode } from './context';
-
 import { getWidgetComponent } from './widgetRegistry.gen';
 
 interface WidgetData {
@@ -12,15 +11,17 @@ interface WidgetData {
   customizations?: Record<string, string | number | boolean | undefined>;
 }
 
-
-
 // Build props for the widget based on template expectations
-function buildWidgetProps(templateId: string, customizations: Record<string, string | number | boolean | undefined>, state: Record<string, any>): Record<string, unknown> {
+function buildWidgetProps(
+  templateId: string,
+  customizations: Record<string, string | number | boolean | undefined>,
+  state: Record<string, any>
+): Record<string, unknown> {
   const commonProps = {
     currentTime: new Date(),
     customizations,
     globalTheme: state.activeTheme || 'nos',
-    interactive: false
+    interactive: false,
   };
 
   if (templateId.startsWith('clock_')) {
@@ -30,7 +31,7 @@ function buildWidgetProps(templateId: string, customizations: Record<string, str
         swTime: state.stopwatchTime || 0,
         swActive: state.stopwatchRunning || false,
         handleStopwatch: () => {},
-        handleStopwatchReset: () => {}
+        handleStopwatchReset: () => {},
       };
     }
   }
@@ -41,7 +42,7 @@ function buildWidgetProps(templateId: string, customizations: Record<string, str
         ...commonProps,
         buildStatus: 'success',
         buildProgress: 100,
-        triggerCICDBuild: () => {}
+        triggerCICDBuild: () => {},
       };
     }
   }
@@ -51,7 +52,7 @@ function buildWidgetProps(templateId: string, customizations: Record<string, str
       return {
         ...commonProps,
         lightOn: state.lightOn !== undefined ? state.lightOn : true,
-        toggleLight: () => {}
+        toggleLight: () => {},
       };
     }
   }
@@ -64,13 +65,13 @@ function buildWidgetProps(templateId: string, customizations: Record<string, str
         aiResponse: '',
         aiThinking: false,
         setAiInput: () => {},
-        triggerAIChat: () => {}
+        triggerAIChat: () => {},
       };
     }
     if (templateId === 'ai_summary') {
       return {
         ...commonProps,
-        valText: customizations.valueText || ''
+        valText: customizations.valueText || '',
       };
     }
   }
@@ -78,14 +79,12 @@ function buildWidgetProps(templateId: string, customizations: Record<string, str
   return commonProps;
 }
 
-// Module level context stack to support nested context rendering
-const contextStack: any[] = (globalThis as any).__CONTEXT_STACK__ || [];
-
-// Recursively traverse and evaluate the React Element tree
-function resolveElementTree(element: React.ReactNode): void {
+// Recursively traverse and evaluate the React Element tree.
+// contextStack is passed as a parameter to avoid module-level mutable state.
+function resolveElementTree(element: React.ReactNode, contextStack: any[]): void {
   if (!element) return;
   if (Array.isArray(element)) {
-    element.forEach(resolveElementTree);
+    element.forEach((el) => resolveElementTree(el, contextStack));
     return;
   }
 
@@ -93,14 +92,14 @@ function resolveElementTree(element: React.ReactNode): void {
   let isProvider = false;
 
   const type = reactElement.type;
-  const isProviderNode = 
-    type === WidgetLayoutContext.Provider || 
+  const isProviderNode =
+    type === WidgetLayoutContext.Provider ||
     type === WidgetLayoutContext ||
-    (type && typeof type === 'object' && (
-      (type as any).$$typeof === Symbol.for('react.provider') || 
-      (type as any)._context === WidgetLayoutContext ||
-      (type as any).type === WidgetLayoutContext.Provider
-    ));
+    (type &&
+      typeof type === 'object' &&
+      ((type as any).$$typeof === Symbol.for('react.provider') ||
+        (type as any)._context === WidgetLayoutContext ||
+        (type as any).type === WidgetLayoutContext.Provider));
 
   if (isProviderNode) {
     isProvider = true;
@@ -112,20 +111,25 @@ function resolveElementTree(element: React.ReactNode): void {
       const Component = reactElement.type as any;
       if (Component.prototype && typeof Component.prototype.render === 'function') {
         const instance = new Component(reactElement.props);
-        resolveElementTree(instance.render());
+        resolveElementTree(instance.render(), contextStack);
       } else {
         const rendered = Component(reactElement.props);
-        resolveElementTree(rendered);
+        resolveElementTree(rendered, contextStack);
       }
     } catch (e: any) {
-      console.error('[resolveElementTree] Error resolving component:', (reactElement.type as any)?.name || reactElement.type, e);
+      // Non-fatal — widget sub-tree may be skipped
+      console.warn(
+        '[resolveElementTree] Error resolving component:',
+        (reactElement.type as any)?.name || reactElement.type,
+        e?.message || e
+      );
     }
   } else if (reactElement.props && reactElement.props.children) {
     const children = reactElement.props.children;
     if (Array.isArray(children)) {
-      children.forEach(resolveElementTree);
+      children.forEach((child) => resolveElementTree(child, contextStack));
     } else {
-      resolveElementTree(children);
+      resolveElementTree(children, contextStack);
     }
   }
 
@@ -134,30 +138,15 @@ function resolveElementTree(element: React.ReactNode): void {
   }
 }
 
-// Dynamic JSX compiler pass (generates layoutJSON tree completely dynamically)
-export function compileWidgetToLayout(widget: WidgetData, state: Record<string, any>): LayoutNode {
-  const templateId = widget.templateId;
-  const templateConfig = widgetsJson.find((w: any) => w.id === templateId);
-  const defaults = (templateConfig?.customizations || {}) as Record<string, string | number | boolean | undefined>;
-  const customizations = { ...defaults, ...(widget.customizations || {}) };
-
-  const Component = getWidgetComponent(templateId);
-  const props = buildWidgetProps(templateId, customizations, state);
-
-  let compiledLayout: LayoutNode = {
-    type: 'view',
-    style: { width: '100%', height: '100%', flexDirection: 'column' },
-    children: []
-  };
-
-  // Mock standard React Hooks and internal dispatcher temporarily to run functional component evaluation
-  const ReactAny = React as any;
-  const dispatcher = {
+// Builds a mock React hook dispatcher for synchronous functional component evaluation.
+function makeMockDispatcher(contextStack: any[]) {
+  return {
     useMemo: (factory: () => unknown) => factory(),
     useState: (initialValue: unknown) => [
       typeof initialValue === 'function' ? (initialValue as Function)() : initialValue,
-      () => {}
+      () => {},
     ],
+    useReducer: (reducer: any, initialArg: any) => [initialArg, () => {}],
     useEffect: () => {},
     useRef: (initialValue: unknown) => ({ current: initialValue }),
     useCallback: (callback: unknown) => callback,
@@ -169,25 +158,66 @@ export function compileWidgetToLayout(widget: WidgetData, state: Record<string, 
     },
     useLayoutEffect: () => {},
     useDebugValue: () => {},
-    useTransition: () => [false, () => {}],
+    useTransition: () => [false, (fn: any) => fn()],
     useDeferredValue: (value: any) => value,
-    useId: () => 'id',
+    useId: () => '__widget_id__',
     useImperativeHandle: () => {},
     useInsertionEffect: () => {},
-    useSyncExternalStore: (subscribe: any, getSnapshot: any) => getSnapshot(),
+    useSyncExternalStore: (_subscribe: any, getSnapshot: any) => getSnapshot(),
+    // React 19 additions
+    useOptimistic: (state: any) => [state, () => {}],
+    useFormStatus: () => ({ pending: false, data: null, method: null, action: null }),
+    useActionState: (_action: any, initialState: any) => [initialState, () => {}],
+    readContext: (contextType: any) => {
+      if (contextType === WidgetLayoutContext) {
+        return contextStack[contextStack.length - 1] || null;
+      }
+      return null;
+    },
+  };
+}
+
+// Dynamic JSX compiler — generates a layoutJSON tree by statically evaluating widget components.
+export function compileWidgetToLayout(widget: WidgetData, state: Record<string, any>): LayoutNode {
+  const templateId = widget.templateId;
+  const templateConfig = widgetsJson.find((w: any) => w.id === templateId);
+  const defaults = (templateConfig?.customizations || {}) as Record<
+    string,
+    string | number | boolean | undefined
+  >;
+  const customizations = { ...defaults, ...(widget.customizations || {}) };
+
+  const Component = getWidgetComponent(templateId);
+  const props = buildWidgetProps(templateId, customizations, state);
+
+  let compiledLayout: LayoutNode = {
+    type: 'view',
+    style: { width: '100%', height: '100%', flexDirection: 'column' },
+    children: [],
   };
 
-  const originalDispatcher = ReactAny.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED?.ReactCurrentDispatcher?.current;
-  if (ReactAny.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED?.ReactCurrentDispatcher) {
-    ReactAny.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher.current = dispatcher;
+  // Local per-call context stack — avoids cross-call mutation via module-level state
+  const contextStack: any[] = [];
+  const dispatcher = makeMockDispatcher(contextStack);
+
+  const ReactAny = React as any;
+
+  // ── Patch React 19 dispatcher (H on __CLIENT_INTERNALS_...) ──────────────────
+  const clientInternals =
+    ReactAny.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+  const originalDispatcher19 = clientInternals ? clientInternals.H : undefined;
+  if (clientInternals) {
+    clientInternals.H = dispatcher;
   }
 
-  const originalDispatcher19 = ReactAny.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE?.H;
-  if (ReactAny.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE) {
-    ReactAny.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE.H = dispatcher;
+  // ── Patch React 18 legacy dispatcher (fallback) ──────────────────────────────
+  const legacyInternals = ReactAny.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
+  const originalDispatcher18 = legacyInternals?.ReactCurrentDispatcher?.current;
+  if (legacyInternals?.ReactCurrentDispatcher) {
+    legacyInternals.ReactCurrentDispatcher.current = dispatcher;
   }
 
-  // Enable compilation flags globally
+  // Enable compilation flags for component wrappers (components.tsx reads these)
   const globalObj = globalThis as any;
   globalObj.__WIDGET_COMPILING__ = true;
   globalObj.__WIDGET_COMPILING_STATE__ = state;
@@ -198,33 +228,32 @@ export function compileWidgetToLayout(widget: WidgetData, state: Record<string, 
       onLayoutCollected: (layout: LayoutNode) => {
         compiledLayout = layout;
       },
-      children: React.createElement(Component, props)
+      children: React.createElement(Component, props),
     });
 
-    resolveElementTree(layoutProvider);
-    
+    resolveElementTree(layoutProvider, contextStack);
+
+    // WidgetLayoutProvider exposes the root synchronously via this global during compile
     if (globalObj.__WIDGET_COMPILED_ROOT__) {
       compiledLayout = globalObj.__WIDGET_COMPILED_ROOT__;
     }
   } catch (err) {
     console.error('[LayoutCompiler] Dynamic compilation failed for template:', templateId, err);
   } finally {
-    // Restore React dispatcher
-    if (ReactAny.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED?.ReactCurrentDispatcher) {
-      ReactAny.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher.current = originalDispatcher;
+    // Restore React 19 dispatcher
+    if (clientInternals) {
+      clientInternals.H = originalDispatcher19;
     }
-    if (ReactAny.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE) {
-      ReactAny.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE.H = originalDispatcher19;
+    // Restore React 18 legacy dispatcher
+    if (legacyInternals?.ReactCurrentDispatcher) {
+      legacyInternals.ReactCurrentDispatcher.current = originalDispatcher18;
     }
-
-    // Clear context stack and flags
-    contextStack.length = 0;
+    // Clear global flags
     delete globalObj.__WIDGET_COMPILING__;
     delete globalObj.__WIDGET_COMPILING_STATE__;
     delete globalObj.__WIDGET_COMPILING_CUSTOMS__;
     delete globalObj.__WIDGET_COMPILED_ROOT__;
   }
 
-  // Ensure children contains root wrappers if root collected children
   return compiledLayout;
 }

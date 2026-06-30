@@ -12,7 +12,7 @@ class ExpoWidgetModule extends NativeModule<{}> {
   async saveWidgetConfig(_category: string, _widgetJson: string): Promise<void> {
     console.warn('ExpoWidget.saveWidgetConfig is not supported on Web');
   }
-  async saveWidgetsStore(_widgetsJson: string, _activeTheme: string): Promise<void> {
+  async saveWidgetsStore(_widgetsJson: string, _activeTheme: string, _dynamicStateJson: string): Promise<void> {
     console.warn('ExpoWidget.saveWidgetsStore is not supported on Web');
   }
 }

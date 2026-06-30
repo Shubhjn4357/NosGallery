@@ -125,6 +125,7 @@ export function getWidgetComponent(templateId: string): React.ComponentType<any>
     case 'weather_moon_phase':
       return MoonPhaseWidget;
     default:
-      throw new Error(`[WidgetRegistry] Unknown widget template ID: ${templateId}`);
+      console.warn(`[WidgetRegistry] Unknown widget template ID: "${templateId}" — falling back to DigitalClock`);
+      return DigitalClock;
   }
 }

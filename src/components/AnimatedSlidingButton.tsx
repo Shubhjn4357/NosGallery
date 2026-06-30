@@ -103,19 +103,23 @@ export const AnimatedSlidingButton: React.FC<AnimatedSlidingButtonProps> = ({
     );
   }, [pan]);
 
-  // Text fade opacity based on thumb position
-  const textOpacity = pan.interpolate({
-    inputRange: [0, Math.max(range * 0.6, 1)],
-    outputRange: [1, 0],
-    extrapolate: 'clamp',
-  });
+  // Text fade opacity based on thumb position — guard against zero range before layout
+  const textOpacity = layoutWidth > 0
+    ? pan.interpolate({
+        inputRange: [0, Math.max(range * 0.6, 1)],
+        outputRange: [1, 0],
+        extrapolate: 'clamp',
+      })
+    : 1;
 
-  // Background glow line expansion
-  const glowWidth = pan.interpolate({
-    inputRange: [0, Math.max(range, 1)],
-    outputRange: [THUMB_SIZE + PADDING * 2, layoutWidth || 100],
-    extrapolate: 'clamp',
-  });
+  // Background glow line expansion — guard against zero range before layout
+  const glowWidth = layoutWidth > 0
+    ? pan.interpolate({
+        inputRange: [0, Math.max(range, 1)],
+        outputRange: [THUMB_SIZE + PADDING * 2, layoutWidth],
+        extrapolate: 'clamp',
+      })
+    : THUMB_SIZE + PADDING * 2;
 
   return (
     <View 

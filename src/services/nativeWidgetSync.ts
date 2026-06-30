@@ -1,18 +1,28 @@
 
 import { Platform } from 'react-native';
-import Constants, { ExecutionEnvironment } from 'expo-constants';
+import Constants from 'expo-constants';
 import { ExpoWidget, compileWidgetToLayout } from '../../modules/expo-widget/src';
 import { useWidgetStore } from '../store/widgetStore';
 import { themes, ThemeId } from '../themes/themes';
 
-const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+/**
+ * Detect if running inside Expo Go.
+ * SDK 51+: Constants.appOwnership === 'expo' means Expo Go.
+ */
+function isExpoGo(): boolean {
+  return Constants.appOwnership === 'expo';
+}
+
 const isAndroid = Platform.OS === 'android';
 
 let unsubscribe: (() => void) | null = null;
+let syncStarted = false;
 
-/** Call this once in the app root (e.g. App.tsx / index.tsx useEffect). */
+/** Call this once in the app root (e.g. _layout.tsx useEffect). */
 export function startNativeWidgetSync() {
-  if (!isAndroid || isExpoGo) return;
+  // Don't run in Expo Go, non-Android, or if already started
+  if (!isAndroid || isExpoGo() || syncStarted) return;
+  syncStarted = true;
 
   const syncToNative = async (state: ReturnType<typeof useWidgetStore.getState>) => {
     try {
@@ -33,8 +43,8 @@ export function startNativeWidgetSync() {
         googleUser: state.googleUser,
       };
 
-      const activeThemeConfig = themes[state.activeTheme] || themes.nos;
-      
+      const activeThemeConfig = themes[state.activeTheme as ThemeId] || themes.nos;
+
       const widgetsWithLayout = state.widgets.map((w) => {
         try {
           const layout = compileWidgetToLayout(w, state);
@@ -54,31 +64,30 @@ export function startNativeWidgetSync() {
         JSON.stringify(dynamicState)
       );
     } catch (err) {
-      // Non-fatal — widget will fall back to defaults next update
+      // Non-fatal — widget will fall back to defaults on next update
       console.log('[NativeWidgetSync] saveWidgetsStore failed:', err);
     }
   };
 
-  // Initial sync
+  // Initial sync on mount
   const initialState = useWidgetStore.getState();
   syncToNative(initialState);
 
-  // Subscribe to future changes (throttled to avoid rapid-fire saves)
+  // Subscribe to future store changes with a 500ms debounce
   let pendingTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  unsubscribe = useWidgetStore.subscribe(
-    (state) => {
-      if (pendingTimeout) clearTimeout(pendingTimeout);
-      pendingTimeout = setTimeout(() => {
-        syncToNative(state);
-        pendingTimeout = null;
-      }, 500); // 500ms debounce
-    }
-  );
+  unsubscribe = useWidgetStore.subscribe((state) => {
+    if (pendingTimeout) clearTimeout(pendingTimeout);
+    pendingTimeout = setTimeout(() => {
+      syncToNative(state);
+      pendingTimeout = null;
+    }, 500);
+  });
 }
 
 /** Cleanup subscription (call on app unmount if needed). */
 export function stopNativeWidgetSync() {
   unsubscribe?.();
   unsubscribe = null;
+  syncStarted = false;
 }

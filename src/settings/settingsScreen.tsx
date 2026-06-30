@@ -67,6 +67,9 @@ export const SettingsScreen: React.FC = () => {
     return cost.toFixed(2);
   };
 
+  // Battery estimation calculator
+  const batteryEstimation = getBatteryEstimation();
+
   return (
     <ScrollView 
       contentContainerStyle={[
@@ -203,15 +206,15 @@ export const SettingsScreen: React.FC = () => {
         <View style={styles.batteryEstimationPanel}>
           <View style={styles.rowSpace}>
             <Text style={styles.estTitle}>ESTIMATED DRAIN COST</Text>
-            <Text style={styles.estValue}>{getBatteryEstimation()}% / HR</Text>
+            <Text style={styles.estValue}>{batteryEstimation}% / HR</Text>
           </View>
           <View style={styles.estBarBg}>
             <View
               style={[
                 styles.estBarFill,
                 {
-                  width: `${Math.min(Number(getBatteryEstimation()) * 80, 100)}%`,
-                  backgroundColor: Number(getBatteryEstimation()) > 0.4 ? '#ff2d2d' : '#ffffff',
+                  width: `${Math.min(Number(batteryEstimation) * 80, 100)}%`,
+                  backgroundColor: Number(batteryEstimation) > 0.4 ? '#ff2d2d' : '#ffffff',
                 },
               ]}
             />
@@ -337,7 +340,7 @@ export const SettingsScreen: React.FC = () => {
         </View>
         <View style={styles.diagRow}>
           <Text style={styles.diagLabel}>Persistence Store</Text>
-          <Text style={[styles.diagValue, { color: '#ff2d2d' }]}>MMKV CACHE ACTIVE</Text>
+          <Text style={[styles.diagValue, { color: '#34c759' }]}>ASYNCSTORAGE ACTIVE</Text>
         </View>
         
         <TouchableOpacity

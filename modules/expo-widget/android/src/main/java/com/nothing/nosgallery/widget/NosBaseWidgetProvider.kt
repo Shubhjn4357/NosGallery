@@ -606,7 +606,12 @@ open class NosBaseWidgetProvider : AppWidgetProvider() {
             ?: "none"
 
         // ── Template Specific Dynamic State Resolving (Only for generic fallback layout) ────────
-        if (views.layoutId == R.layout.nos_widget_layout) {
+        val hasCustomLayout = if (templateId.isNotEmpty()) {
+            val resName = "widgetprovider_${templateId.lowercase(Locale.getDefault())}_layout"
+            context.resources.getIdentifier(resName, "layout", context.packageName) != 0
+        } else false
+        
+        if (!hasCustomLayout) {
             if (templateId.startsWith("clock_") && templateId != "clock_stopwatch") {
                 views.setViewVisibility(R.id.nos_widget_clock_value, View.VISIBLE)
                 views.setViewVisibility(R.id.nos_widget_value, View.GONE)

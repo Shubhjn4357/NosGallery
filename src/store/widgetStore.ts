@@ -57,7 +57,7 @@ interface WidgetState {
   selectedWidgetId: string | null;
   downloadedPresets: ActiveWidget[];
   settings: SystemSettings;
-  activeTab: 'editor' | 'marketplace' | 'wallpapers' | 'settings';
+  activeTab: 'editor' | 'settings';
   googleUser: UserGoogleAccount | null;
   toastMessage: string | null;
   toastType: 'success' | 'error' | 'info' | 'warning' | null;
@@ -85,7 +85,7 @@ interface WidgetState {
   setActiveTheme: (theme: ThemeId) => void;
   setSelectedWidgetId: (id: string | null) => void;
   updateSettings: (updates: Partial<SystemSettings>) => void;
-  setActiveTab: (tab: 'editor' | 'marketplace' | 'wallpapers' | 'settings') => void;
+  setActiveTab: (tab: 'editor' | 'settings') => void;
   setGoogleUser: (user: UserGoogleAccount | null) => void;
   showToast: (msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void;
   hideToast: () => void;
@@ -477,6 +477,15 @@ export const useWidgetStore = create<WidgetState>()(
     {
       name: 'nos-gallery-widget-storage',
       storage: createJSONStorage(() => AsyncStorage),
+      // Reset transient runtime state on hydration so stale state from a previous session
+      // doesn't cause inconsistencies (e.g. stopwatch showing "running" with no interval)
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.stopwatchRunning = false;
+          state.toastMessage = null;
+          state.toastType = null;
+        }
+      },
       partialize: (state) => ({
         widgets: state.widgets,
         selectedWallpaper: state.selectedWallpaper,
