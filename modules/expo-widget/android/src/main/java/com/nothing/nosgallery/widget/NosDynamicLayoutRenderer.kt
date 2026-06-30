@@ -295,7 +295,11 @@ object NosDynamicLayoutRenderer {
                 "flex-end" -> Gravity.BOTTOM
                 else -> Gravity.TOP
             }
-            views.setInt(viewId, "setOrientation", LinearLayout.HORIZONTAL)
+            if (viewId == R.id.dynamic_view_container) {
+                try {
+                    views.setInt(viewId, "setOrientation", LinearLayout.HORIZONTAL)
+                } catch (_: Exception) {}
+            }
         } else {
             gravity = when (justifyContent) {
                 "center" -> Gravity.CENTER_VERTICAL
@@ -307,9 +311,18 @@ object NosDynamicLayoutRenderer {
                 "flex-end" -> Gravity.RIGHT
                 else -> Gravity.LEFT
             }
-            views.setInt(viewId, "setOrientation", LinearLayout.VERTICAL)
+            if (viewId == R.id.dynamic_view_container) {
+                try {
+                    views.setInt(viewId, "setOrientation", LinearLayout.VERTICAL)
+                } catch (_: Exception) {}
+            }
         }
-        views.setInt(viewId, "setGravity", gravity)
+
+        if (viewId == R.id.dynamic_view_container || type == "text" || type == "button" || type == "clock" || type == "chronometer") {
+            try {
+                views.setInt(viewId, "setGravity", gravity)
+            } catch (_: Exception) {}
+        }
 
         // 5. Text-specific styles (color, size, alignment)
         val textColorStr = style.optString("color")

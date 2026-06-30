@@ -151,13 +151,6 @@ export function compileWidgetToLayout(widget: WidgetData, state: Record<string, 
   };
 
   // Mock standard React Hooks and internal dispatcher temporarily to run functional component evaluation
-  const originalUseMemo = React.useMemo;
-  const originalUseState = React.useState;
-  const originalUseEffect = React.useEffect;
-  const originalUseRef = React.useRef;
-  const originalUseCallback = React.useCallback;
-  const originalContext = React.useContext;
-
   const ReactAny = React as any;
   const dispatcher = {
     useMemo: (factory: () => unknown) => factory(),
@@ -194,13 +187,6 @@ export function compileWidgetToLayout(widget: WidgetData, state: Record<string, 
     ReactAny.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE.H = dispatcher;
   }
 
-  ReactAny.useMemo = dispatcher.useMemo;
-  ReactAny.useState = dispatcher.useState;
-  ReactAny.useEffect = dispatcher.useEffect;
-  ReactAny.useRef = dispatcher.useRef;
-  ReactAny.useCallback = dispatcher.useCallback;
-  ReactAny.useContext = dispatcher.useContext;
-
   // Enable compilation flags globally
   const globalObj = globalThis as any;
   globalObj.__WIDGET_COMPILING__ = true;
@@ -230,14 +216,6 @@ export function compileWidgetToLayout(widget: WidgetData, state: Record<string, 
     if (ReactAny.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE) {
       ReactAny.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE.H = originalDispatcher19;
     }
-
-    // Restore React hooks
-    ReactAny.useMemo = originalUseMemo;
-    ReactAny.useState = originalUseState;
-    ReactAny.useEffect = originalUseEffect;
-    ReactAny.useRef = originalUseRef;
-    ReactAny.useCallback = originalUseCallback;
-    ReactAny.useContext = originalContext;
 
     // Clear context stack and flags
     contextStack.length = 0;
