@@ -16,31 +16,20 @@ permissions:
   contents: write
 
 env:
-  NODE_VERSION: '24'
   JAVA_VERSION: '17'
   GRADLE_OPTS: '-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m'
 
 # ─────────────────────────────────────────────────────────────────
-# JOB 1: DEV BUILD  (expo-dev-client included, debug variant)
+# JOB 1: DEV BUILD (Debug Variant)
 # ─────────────────────────────────────────────────────────────────
 jobs:
   build-dev:
-    name: Dev Build (expo-dev-client)
+    name: Dev Build (Debug APK)
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup Node ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9
 
       - name: Setup Java ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
@@ -48,30 +37,14 @@ jobs:
           distribution: zulu
           java-version: ${{ env.JAVA_VERSION }}
 
-      - name: Accept Android SDK Licenses
-        run: |
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null || true
-
       - name: Setup Gradle Cache
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Clean existing android folder
-        run: rm -rf android
-
-      # expo-dev-client IS included via app.json plugins — prebuild picks it up automatically
-      - name: Expo Prebuild (dev, with expo-dev-client)
-        run: pnpm exec expo prebuild --platform android --no-install
-        env:
-          EXPO_NO_TELEMETRY: 1
-
-      - name: Build Debug APK (Dev)
+      - name: Build Debug APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew clean assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Rename Dev APK
         run: |
@@ -88,25 +61,15 @@ jobs:
           retention-days: 14
 
 # ─────────────────────────────────────────────────────────────────
-# JOB 2: PRODUCTION BUILD  (expo-dev-client stripped, release variant)
+# JOB 2: PRODUCTION BUILD (Release Variant)
 # ─────────────────────────────────────────────────────────────────
   build-prod:
-    name: Production Build (no expo-dev-client)
+    name: Production Build (Release APK)
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup Node ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9
 
       - name: Setup Java ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
@@ -114,44 +77,18 @@ jobs:
           distribution: zulu
           java-version: ${{ env.JAVA_VERSION }}
 
-      - name: Accept Android SDK Licenses
-        run: |
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null || true
-
       - name: Setup Gradle Cache
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
-
-      # Strip expo-dev-client from app.json and package.json autolinking (production only)
-      - name: Strip dev-client configuration for production build
-        run: node scripts/eas-pre-install.js
-        env:
-          EAS_BUILD_PROFILE: production
-
-      - name: Clean existing android folder
-        run: rm -rf android
-
-      # Release builds also set NODE_ENV=production to tree-shake dev code
-      - name: Expo Prebuild (production, without expo-dev-client)
-        run: pnpm exec expo prebuild --platform android --no-install
-        env:
-          EXPO_NO_TELEMETRY: 1
-          NODE_ENV: production
-
-      - name: Build Release APK (Production, unsigned)
+      - name: Build Release APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew clean assembleRelease --no-daemon --stacktrace
-        env:
-          NODE_ENV: production
+          ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Rename Production APK
         run: |
           mkdir -p out
-          # Unsigned release APK from Gradle
           cp android/app/build/outputs/apk/release/app-release-unsigned.apk \
              out/nos-gallery-prod-unsigned.apk 2>/dev/null || \
           cp android/app/build/outputs/apk/release/app-release.apk \
@@ -191,29 +128,29 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('v1.0.0-build.{0}', github.run_number) }}
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('v2.0.0-build.{0}', github.run_number) }}
           prerelease: ${{ !startsWith(github.ref, 'refs/tags/v') }}
           files: |
             release/nos-gallery-dev-debug.apk
             release/nos-gallery-prod-unsigned.apk
-          name: "NOS Gallery Studio ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('v1.0.0 (Build {0})', github.run_number) }}"
+          name: "NOS Gallery Studio ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('v2.0.0 (Build {0})', github.run_number) }}"
           body: |
-            ## 📱 NOS Gallery Studio — ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('v1.0.0-build.{0}', github.run_number) }}
+            ## 📱 NOS Gallery Studio — ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('v2.0.0-build.{0}', github.run_number) }}
 
-            > Widget customization studio for Nothing OS, iOS & Android
+            > Widget customization studio for Nothing OS (Native Jetpack Compose edition)
 
             ### 📦 Downloads
 
             | APK | Description | Use When |
             |-----|-------------|----------|
-            | `nos-gallery-dev-debug.apk` | **Dev Build** — includes expo-dev-client | Testing, fast refresh, Expo Go debugging |
-            | `nos-gallery-prod-unsigned.apk` | **Production Build** — stripped, release variant | Sideloading, final QA, distribution |
+            | `nos-gallery-dev-debug.apk` | **Dev Build** — native debug APK | Sandbox testing, widget layout verification |
+            | `nos-gallery-prod-unsigned.apk` | **Production Build** — unsigned release APK | Sideloading, final QA, distribution |
 
             > ⚠️ Production APK is unsigned. Sign with your keystore before publishing to Play Store.
 
             ### 🛠️ Build Info
-            - Expo SDK 56 · React Native 0.85 · Node 20 · Java 17
-            - Android target SDK 35
-            - expo-dev-client: **dev only** (stripped in production)
+            - Native Android Kotlin App
+            - Jetpack Compose / Material 3
+            - Target SDK 34
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
