@@ -39,8 +39,8 @@ yarn-error.*
 example
 
 # generated native folders
-/ios
-/android
+# local properties
+**/local.properties
 
 # local build cache
 /build-cache/

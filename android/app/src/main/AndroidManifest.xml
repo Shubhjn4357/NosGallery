@@ -1,0 +1,319 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
+  <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
+  <uses-permission android:name="android.permission.BLUETOOTH"/>
+  <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
+  <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
+  <uses-permission android:name="android.permission.CAMERA"/>
+  <uses-permission android:name="android.permission.INTERNET"/>
+  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" tools:replace="android:maxSdkVersion"/>
+  <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+  <uses-permission android:name="android.permission.VIBRATE"/>
+  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="32" tools:replace="android:maxSdkVersion"/>
+  <queries>
+    <intent>
+      <action android:name="android.intent.action.VIEW"/>
+      <category android:name="android.intent.category.BROWSABLE"/>
+      <data android:scheme="https"/>
+    </intent>
+  </queries>
+  <application android:name=".MainApplication" android:label="@string/app_name" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round" android:allowBackup="true" android:theme="@style/AppTheme" android:supportsRtl="true" android:enableOnBackInvokedCallback="false">
+    <meta-data android:name="expo.modules.updates.ENABLED" android:value="false"/>
+    <meta-data android:name="expo.modules.updates.ENABLE_BSDIFF_PATCH_SUPPORT" android:value="true"/>
+    <meta-data android:name="expo.modules.updates.EXPO_UPDATES_CHECK_ON_LAUNCH" android:value="ALWAYS"/>
+    <meta-data android:name="expo.modules.updates.EXPO_UPDATES_LAUNCH_WAIT_MS" android:value="0"/>
+    <activity android:name=".MainActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|uiMode|smallestScreenSize" android:launchMode="singleTask" android:windowSoftInputMode="adjustResize" android:theme="@style/AppTheme" android:exported="true" android:screenOrientation="portrait">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN"/>
+        <category android:name="android.intent.category.LAUNCHER"/>
+      </intent-filter>
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+        <category android:name="android.intent.category.BROWSABLE"/>
+        <data android:scheme="nosgallery"/>
+        <data android:scheme="exp+nosgallery"/>
+      </intent-filter>
+    </activity>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSClockDigitalWidget" android:exported="true" android:label="NOS Digital Clock">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_clock_digital"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSClockDotWidget" android:exported="true" android:label="NOS Dot Clock">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_clock_dot"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSClockAnalogWidget" android:exported="true" android:label="NOS Analog Clock">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_clock_analog"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSClockFlipWidget" android:exported="true" android:label="NOS Flip Clock">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_clock_flip"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSClockStopwatchWidget" android:exported="true" android:label="NOS Stopwatch">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_clock_stopwatch"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSCalendarMonthlyWidget" android:exported="true" android:label="NOS Month View">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_calendar_monthly"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSCalendarAgendaWidget" android:exported="true" android:label="NOS Agenda View">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_calendar_agenda"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSCalendarProgressWidget" android:exported="true" android:label="NOS Year Progress">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_calendar_progress"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSWeatherCurrentWidget" android:exported="true" android:label="NOS Current Weather">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_weather_current"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSWeatherAqiWidget" android:exported="true" android:label="NOS Air Quality">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_weather_aqi"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSMoonPhaseWidget" android:exported="true" android:label="NOS Moon Phase">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_weather_moon_phase"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSProductivityTodoWidget" android:exported="true" android:label="NOS To-Do List">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_productivity_todo"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSProductivityFocusWidget" android:exported="true" android:label="NOS Focus Mode">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_productivity_focus"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSCalculatorWidget" android:exported="true" android:label="NOS Calculator">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_productivity_calculator"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSCameraWidget" android:exported="true" android:label="NOS Camera Shortcut">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_productivity_camera"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSMusicWidget" android:exported="true" android:label="NOS Music Player">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_productivity_music"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSTextUsernameWidget" android:exported="true" android:label="NOS Custom Username">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_productivity_text_username"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSGoogleSearchWidget" android:exported="true" android:label="NOS Google Search">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_productivity_google_search"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSPomodoroWidget" android:exported="true" android:label="NOS Pomodoro Timer">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_productivity_pomodoro"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSFolderWidget" android:exported="true" android:label="NOS Apps Folder">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_productivity_folder"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSPhotoFrameWidget" android:exported="true" android:label="NOS Photo Frame">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_productivity_photo_frame"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSHealthStepsWidget" android:exported="true" android:label="NOS Steps Tracker">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_health_steps"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSHealthWaterWidget" android:exported="true" android:label="NOS Water Tracker">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_health_water"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSHealthBreathWidget" android:exported="true" android:label="NOS Breathing Pacer">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_health_breath"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSFinanceCryptoWidget" android:exported="true" android:label="NOS Crypto Tracker">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_finance_crypto"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSDeveloperGitWidget" android:exported="true" android:label="NOS GitHub Grid">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_developer_git"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSDeveloperBuildWidget" android:exported="true" android:label="NOS CI/CD Pipeline">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_developer_build"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSDeveloperCpuWidget" android:exported="true" android:label="NOS CPU Monitor">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_developer_cpu"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSQuickControlsWidget" android:exported="true" android:label="NOS Control Center">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_developer_quick_controls"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSBatteryWidget" android:exported="true" android:label="NOS Battery Status">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_developer_battery"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSSocialFeedWidget" android:exported="true" android:label="NOS Social Feed">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_social_feed"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSContactWidget" android:exported="true" android:label="NOS Fav Contact">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_social_contact"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSSocialShortcutsWidget" android:exported="true" android:label="NOS Social Direct">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_social_shortcuts"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSSmartHomeControlsWidget" android:exported="true" android:label="NOS Smart Room">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_smart_home_controls"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSTorchWidget" android:exported="true" android:label="NOS Torch">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_smart_home_torch"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSBluetoothWidget" android:exported="true" android:label="NOS Bluetooth">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_smart_home_bluetooth"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSSoundControlWidget" android:exported="true" android:label="NOS Sound Control">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_smart_home_sound_control"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSAiChatWidget" android:exported="true" android:label="NOS AI Chat">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_ai_chat"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSAiSummaryWidget" android:exported="true" android:label="NOS AI Summary">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_ai_summary"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NOSAiBarWidget" android:exported="true" android:label="NOS AI Router">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.nothing.nosgallery.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_ai_bar"/>
+    </receiver>
+    <receiver android:name="com.nothing.nosgallery.widget.NosWidgetPinReceiver" android:exported="false"/>
+  </application>
+</manifest>
