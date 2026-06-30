@@ -241,8 +241,8 @@ object NosDynamicLayoutRenderer {
                     val drawableRes = radiusMap[closestRadius] ?: R.drawable.widget_rounded_bg_16
                     
                     views.setInt(viewId, "setBackgroundResource", drawableRes)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        views.setInt(viewId, "setBackgroundTintList", ColorStateList.valueOf(color))
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        views.setColorStateList(viewId, "setBackgroundTintList", ColorStateList.valueOf(color))
                     }
                 } else {
                     views.setInt(viewId, "setBackgroundColor", color)
