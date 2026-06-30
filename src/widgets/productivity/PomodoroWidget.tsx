@@ -1,6 +1,7 @@
 import { Hourglass, Play, Pause, RotateCcw } from 'lucide-react-native';
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity } from '../../../modules/expo-widget/src';
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';
 import { useFeedback } from '../../hooks/useFeedback';

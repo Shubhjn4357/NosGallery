@@ -61,7 +61,11 @@ open class NosBaseWidgetProvider : AppWidgetProvider() {
             val appWidgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID)
             val clickAction = intent.getStringExtra("clickAction")
             if (appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID && clickAction != null) {
-                handleWidgetClick(context, appWidgetId, clickAction)
+                if (clickAction.startsWith("{") && clickAction.endsWith("}")) {
+                    executeDynamicAction(context, appWidgetId, clickAction)
+                } else {
+                    handleWidgetClick(context, appWidgetId, clickAction)
+                }
             }
         } else {
             super.onReceive(context, intent)
@@ -224,6 +228,80 @@ open class NosBaseWidgetProvider : AppWidgetProvider() {
         updateWidget(context, appWidgetManager, appWidgetId)
     }
 
+    private fun executeDynamicAction(context: Context, appWidgetId: Int, actionJsonStr: String) {
+        try {
+            val action = JSONObject(actionJsonStr)
+            val type = action.optString("type", "state")
+
+            when (type) {
+                "intent" -> {
+                    val intentAction = action.optString("intentAction", Intent.ACTION_VIEW)
+                    val uriStr = action.optString("uri")
+                    val intent = if (!uriStr.isNullOrBlank()) {
+                        Intent(intentAction, Uri.parse(uriStr))
+                    } else {
+                        Intent(intentAction)
+                    }
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(intent)
+                }
+                "route" -> {
+                    val route = action.optString("route")
+                    if (!route.isNullOrBlank()) {
+                        val deepLinkUri = "nosgallery://app/$route"
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(deepLinkUri)).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        context.startActivity(intent)
+                    }
+                }
+                "state" -> {
+                    val field = action.optString("field")
+                    if (!field.isNullOrBlank()) {
+                        val mutation = action.optString("mutation", "set")
+                        val dynamicState = NosWidgetPreferences.getDynamicStateJson(context)
+
+                        when (mutation) {
+                            "toggle" -> {
+                                val curr = dynamicState.optBoolean(field, false)
+                                dynamicState.put(field, !curr)
+                            }
+                            "increment" -> {
+                                val amount = action.optInt("amount", 1)
+                                val curr = dynamicState.optInt(field, 0)
+                                dynamicState.put(field, curr + amount)
+                            }
+                            "set" -> {
+                                val value = action.opt("value")
+                                dynamicState.put(field, value)
+                            }
+                        }
+
+                        NosWidgetPreferences.getPrefs(context).edit()
+                            .putString("dynamicState", dynamicState.toString())
+                            .apply()
+
+                        val config = NosWidgetPreferences.resolveWidgetConfig(context, appWidgetId, null, "") ?: JSONObject()
+                        syncWidgetBackToStore(context, appWidgetId, config)
+
+                        val appWidgetManager = AppWidgetManager.getInstance(context)
+                        updateWidget(context, appWidgetManager, appWidgetId)
+                    }
+                }
+                "native" -> {
+                    val nativeAction = action.optString("nativeAction")
+                    val config = NosWidgetPreferences.resolveWidgetConfig(context, appWidgetId, null, "") ?: JSONObject()
+                    handleNativeAction(context, nativeAction, config)
+
+                    val appWidgetManager = AppWidgetManager.getInstance(context)
+                    updateWidget(context, appWidgetManager, appWidgetId)
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("NosBaseWidgetProvider", "Failed to execute dynamic action: ${e.message}", e)
+        }
+    }
+
     private fun toggleNativeFlashlight(context: Context, enable: Boolean) {
         try {
             val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as android.hardware.camera2.CameraManager
@@ -306,6 +384,42 @@ open class NosBaseWidgetProvider : AppWidgetProvider() {
         val config = NosWidgetPreferences.resolveWidgetConfig(context, appWidgetId, template, categoryPrefix)
         val theme = NosWidgetPreferences.getActiveTheme(context)
         val customs = config?.optJSONObject("customizations")
+
+        val layoutJsonStr = config?.optString("layoutJSON")
+        if (!layoutJsonStr.isNullOrBlank()) {
+            try {
+                val layoutNode = JSONObject(layoutJsonStr)
+                val views = RemoteViews(context.packageName, R.layout.nos_widget_layout)
+
+                // Clear all views inside root FrameLayout
+                views.removeAllViews(R.id.nos_widget_root)
+
+                // Background color: customizations > theme default
+                val bgColor = parseColorOr(customs?.optString("backgroundColor"), themeBackground(theme))
+                views.setInt(R.id.nos_widget_root, "setBackgroundColor", bgColor)
+
+                // Root tap action
+                val tapIntent = buildLaunchIntent(context, config)
+                val pendingIntent = PendingIntent.getActivity(
+                    context,
+                    appWidgetId,
+                    tapIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(R.id.nos_widget_root, pendingIntent)
+
+                // Recursively render dynamic layout and add it under root FrameLayout
+                val dynamicViews = NosDynamicLayoutRenderer.renderNode(context, layoutNode, appWidgetId, this)
+                if (dynamicViews != null) {
+                    views.addView(R.id.nos_widget_root, dynamicViews)
+                }
+
+                appWidgetManager.updateAppWidget(appWidgetId, views)
+                return
+            } catch (e: Exception) {
+                android.util.Log.e("NosBaseWidgetProvider", "Failed to render dynamic layout: ${e.message}", e)
+            }
+        }
 
         val layoutResName = if (template != null) {
             "widgetprovider_${template.lowercase()}_layout"

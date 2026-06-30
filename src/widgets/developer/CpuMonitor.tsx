@@ -1,6 +1,7 @@
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { View, Text } from '../../../modules/expo-widget/src';
 import Svg, { Path, Line, Circle } from 'react-native-svg';
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';

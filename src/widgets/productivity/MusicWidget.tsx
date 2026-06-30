@@ -1,6 +1,7 @@
 import { Play, Pause, SkipForward, SkipBack, Music } from 'lucide-react-native';
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Image } from '../../../modules/expo-widget/src';
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';
 import { useWidgetStore } from '../../store/widgetStore';

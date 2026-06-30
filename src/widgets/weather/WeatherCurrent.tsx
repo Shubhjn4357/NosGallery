@@ -1,7 +1,8 @@
 import { Droplets, Thermometer, Wind, Sun, Cloud, CloudRain, CloudDrizzle, Snowflake, CloudLightning, CloudSun } from 'lucide-react-native';
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React, { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text } from '../../../modules/expo-widget/src';
 
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { fetchLiveWeather, LiveWeatherData } from '../../services/apiService';

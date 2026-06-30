@@ -1,7 +1,7 @@
 
 import { Platform } from 'react-native';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
-import { ExpoWidget } from '../../modules/expo-widget/src';
+import { ExpoWidget, compileWidgetToLayout } from '../../modules/expo-widget/src';
 import { useWidgetStore } from '../store/widgetStore';
 import { themes, ThemeId } from '../themes/themes';
 
@@ -34,8 +34,22 @@ export function startNativeWidgetSync() {
       };
 
       const activeThemeConfig = themes[state.activeTheme] || themes.nos;
+      
+      const widgetsWithLayout = state.widgets.map((w) => {
+        try {
+          const layout = compileWidgetToLayout(w, state);
+          return {
+            ...w,
+            layoutJSON: JSON.stringify(layout),
+          };
+        } catch (err) {
+          console.warn('[NativeWidgetSync] Failed to compile widget layout:', w.templateId, err);
+          return w;
+        }
+      });
+
       await ExpoWidget.saveWidgetsStore(
-        JSON.stringify(state.widgets),
+        JSON.stringify(widgetsWithLayout),
         JSON.stringify(activeThemeConfig),
         JSON.stringify(dynamicState)
       );

@@ -23,7 +23,7 @@ import widgetsJson from '../widgets/widgets.json';
 import { themes, ThemeId } from '../themes/themes';
 import { WidgetCard } from '../components/WidgetCard';
 import { CustomizerDrawer } from '@/editor/CustomizerDrawer';
-import { ExpoWidget } from '../../modules/expo-widget/src';
+import { ExpoWidget, compileWidgetToLayout } from '../../modules/expo-widget/src';
 import { startNativeWidgetSync } from '../services/nativeWidgetSync';
 
 const widgetsJsonTyped = widgetsJson as unknown as WidgetTemplateJson[];
@@ -175,7 +175,18 @@ export default function Index() {
     
     // Pre-generate a unique ID for the widget to associate it with the home screen widget instance
     const newWidgetId = `widget_${Date.now()}`;
-    const widgetToPin = { ...pendingWidget, id: newWidgetId };
+    
+    // Compile pending widget with layout
+    const state = useWidgetStore.getState();
+    let layoutJSON = '';
+    try {
+      const layout = compileWidgetToLayout(pendingWidget, state);
+      layoutJSON = JSON.stringify(layout);
+    } catch (e) {
+      console.warn('[handleAddToHomeScreen] Failed to compile widget layout:', pendingWidget.templateId, e);
+    }
+
+    const widgetToPin = { ...pendingWidget, id: newWidgetId, layoutJSON };
     
     // Save widget to grid state
     applyPendingToGrid(newWidgetId);

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ColorValue } from 'react-native';
+import { StyleSheet, ColorValue } from 'react-native';
+import { View, Text } from '../../../modules/expo-widget/src';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';

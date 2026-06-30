@@ -1,29 +1,3 @@
-/**
- * expo-widget — Android native widget system for Expo/React Native
- *
- * Fully dynamic, data-driven widget engine. Define widgets in React Native,
- * render them natively on the Android home screen. No native code changes needed.
- *
- * @example
- * ```ts
- * import { ExpoWidget, WidgetConfig } from 'expo-widget';
- *
- * // Pin a widget to the home screen
- * const config: WidgetConfig = {
- *   id: 'my_clock',
- *   templateId: 'clock_digital',
- *   w: 2, h: 2,
- *   customizations: {
- *     titleText: 'MY CLOCK',
- *     valueText: '10:42 PM',
- *     footerText: 'NOS • CLOCK',
- *   }
- * };
- *
- * await ExpoWidget.requestPinWidget('NOSWidget2x2', config.id, 'clock', JSON.stringify(config));
- * ```
- */
-
 // Native module bridge
 export { default as ExpoWidget } from './ExpoWidget';
 
@@ -40,3 +14,44 @@ export {
   getWidgetProviderName,
   buildWidgetConfig,
 } from './helpers';
+
+// Compiler
+export {
+  compileWidgetToLayout,
+} from './layoutCompiler';
+
+// Context & Providers
+export {
+  WidgetLayoutContext,
+  WidgetLayoutProvider,
+} from './context';
+export type {
+  LayoutNode,
+  WidgetLayoutContextType
+} from './context';
+
+// Dynamic Components
+export {
+  View,
+  Text,
+  Pressable,
+  Image,
+  ProgressBar,
+  TextClock,
+  Chronometer,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  TouchableHighlight,
+  ScrollView,
+  SafeAreaView
+} from './components';
+
+// SDK Hooks
+export {
+  useWidgetState,
+  useWidgetConfig
+} from './hooks';
+export type {
+  WidgetCustomizations as SDKWidgetCustomizations,
+  WidgetConfig as SDKWidgetConfig
+} from './hooks';

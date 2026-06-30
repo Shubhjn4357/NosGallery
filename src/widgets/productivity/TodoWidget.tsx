@@ -1,7 +1,8 @@
 import { Check, CheckSquare } from 'lucide-react-native';
 import { WidgetCustomizations } from '../../store/widgetStore';
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity } from '../../../modules/expo-widget/src';
 
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';

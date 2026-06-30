@@ -1,6 +1,7 @@
 import { Camera, Image as ImageIcon } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Image } from '../../../modules/expo-widget/src';
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';
 import { useFeedback } from '../../hooks/useFeedback';

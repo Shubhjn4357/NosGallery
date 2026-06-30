@@ -1,7 +1,6 @@
 const { withDangerousMod, withAndroidManifest } = require('@expo/config-plugins');
 const fs = require('fs');
 const path = require('path');
-const { parseTsxToKotlin } = require('./tsxParser');
 
 function withAndroidWidgets(config) {
   const projectRoot = config.modRequest?.projectRoot || process.cwd();
@@ -177,6 +176,22 @@ function withAndroidWidgets(config) {
         });
       }
 
+      // Clean up legacy layout files generated in android/app/src/main/res/layout/
+      const appResLayoutDir = path.join(projectRoot, 'android', 'app', 'src', 'main', 'res', 'layout');
+      if (fs.existsSync(appResLayoutDir)) {
+        const files = fs.readdirSync(appResLayoutDir);
+        files.forEach((file) => {
+          if (file.startsWith('widgetprovider_') && file.endsWith('_layout.xml')) {
+            try {
+              fs.unlinkSync(path.join(appResLayoutDir, file));
+              console.log(`[withAndroidWidgets] Cleaned up legacy layout XML: ${file}`);
+            } catch (err) {
+              console.warn(`[withAndroidWidgets] Failed to delete layout XML ${file}:`, err.message);
+            }
+          }
+        });
+      }
+
       // 2b. Kotlin files: android/app/src/main/java/com/nothing/nosgallery/widget/
       const widgetJavaDir = path.join(projectRoot, 'android', 'app', 'src', 'main', 'java', 'com', 'nothing', 'nosgallery', 'widget');
       if (!fs.existsSync(widgetJavaDir)) {
@@ -184,69 +199,10 @@ function withAndroidWidgets(config) {
       }
       
       templateWidgets.forEach((w) => {
-        let customMethods = '';
-        let extraImports = '';
-        
-        const relPath = findTsxFilePath(w, projectRoot);
-        if (relPath) {
-          const tsxFilePath = path.join(projectRoot, relPath);
-          if (fs.existsSync(tsxFilePath)) {
-            const tsxContent = fs.readFileSync(tsxFilePath, 'utf8');
-            const { kotlinCode, kotlinImports, xmlContent } = parseTsxToKotlin(tsxContent, w);
-            
-            if (xmlContent) {
-              const layoutDir = path.join(projectRoot, 'android', 'app', 'src', 'main', 'res', 'layout');
-              if (!fs.existsSync(layoutDir)) {
-                fs.mkdirSync(layoutDir, { recursive: true });
-              }
-              const layoutName = `widgetprovider_${w.id.toLowerCase()}_layout.xml`;
-              fs.writeFileSync(path.join(layoutDir, layoutName), xmlContent, 'utf8');
-            }
-
-            if (kotlinCode) {
-              const defaultImports = [
-                'android.appwidget.AppWidgetManager',
-                'android.content.Context',
-                'android.widget.RemoteViews',
-                'org.json.JSONObject',
-                'org.json.JSONArray',
-                'com.nothing.nosgallery.R'
-              ];
-              const filteredImports = kotlinImports.filter(imp => !defaultImports.includes(imp));
-              if (filteredImports.length > 0) {
-                extraImports = '\n' + filteredImports.map(imp => `import ${imp}`).join('\n');
-              }
-              const indentedCode = kotlinCode.split('\n').map(line => `        ${line}`).join('\n');
-              
-              customMethods = `
-
-    @Suppress("UNUSED_VARIABLE")
-    override fun populateViews(
-        context: Context,
-        views: RemoteViews,
-        config: JSONObject?,
-        customs: JSONObject?,
-        theme: String,
-        appWidgetId: Int
-    ) {
-${indentedCode}
-    }
-`;
-            }
-          }
-        }
-
         const ktContent = `package com.nothing.nosgallery.widget
 
-import android.appwidget.AppWidgetManager
-import android.content.Context
-import android.widget.RemoteViews
-import org.json.JSONObject
-import org.json.JSONArray
-import com.nothing.nosgallery.R${extraImports}
-
 class ${w.className} : NosBaseWidgetProvider() {
-    override val defaultTemplateId = "${w.id}"${customMethods}
+    override val defaultTemplateId = "${w.id}"
 }
 `;
         fs.writeFileSync(path.join(widgetJavaDir, `${w.className}.kt`), ktContent, 'utf8');
@@ -261,7 +217,7 @@ class ${w.className} : NosBaseWidgetProvider() {
       templateWidgets.forEach((w) => {
         const minWidth = w.w === 4 ? 330 : 160;
         const minHeight = w.h === 4 ? 230 : 110;
-        const layoutName = `widgetprovider_${w.id.toLowerCase()}_layout`;
+        const layoutName = `nos_widget_layout`;
         const xmlContent = `<?xml version="1.0" encoding="utf-8"?>
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="${minWidth}dp"

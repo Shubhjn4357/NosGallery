@@ -1,6 +1,7 @@
 import { Beef, Droplet, Flame, Footprints, Wheat } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity } from '../../../modules/expo-widget/src';
 import { WidgetCustomizations } from '../../store/widgetStore';
 import { useWidgetStyle } from '../../hooks/useWidgetStyle';
 import { ThemeId } from '../../themes/themes';
