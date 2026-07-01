@@ -1,8 +1,5 @@
 package com.nothing.nosgallery.ui
 
-import android.content.Context
-import android.os.Vibrator
-import android.os.VibrationEffect
 import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,8 +18,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -31,13 +29,56 @@ import androidx.compose.ui.unit.sp
 import com.nothing.nosgallery.store.WidgetStore
 import com.nothing.nosgallery.store.SavedWidget
 
+// Settings Claymorphic container Composable
+@Composable
+fun SettingsClayCard(
+    title: String,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 6.dp,
+                shape = RoundedCornerShape(28.dp),
+                clip = false,
+                ambientColor = Color.Black.copy(alpha = 0.4f),
+                spotColor = Color.Black.copy(alpha = 0.4f)
+            )
+            .background(Color(0xFF161619), RoundedCornerShape(28.dp))
+            .border(
+                1.dp,
+                Brush.linearGradient(
+                    colors = listOf(
+                        Color.White.copy(alpha = 0.08f),
+                        Color.Black.copy(alpha = 0.3f)
+                    )
+                ),
+                RoundedCornerShape(28.dp)
+            )
+            .padding(18.dp)
+    ) {
+        Column {
+            Text(
+                text = title.uppercase(),
+                color = Color.White,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.5.sp,
+                modifier = Modifier.padding(bottom = 14.dp)
+            )
+            content()
+        }
+    }
+}
+
 @Composable
 fun SettingsScreen(
     store: WidgetStore,
     modifier: Modifier = Modifier,
     showToast: (String, String) -> Unit
 ) {
-    val context = LocalContext.current
     val view = LocalView.current
     val scrollState = rememberScrollState()
 
@@ -52,7 +93,8 @@ fun SettingsScreen(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .padding(16.dp),
+            .padding(16.dp)
+            .padding(bottom = 80.dp), // Space for floating tab bar
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // ── HEADER ──
@@ -63,19 +105,19 @@ fun SettingsScreen(
                 Text(text = "STUDIO SETTINGS", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
             }
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = "Configure the dashboard widgets engine and theme settings", color = Color(0xFF8E8E93), fontSize = 11.sp)
+            Text(text = "Configure the widgets engine and active theme defaults", color = Color(0xFF8E8E93), fontSize = 11.sp)
             Spacer(modifier = Modifier.height(12.dp))
-            Divider(color = Color(0xFF1F1F22))
+            HorizontalDivider(color = Color(0xFF1F1F22))
         }
 
         // ── STUDIO ENVIRONMENT ──
-        SectionCard(title = "Studio Environment") {
+        SettingsClayCard(title = "Studio Environment") {
             Column(modifier = Modifier.padding(vertical = 4.dp)) {
                 Text("Global Theme", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                Text("Active skin for the gallery dashboard", color = Color(0xFF8E8E93), fontSize = 10.sp)
+                Text("Active theme applied to all launcher widgets", color = Color(0xFF8E8E93), fontSize = 10.sp)
                 Spacer(modifier = Modifier.height(8.dp))
                 
-                val themesList = listOf("nos", "minimal", "warm", "luxury", "cyberpunk", "amoled")
+                val themesList = listOf("nos", "minimal", "warm", "luxury", "cyberpunk", "amoled", "glassmorphism", "liquidglass")
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -85,14 +127,14 @@ fun SettingsScreen(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(20.dp))
-                                .background(if (isSelected) Color.White else Color(0xFF161618))
-                                .border(1.dp, Color(0xFF242426), RoundedCornerShape(20.dp))
+                                .background(if (isSelected) Color.White else Color(0xFF222226))
+                                .border(1.dp, Color(0xFF333338), RoundedCornerShape(20.dp))
                                 .clickable {
                                     triggerHaptic()
                                     store.activeTheme.value = t
                                     store.saveStateToNative()
                                 }
-                                .padding(horizontal = 14.dp, java.lang.Float.max(8f, 8f).toInt().dp), // padding vertical
+                                .padding(horizontal = 14.dp, vertical = 8.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
@@ -108,7 +150,7 @@ fun SettingsScreen(
         }
 
         // ── DEVELOPER ACCOUNTS ──
-        SectionCard(title = "Developer & Accounts") {
+        SettingsClayCard(title = "Developer & Accounts") {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 // Github Username
                 Column {
@@ -123,13 +165,14 @@ fun SettingsScreen(
                         },
                         placeholder = { Text("e.g. octocat", color = Color(0xFF666666)) },
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF242426),
-                            unfocusedBorderColor = Color(0xFF242426),
-                            focusedContainerColor = Color(0xFF161618),
-                            unfocusedContainerColor = Color(0xFF161618),
+                            focusedBorderColor = Color(0xFF333338),
+                            unfocusedBorderColor = Color(0xFF242428),
+                            focusedContainerColor = Color(0xFF0F0F12),
+                            unfocusedContainerColor = Color(0xFF0F0F12),
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color.White
                         ),
+                        shape = RoundedCornerShape(16.dp),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -149,13 +192,14 @@ fun SettingsScreen(
                         placeholder = { Text("AIzaSy...", color = Color(0xFF666666)) },
                         visualTransformation = PasswordVisualTransformation(),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF242426),
-                            unfocusedBorderColor = Color(0xFF242426),
-                            focusedContainerColor = Color(0xFF161618),
-                            unfocusedContainerColor = Color(0xFF161618),
+                            focusedBorderColor = Color(0xFF333338),
+                            unfocusedBorderColor = Color(0xFF242428),
+                            focusedContainerColor = Color(0xFF0F0F12),
+                            unfocusedContainerColor = Color(0xFF0F0F12),
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color.White
                         ),
+                        shape = RoundedCornerShape(16.dp),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -164,7 +208,7 @@ fun SettingsScreen(
         }
 
         // ── HEALTH SYNC ──
-        SectionCard(title = "Health Sync Integration") {
+        SettingsClayCard(title = "Health Sync Integration") {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -172,7 +216,7 @@ fun SettingsScreen(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Google Health Sync", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                    Text("Sync steps and health metrics with Google Fit", color = Color(0xFF8E8E93), fontSize = 10.sp)
+                    Text("Sync steps metrics with Google Fit", color = Color(0xFF8E8E93), fontSize = 10.sp)
                 }
                 Switch(
                     checked = store.googleHealthConnected.value,
@@ -207,16 +251,16 @@ fun SettingsScreen(
             String.format("%.2f", cost)
         }
 
-        SectionCard(title = "Battery Optimizer") {
+        SettingsClayCard(title = "Battery Optimizer") {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 // Readout Panel
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFF161618))
-                        .border(1.dp, Color(0xFF242426), RoundedCornerShape(12.dp))
-                        .padding(12.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(Color(0xFF0F0F12))
+                        .border(1.dp, Color(0xFF242428), RoundedCornerShape(18.dp))
+                        .padding(14.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -227,21 +271,20 @@ fun SettingsScreen(
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     
-                    // Battery indicator bar
                     val fillPercent = (batteryEstimation.toFloatOrNull() ?: 0.15f) * 0.8f
                     LinearProgressIndicator(
-                        progress = fillPercent.coerceIn(0f, 1f),
+                        progress = { fillPercent.coerceIn(0f, 1f) },
                         color = if ((batteryEstimation.toFloatOrNull() ?: 0f) > 0.4f) Color(0xFFFF2D2D) else Color.White,
-                        trackColor = Color(0xFF0A0A0C),
+                        trackColor = Color(0xFF222226),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(8.dp)
                             .clip(CircleShape)
-                            .border(1.dp, Color(0xFF242426), CircleShape)
+                            .border(1.dp, Color(0xFF333338), CircleShape)
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        "Target rate: < 1% battery/hour. The widgets engine operates under throttled background cycles.",
+                        "Target rate: < 1% battery/hour. Active widgets refresh cycle throttled automatically.",
                         color = Color(0xFF666666),
                         fontSize = 8.5.sp,
                         lineHeight = 11.sp
@@ -286,8 +329,8 @@ fun SettingsScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0xFF161618))
-                                .border(1.dp, Color(0xFF242426), RoundedCornerShape(12.dp))
+                                .background(Color(0xFF0F0F12))
+                                .border(1.dp, Color(0xFF242428), RoundedCornerShape(12.dp))
                                 .padding(2.dp)
                         ) {
                             intervals.forEach { (key, label) ->
@@ -346,7 +389,7 @@ fun SettingsScreen(
         }
 
         // ── DIAGNOSTICS ──
-        SectionCard(title = "Gallery Diagnostics") {
+        SettingsClayCard(title = "Gallery Diagnostics") {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 DiagRow(label = "Active Screen Widgets", value = store.widgetsList.value.size.toString())
                 DiagRow(label = "Persistence Store", value = "SHARED PREFS ACTIVE", valueColor = Color(0xFF34C759))
@@ -357,7 +400,7 @@ fun SettingsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(24.dp))
-                        .background(Color(0xFF161618))
+                        .background(Color(0xFF0F0F12))
                         .border(1.dp, Color(0xFFFF2D2D), RoundedCornerShape(24.dp))
                         .clickable {
                             triggerHaptic()
@@ -390,31 +433,6 @@ fun SettingsScreen(
                 .wrapContentWidth(Alignment.CenterHorizontally)
                 .padding(vertical = 12.dp)
         )
-    }
-}
-
-@Composable
-fun SectionCard(
-    title: String,
-    content: @Composable () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color(0xFF0B0B0C))
-            .border(1.dp, Color(0xFF1F1F22), RoundedCornerShape(16.dp))
-            .padding(16.dp)
-    ) {
-        Text(
-            text = title.uppercase(),
-            color = Color.White,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.5.sp,
-            modifier = Modifier.padding(bottom = 12.dp)
-        )
-        content()
     }
 }
 

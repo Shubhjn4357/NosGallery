@@ -10,6 +10,7 @@ import com.nothing.nosgallery.widget.NosWidgetPreferences
 import com.nothing.nosgallery.widget.WidgetLayoutCompiler
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.Locale
 
 class WidgetStore private constructor(private val context: Context) {
 
@@ -36,6 +37,7 @@ class WidgetStore private constructor(private val context: Context) {
     val stopwatchTime = mutableStateOf(prefs.getLong("stopwatchTime", 0L))
     val stopwatchRunning = mutableStateOf(false) // always reset on launch
     val torchEnabled = mutableStateOf(prefs.getBoolean("torchEnabled", false))
+    val soundProfile = mutableStateOf(prefs.getString("soundProfile", "vibrate") ?: "vibrate")
 
     // Preview widgets list on grid canvas
     val widgetsList = mutableStateOf<List<SavedWidget>>(emptyList())
@@ -115,6 +117,7 @@ class WidgetStore private constructor(private val context: Context) {
         editor.putInt("waterGoal", waterGoal.value)
         editor.putLong("stopwatchTime", stopwatchTime.value)
         editor.putBoolean("torchEnabled", torchEnabled.value)
+        editor.putString("soundProfile", soundProfile.value)
 
         // Compile and serialize active widgets with their compiled layout JSONs
         val widgetsArray = JSONArray()
@@ -161,6 +164,7 @@ class WidgetStore private constructor(private val context: Context) {
             "stopwatchTime" to stopwatchTime.value,
             "stopwatchRunning" to stopwatchRunning.value,
             "torchEnabled" to torchEnabled.value,
+            "soundProfile" to soundProfile.value,
             "activeTheme" to activeTheme.value
         )
     }
@@ -177,6 +181,7 @@ class WidgetStore private constructor(private val context: Context) {
             "developer_battery" -> "BATTERY"
             "weather_aqi" -> "AIR QUALITY"
             "weather_current" -> "WEATHER"
+            "smart_home_sound_control" -> "SOUND CONTROL"
             else -> "NOS WIDGET"
         }
     }
@@ -188,6 +193,7 @@ class WidgetStore private constructor(private val context: Context) {
             "developer_battery" -> "82%"
             "weather_aqi" -> "32 AQI"
             "weather_current" -> "24°C"
+            "smart_home_sound_control" -> soundProfile.value.uppercase(Locale.getDefault())
             else -> "--"
         }
     }

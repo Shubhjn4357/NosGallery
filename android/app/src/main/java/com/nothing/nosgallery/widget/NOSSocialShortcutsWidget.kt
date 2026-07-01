@@ -6,6 +6,14 @@ import android.widget.RemoteViews
 import com.nothing.nosgallery.R
 import org.json.JSONObject
 
+/**
+ * NOSSocialShortcutsWidget
+ * Design: Contact avatar grid — like a speed-dial screen.
+ * TOP: "DIRECT MESSAGE" header
+ * MIDDLE: 2x2 grid of avatar initial circles with app icon badge
+ * BOTTOM: "MESSAGE" button per contact
+ * Unique: Only widget laid out as a 2x2 avatar grid speed-dial.
+ */
 class NOSSocialShortcutsWidget : NosBaseWidgetProvider() {
     override val defaultTemplateId = "social_shortcuts"
 
@@ -21,26 +29,47 @@ class NOSSocialShortcutsWidget : NosBaseWidgetProvider() {
         val textColor = parseColorOr(customs?.optString("textColor"), themeText(theme))
         val subtextColor = parseColorOr(customs?.optString("subValueColor"), themeSubtext(theme))
 
+        val btnBg = if (theme == "minimal") android.graphics.Color.parseColor("#ffe0e0e0")
+                    else android.graphics.Color.parseColor("#ff1c1c1e")
+
         val root = createRootView(context, theme, customs)
-        val container = createColumnView(context)
+        val col = createColumnView(context)
 
-        val title = customs?.optString("titleText") ?: "DIRECT CHATS"
-        container.addView(R.id.dynamic_view_container, createHeader(context, title, "messagesquare", accentColor, subtextColor))
-        
-        // Row of social chat app shortcut buttons
-        val row = createRowView(context)
-        val colors = mapOf(
-            "btnBg" to if (theme == "minimal") android.graphics.Color.parseColor("#ffe0e0e0") else android.graphics.Color.parseColor("#ff1c1c1e")
+        // ── HEADER ──
+        col.addView(R.id.dynamic_view_container,
+            createHeader(context, "SPEED DIAL", "contacts", accentColor, subtextColor))
+
+        // ── CONTACT GRID (2 rows of 2) ──
+        val contacts = listOf(
+            Triple("A", customs?.optString("valueText") ?: "Alice", "📱"),
+            Triple("B", "Bob", "✈️"),
+            Triple("K", "Kai", "📱"),
+            Triple("M", "Maya", "📸")
         )
-        row.addView(R.id.dynamic_view_container, createButtonView(context, "WA", "chat_wa", appWidgetId, textColor, colors["btnBg"]!!))
-        row.addView(R.id.dynamic_view_container, createButtonView(context, "TG", "chat_tg", appWidgetId, textColor, colors["btnBg"]!!))
-        
-        container.addView(R.id.dynamic_view_container, row)
 
-        val footer = customs?.optString("footerText") ?: "NOS • SOCIAL"
-        container.addView(R.id.dynamic_view_container, createFooter(context, footer, accentColor))
+        contacts.chunked(2).forEach { row ->
+            val rowView = createRowView(context)
+            row.forEach { (initial, name, icon) ->
+                val contactCol = createColumnView(context)
+                contactCol.addView(R.id.dynamic_view_container,
+                    createTextView(context, "( $initial )", 14f, accentColor, marginTop = 0f, isBold = true))
+                contactCol.addView(R.id.dynamic_view_container,
+                    createTextView(context, name.take(8), 7f, textColor, marginTop = 1f, isBold = true))
+                contactCol.addView(R.id.dynamic_view_container,
+                    createButtonView(context, "$icon MSG", "chat_$name", appWidgetId, subtextColor, btnBg))
+                rowView.addView(R.id.dynamic_view_container, contactCol)
 
-        root.addView(R.id.nos_widget_root, container)
+                // spacer
+                rowView.addView(R.id.dynamic_view_container,
+                    createTextView(context, "  │  ", 8f, subtextColor, marginTop = 0f))
+            }
+            col.addView(R.id.dynamic_view_container, rowView)
+        }
+
+        col.addView(R.id.dynamic_view_container,
+            createFooter(context, customs?.optString("footerText") ?: "NOS • SOCIAL", accentColor))
+
+        root.addView(R.id.nos_widget_root, col)
         return root
     }
 }

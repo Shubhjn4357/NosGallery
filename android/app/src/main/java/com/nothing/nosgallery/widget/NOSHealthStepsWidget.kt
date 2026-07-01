@@ -22,23 +22,53 @@ class NOSHealthStepsWidget : NosBaseWidgetProvider() {
         val subtextColor = parseColorOr(customs?.optString("subValueColor"), themeSubtext(theme))
 
         val root = createRootView(context, theme, customs)
-        val container = createColumnView(context)
+        val col = createColumnView(context)
 
-        val title = customs?.optString("titleText") ?: "STEPS TRACKER"
-        container.addView(R.id.dynamic_view_container, createHeader(context, title, "heart", accentColor, subtextColor))
-        
-        val valTxt = customs?.optString("valueText") ?: "👣 5,420 STEPS"
-        container.addView(R.id.dynamic_view_container, createTextView(context, valTxt, 20f, textColor, marginTop = 6f))
-        
-        container.addView(R.id.dynamic_view_container, createProgressBar(context, 54, 100, accentColor))
-        
-        val sub = customs?.optString("subValueText") ?: "Goal: 10,000 steps"
-        container.addView(R.id.dynamic_view_container, createTextView(context, sub, 8f, subtextColor, marginTop = 4f))
-        
-        val footer = customs?.optString("footerText") ?: "NOS • HEALTH"
-        container.addView(R.id.dynamic_view_container, createFooter(context, footer, accentColor))
+        // ── HEADER ──
+        col.addView(R.id.dynamic_view_container,
+            createHeader(context, "STEP COUNTER", "footprint", accentColor, subtextColor))
 
-        root.addView(R.id.nos_widget_root, container)
+        // Compute steps data
+        val stepsRaw = customs?.optString("valueText") ?: "5,420 STEPS"
+        val stepsNum = stepsRaw.filter { it.isDigit() }.toIntOrNull() ?: 5420
+        val goalNum = 10000
+        val progress = (stepsNum.toFloat() / goalNum).coerceIn(0f, 1f)
+
+        // ── STEPS NUMBER ──
+        col.addView(R.id.dynamic_view_container,
+            createTextView(context, "%,d".format(stepsNum), 30f, textColor, marginTop = 2f, isBold = true))
+        col.addView(R.id.dynamic_view_container,
+            createTextView(context, "GOAL: ${"%,d".format(goalNum)}", 8f, subtextColor, marginTop = 0f))
+
+        // ── DOT GRID (20 dots = every 500 steps) ──
+        val totalDots = 20
+        val filledDots = (progress * totalDots).toInt()
+        col.addView(R.id.dynamic_view_container,
+            createTextView(context, "── PROGRESS ──", 7f, subtextColor, marginTop = 6f))
+
+        val dotRow = createRowView(context)
+        for (i in 0 until totalDots) {
+            val dotChar = if (i < filledDots) "●" else "○"
+            val dotColor = if (i < filledDots) accentColor else subtextColor
+            dotRow.addView(R.id.dynamic_view_container,
+                createTextView(context, dotChar, 7f, dotColor, marginTop = 0f))
+        }
+        col.addView(R.id.dynamic_view_container, dotRow)
+
+        // ── CALORIES + DISTANCE ──
+        val calories = (stepsNum * 0.04).toInt()
+        val distKm = "%.2f".format(stepsNum * 0.00075)
+        val statsRow = createRowView(context)
+        statsRow.addView(R.id.dynamic_view_container,
+            createTextView(context, "🔥 ${calories} kcal", 8f, subtextColor, marginTop = 4f))
+        statsRow.addView(R.id.dynamic_view_container,
+            createTextView(context, "   📍 ${distKm} km", 8f, subtextColor, marginTop = 4f))
+        col.addView(R.id.dynamic_view_container, statsRow)
+
+        col.addView(R.id.dynamic_view_container,
+            createFooter(context, customs?.optString("footerText") ?: "NOS • HEALTH", accentColor))
+
+        root.addView(R.id.nos_widget_root, col)
         return root
     }
 }
